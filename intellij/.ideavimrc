@@ -1,0 +1,135 @@
+" IDEA shortcuts
+" Shift - k             Show help under cursor
+" Ctrl - r              Replace
+
+" Basic settings
+let mapleader = " "
+set scrolloff=5
+set hlsearch
+set ignorecase
+set smartcase
+set incsearch
+" Use system clipboard as default
+set clipboard+=unnamed
+" Built-in navigation to navigated items works better
+nnoremap <c-o> :action Back<CR>
+nnoremap <c-i> :action Forward<CR>
+" Dont enter select mode when refactor
+set idearefactormode=keep
+
+" PLUGINS
+set NERDTree
+set commentary
+set surround
+set easymotion
+
+" Shortcuts not used while programming under \
+nnoremap \e :e ~/.ideavimrc<CR>
+nnoremap \r :action IdeaVim.ReloadVimRc.reload<CR>
+nnoremap \a :actionlist<CR>
+
+" Terminal Use Esc to exit terminal
+nnoremap <leader>' :action ActivateTerminalToolWindow<CR>
+nnoremap <leader>" :action Terminal.OpenInTerminal<CR>
+
+" Window
+map ; <c-w>w
+
+" Find
+map fb :action RecentFiles<CR>
+map fl :action RecentLocations<CR>
+map f/ :action FindInPath<CR>
+map fe :NERDTreeFind<CR>
+map ff :action GotoFile<CR>
+map fs :action FileStructurePopup<CR>
+map fa :action GotoAction<CR>
+map fu :action ShowUsages<CR>
+map fc :action GotoClass<CR>
+map fp :action ManageRecentProjects<CR>
+map fm :action ShowBookmarks<CR>
+
+" GoTo
+nmap gd :action GotoDeclaration<CR>
+nmap gi :action GotoImplementation<CR>
+nmap gt :action GotoTest<CR>
+nmap ge :action GotoNextError<CR>
+nmap gE :action GotoPreviousError<CR>
+
+" Easymotion
+map s <Plug>(easymotion-s)
+
+" Toolwindows
+" Shift Esc -           Hide Toolwindow
+" Esc -                 Jump to editor from Toolwindow
+" Alt - Right/Left      Switch Tab
+nnoremap <leader>aa :action ToolWindowsGroup<CR>
+nnoremap <leader>aj :action JumpToLastWindow<CR>
+nnoremap <leader>ah :action HideAllWindows<CR>
+
+" Git
+nnoremap <leader>gm :action Git.Menu<CR>
+
+" Buffer"
+map <Leader>bq :action CloseAllEditors<CR>
+map <Leader>bc :nohl<CR>
+nnoremap <leader>bx :1,$d<CR>
+
+
+" Refactor
+nnoremap <leader>cm :action Refactorings.QuickListPopupAction<CR>
+
+" Run
+nnoremap <leader>rr :action ContextRun<CR>
+nnoremap <leader>rc :action RunClass<CR>
+nnoremap <leader>rm :action ChooseRunConfiguration<CR>
+nnoremap <leader>ra :action Rerun<CR>
+
+" Test
+nnoremap <leader>tf :action RerunFailedTests<CR>
+
+" Debug
+nnoremap <leader>dd :action ContextDebug<CR>
+nnoremap <leader>db :action ToggleLineBreakpoint<CR>
+
+" --- Clojure
+" Find
+nmap fk :action GotoKeyword<CR>
+nmap fn :action GotoNamespace<CR>
+
+" Paredit
+nnoremap <c-h> :action :cursive.actions.paredit/backward<CR>
+nnoremap <c-j> :action :cursive.actions.paredit/forward-down<CR>
+nnoremap <c-k> :action :cursive.actions.paredit/backward-up<CR>
+nnoremap <c-l> :action :cursive.actions.paredit/forward<CR>
+nnoremap <c-m> %
+nnoremap <leader>kB :action :cursive.actions.paredit/barf-backwards<CR>
+nnoremap <leader>kb :action :cursive.actions.paredit/barf-forwards<CR>
+nnoremap <leader>kx :action :cursive.actions.paredit/kill-sexp<CR>
+nnoremap <leader>kS :action :cursive.actions.paredit/slurp-backwards<CR>
+nnoremap <leader>ks :action :cursive.actions.paredit/slurp-forwards<CR>
+nnoremap <leader>ke :action :cursive.actions.paredit/splice-killing-backwards<CR>
+nnoremap <leader>kE :action :cursive.actions.paredit/splice-killing-forwards<CR>
+nnoremap <leader>kf :action :cursive.actions.paredit/thread-form<CR>
+" Repl
+nnoremap <leader>ss :action :cursive.repl.actions/jump-to-repl<CR>
+nnoremap <leader>sb :action :cursive.repl.actions/load-file<CR>
+nnoremap <leader>sr :action :cursive.repl.actions/sync-files<CR>
+" Eval
+nnoremap <leader>em :action :cursive.repl.actions/macroexpansion<CR>
+nnoremap <leader>el :action :cursive.repl.actions/run-last-sexp<CR>
+nnoremap <leader>ee :action :cursive.repl.actions/run-top-sexp<CR>
+nnoremap <leader>ef :action Cursive.Repl.Command.eval-to-file<cr> :action Synchronize<cr>
+" Test
+nnoremap <leader>tx :action :cursive.testing.actions/remove-test-markers<CR>
+nnoremap <leader>tr :action :cursive.testing.actions/rerun-last-test <CR>
+nnoremap <leader>ta :action :cursive.testing.actions/run-ns-tests <CR>
+nnoremap <leader>tt :action :cursive.testing.actions/run-single-test<CR>
+" ---
+
+" Handlers
+" n - normal mode
+" i - insert mode
+" x - visual mode
+" v - visual and select modes
+" a - all modes
+sethandler <C-v> n-v:vim i:ide

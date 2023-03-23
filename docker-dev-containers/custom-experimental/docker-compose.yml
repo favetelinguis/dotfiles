@@ -1,0 +1,27 @@
+version: '3.8'
+services:
+  dev-env:
+    container_name: dev-env
+    stdin_open: true # docker run -i
+    tty: true # docker run -t
+    build:
+      context: .
+      args:
+        - TEST=IM_HERE
+    environment:
+      - CUSTOMENV=setindocker
+#    networks:
+#      - dev-env
+    volumes:
+      - ./app:/root/app
+      - ./rtx/.rtx.toml:/root/.rtx.toml
+      - my-volume:/root/real-volume
+#    command:
+#      - rtx
+#      - install
+#networks:
+#  - dev-env:
+volumes:
+  - my-volume:
+      external: false
+
