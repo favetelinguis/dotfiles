@@ -17,6 +17,9 @@ nnoremap <c-i> :action Forward<CR>
 " Dont enter select mode when refactor
 set idearefactormode=keep
 
+# Exit insert
+imap ii <Esc>
+
 " PLUGINS
 set NERDTree
 set commentary
@@ -27,10 +30,6 @@ set easymotion
 nnoremap \e :e ~/.ideavimrc<CR>
 nnoremap \r :action IdeaVim.ReloadVimRc.reload<CR>
 nnoremap \a :actionlist<CR>
-
-" Terminal Use Esc to exit terminal
-nnoremap <leader>' :action ActivateTerminalToolWindow<CR>
-nnoremap <leader>" :action Terminal.OpenInTerminal<CR>
 
 " Window
 map ; <c-w>w
@@ -73,6 +72,7 @@ nnoremap <leader>gm :action Git.Menu<CR>
 map <Leader>bq :action CloseAllEditors<CR>
 map <Leader>bc :nohl<CR>
 nnoremap <leader>bx :1,$d<CR>
+map <Leader>bj :action SplitHorizontally<CR>
 
 
 " Refactor
