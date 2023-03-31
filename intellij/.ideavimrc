@@ -72,7 +72,7 @@ nnoremap <leader>gm :action Git.Menu<CR>
 map <Leader>bq :action CloseAllEditors<CR>
 map <Leader>bc :nohl<CR>
 nnoremap <leader>bx :1,$d<CR>
-map <Leader>bj :action SplitHorizontally<CR>
+map <Leader>bw :action SplitVertically<CR>
 
 
 " Refactor
