@@ -1,0 +1,222 @@
+#+title My emacs configuration
+#+PROPERTY: header-args:emacs-lisp  :tangle ./init.el
+
+* Philosopy of my configuratio
+    Things I think Emacs will do for me:
+    1. Note taking over multiple projects and support tasks - org mode
+    2. Project navigation and handling - projectile magit forge
+    3. Terminal - dired wrapping clis in transient state using elisp
+
+    What im not using emacs to:
+    1. IDE
+
+* Things to investigate more
+Understand the logic behind M-x C-x and C-c and C-u are thing under x always emacs basic while C-c more
+comom for mode specific stuff?
+* How to run this file
+  Each code block has a \tangle\ to it, generate the code to files with M-x org-bable-tangle
+  If no codeblocks get tangled, try M-x org-mode to reload
+
+* Use-Package setup
+#+begin_src emacs-lisp
+;; Initialize package sources
+(require 'package)
+
+(setq package-archives '(("melpa" . "https://melpa.org/packages/")
+                         ("org" . "https://orgmode.org/elpa/") ;; Get latest org mode
+                         ("elpa" . "https://elpa.gnu.org/packages/")))
+
+(package-initialize)
+(unless package-archive-contents
+ (package-refresh-contents))
+
+;; Initialize use-package on non-Linux platforms
+(unless (package-installed-p 'use-package)
+   (package-install 'use-package))
+
+(require 'use-package)
+(setq use-package-always-ensure t) ; Install packages if they are not avaliable already
+; To update the package list use M-x list-packages this can be good if i get error trying to instal new packages
+; C-h f function v variable k keybinding h general help
+
+#+end_src
+
+* Basic UI Configuration
+#+begin_src emacs-lisp
+
+;; Cleanup Emacs user interface
+(setq inhibit-startup-message t)
+
+(scroll-bar-mode -1) ; Disable visible scrollbar
+(tool-bar-mode -1)  ; Disable the toolbar
+(tooltip-mode -1) ; Disable tooltips
+(set-fringe-mode 10)
+(menu-bar-mode -1) ; Disable the menu bar
+(setq visible-bell t) ; Turn off sound and show flashing warning instead
+#+end_src
+
+** Font configuration
+#+begin_src emacs-lisp
+(set-face-attribute 'default nil :family "Inconsolata" :height 145 :weight 'normal)
+#+end_src
+
+** Theme
+#+begin_src emacs-lisp
+(load-theme 'wombat)
+#+end_src
+
+* Ivy
+#+begin_src emacs-lisp
+
+; Using M-o while inside a ivy buffer shows any special things one can do in that buffer
+; Using C-c C-o persist an ivy search buffer for example with ripgrep
+(use-package counsel
+  :bind (("C-s" . swiper)
+         :map ivy-minibuffer-map
+         ("TAB" . ivy-alt-done)	
+         ("C-l" . ivy-alt-done)
+         ("C-j" . ivy-next-line)
+         ("C-k" . ivy-previous-line)
+         :map ivy-switch-buffer-map
+         ("C-k" . ivy-previous-line)
+         ("C-l" . ivy-done)
+         ("C-d" . ivy-switch-buffer-kill)
+         :map ivy-reverse-i-search-map
+         ("C-k" . ivy-previous-line)
+         ("C-d" . ivy-reverse-i-search-kill))
+  :init (ivy-mode 1))
+#+end_src
+* Evil
+#+begin_src emacs-lisp
+(use-package evil
+  :init
+  (setq evil-want-keybinding nil)
+  (setq evil-want-integration t)
+  :config
+  (evil-mode 1)
+  (define-key evil-insert-state-map (kbd "C-g") 'evil-normal-state))
+
+(use-package evil-collection
+  :after evil
+  :config
+  (evil-collection-init))
+
+(use-package evil-commentary
+  :after evil
+  :config
+  (evil-commentary-mode))
+#+end_src
+* Projectile
+#+begin_src emacs-lisp
+
+; Serch projects p search f search files sr search using rg xe eshell q switch between open projects
+; Depends of fd and ripgrep
+; Add shortcut to open projet in idea
+(use-package projectile
+  :custom ((projectile-completion-system 'ivy))
+  :bind ("C-SPC" . projectile-commander)
+;  :bind-keymap
+;  ("C-c p" . projectile-command-map)
+  :config
+  (projectile-mode)
+(def-projectile-commander-method ?s
+  "Open a *shell* buffer for the project."
+  (projectile-run-shell))
+
+(def-projectile-commander-method ?c
+  "Run `compile' in the project."
+  (projectile-compile-project nil))
+
+(def-projectile-commander-method ?p
+  "Project selection."
+  (projectile-switch-project))
+
+(def-projectile-commander-method ?d
+  "Open project root in dired."
+  (projectile-dired))
+
+(def-projectile-commander-method ?/
+  "rg project"
+  (-projectile-rg))
+  ;; NOTE: Set this to the folder where you keep your Git repos!
+;  (setq projectile-create-missing-test-files t)
+  :init
+  (when (file-directory-p "~/repos")
+    (setq projectile-project-search-path '("~/repos")))
+  (setq projectile-switch-project-action #'projectile-commander)
+  ;(setq projectile-switch-project-action #'projectile-commander) ; First thing to happen when switching project
+  )
+#+end_src
+* Magit/Forge
+#+begin_src emacs-lisp
+(use-package magit
+  :custom
+  (magit-display-buffer-function #'magit-display-buffer-same-window-except-diff-v1))
+
+(use-package forge
+  :after magit)
+#+end_src
+* Org Mode
+  M-x org-agenda OR org-agenda-list
+   C-c [ ] add/remove file to files to agenda
+   HABBIT exlude org file from all projects in som global gitignore
+  add org files for all projects add them to agenda and track what im doing in the projects
+   understand todo list items state done C-c t. called task and task state in org?
+   IVESTIGATE capture template and structure templates M-x org-capture quicker then creating todo stuff manually
+  Video manage your life with org
+  https://www.youtube.com/watch?v=VcgjTEa0kU4&list=PLEoMzSkcN8oPH1au7H6B7bBJ4ZO7BXjSZ&index=5
+  https://www.youtube.com/watch?v=PNE-mgkZ6HM&list=PLEoMzSkcN8oPH1au7H6B7bBJ4ZO7BXjSZ&index=6
+  Video configure all dot files with Org Babel
+  https://www.youtube.com/watch?v=kkqVTDbfYp4&list=PLEoMzSkcN8oPH1au7H6B7bBJ4ZO7BXjSZ&index=7
+  Make better symlinks babel generate files that i symlink, i also commit the generated files
+  https://www.gnu.org/software/stow/ use this to create symlinks
+#+begin_src emacs-lisp
+  (use-package org
+    :custom ; dont use setq in config use custom instead!
+    ;; (org-agenda-files '("~/orgfiles/tasks.org"))
+    (org-confirm-babel-evaluate nil) ; dont have to confirm each execute block
+    (org-agenda-start-with-log-mode t)
+    (org-log-done 'time)
+    (require 'org-tempo)
+    (add-to-list 'org-structure-template-alist '("el" . "src emacs-lisp")) ; <el <TAB>
+    )
+#+end_src
+** Configure Babel Languages
+#+begin_src emacs-lisp
+; C-c C-c eval block of code
+(org-babel-do-load-languages 'org-babel-load-languages
+			     '((emacs-lisp . t)))
+#+end_src
+
+* Dired
+#+begin_src emacs-lisp
+; Load extra dired stuff to enable dired-jump
+ (add-hook 'dired-load-hook
+            (function (lambda () (load "dired-x"))))
+#+end_src
+* Shells
+Show eshell at startup
+#+begin_src emacs-lisp
+(add-hook 'emacs-startup-hook #'eshell)
+#+end_src
+* Custom keybinding
+#+begin_src emacs-lisp
+(defun fav/toggle-buffer ()
+  "Flips to the last-visited buffer in this window."
+  (interactive)
+  (switch-to-buffer (other-buffer (current-buffer))))
+
+
+;; Make killing current buffer faster
+(global-set-key (kbd "C-x k") 'kill-this-buffer)
+
+(global-set-key (kbd "C-;") 'fav/toggle-buffer)
+(global-set-key (kbd "M-;") 'other-window)
+
+(global-set-key (kbd "C-'") 'org-agenda-list)
+(global-set-key (kbd "M-'") 'counsel-org-agenda-headlines) 
+(global-set-key (kbd "C-M-'") 'org-agenda) 
+
+(global-set-key (kbd "C--") 'dired-jump) 
+;(define-key KEYMAP KEY DEF)
+#+end_src
