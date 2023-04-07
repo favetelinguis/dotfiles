@@ -1,5 +1,6 @@
 #+title My emacs configuration
 #+PROPERTY: header-args:emacs-lisp  :tangle ./init.el
+#+STARTUP: fold
 
 * Philosopy of my configuratio
     Things I think Emacs will do for me:
@@ -8,7 +9,11 @@
     3. Terminal - dired wrapping clis in transient state using elisp
 
     What im not using emacs to:
-    1. IDE
+    1. IDE with lsp mode
+
+ Workflow:
+ - Do lots of filesystem stuff - dired
+ - Git stuff - magit
 
 * Things to investigate more
 Understand the logic behind M-x C-x and C-c and C-u are thing under x always emacs basic while C-c more
@@ -16,6 +21,8 @@ comom for mode specific stuff?
 * How to run this file
   Each code block has a \tangle\ to it, generate the code to files with M-x org-bable-tangle
   If no codeblocks get tangled, try M-x org-mode to reload
+
+To update packages M-x list-packages then we will be prometed to type U for outdated packages, follow instructions
 
 * Use-Package setup
 #+begin_src emacs-lisp
@@ -65,6 +72,15 @@ comom for mode specific stuff?
 (load-theme 'wombat)
 #+end_src
 
+* Which Key
+#+begin_src emacs-lisp
+(use-package which-key
+  :defer 0
+  :diminish which-key-mode
+  :config
+  (which-key-mode)
+  (setq which-key-idle-delay 1))
+#+end_src
 * Ivy
 #+begin_src emacs-lisp
 
@@ -109,43 +125,65 @@ comom for mode specific stuff?
 * Projectile
 #+begin_src emacs-lisp
 
-; Serch projects p search f search files sr search using rg xe eshell q switch between open projects
-; Depends of fd and ripgrep
-; Add shortcut to open projet in idea
-(use-package projectile
-  :custom ((projectile-completion-system 'ivy))
-  :bind ("C-SPC" . projectile-commander)
-;  :bind-keymap
-;  ("C-c p" . projectile-command-map)
-  :config
-  (projectile-mode)
-(def-projectile-commander-method ?s
-  "Open a *shell* buffer for the project."
-  (projectile-run-shell))
+  ; Serch projects p search f search files sr search using rg xe eshell q switch between open projects
+  ; Depends of fd and ripgrep
+  ; Add shortcut to open projet in idea
+  (use-package projectile
+    :custom ((projectile-completion-system 'ivy))
+    :bind ("C-SPC" . projectile-commander)
+  ;  :bind-keymap
+  ;  ("C-c p" . projectile-command-map)
+    :config
+    (projectile-mode)
+  (def-projectile-commander-method ?s
+    "Open a *shell* buffer for the project."
+    (projectile-run-eshell))
 
-(def-projectile-commander-method ?c
-  "Run `compile' in the project."
-  (projectile-compile-project nil))
+  (def-projectile-commander-method ?c
+    "Run `compile' in the project."
+    (projectile-compile-project nil))
 
-(def-projectile-commander-method ?p
-  "Project selection."
-  (projectile-switch-project))
+  (def-projectile-commander-method ?p
+    "Project selection."
+    (projectile-switch-project))
 
-(def-projectile-commander-method ?d
-  "Open project root in dired."
-  (projectile-dired))
+  (def-projectile-commander-method ?d
+    "Open project root in dired."
+    (projectile-dired))
 
-(def-projectile-commander-method ?/
-  "rg project"
-  (-projectile-rg))
-  ;; NOTE: Set this to the folder where you keep your Git repos!
-;  (setq projectile-create-missing-test-files t)
-  :init
-  (when (file-directory-p "~/repos")
-    (setq projectile-project-search-path '("~/repos")))
-  (setq projectile-switch-project-action #'projectile-commander)
-  ;(setq projectile-switch-project-action #'projectile-commander) ; First thing to happen when switching project
-  )
+  (def-projectile-commander-method ?j
+    "rg project"
+    (-projectile-rg))
+    ;; NOTE: Set this to the folder where you keep your Git repos!
+  ;  (setq projectile-create-missing-test-files t)
+    :init
+    (when (file-directory-p "~/repos")
+      (setq projectile-project-search-path '("~/repos")))
+    (setq projectile-switch-project-action #'projectile-commander)
+    ;(setq projectile-switch-project-action #'projectile-commander) ; First thing to happen when switching project
+    )
+#+end_src
+
+* Development
+** Lisp
+What is the recommended elisp dev setup?
+Completion = Using completion-at-point for completion?
+Diagnostics = Using flymake-mode - flymake-show-buffer-diagnostic
+Go to reference xref-find-references
+Formatting?
+https://github.com/p3r7/awesome-elisp
+https://dawranliou.com/blog/structural-editing-in-vanilla-emacs/
+Try using lispy without any evil adjustments
+#+begin_src emacs-lisp
+       ;;  (use-package lispy)
+  ;;       ; todo add this as hook in use-package
+  ;;     (add-hook 'emacs-lisp-mode-hook (lambda () (lispy-mode 1)))
+
+  ;;   (use-package lispyville
+  ;;   :config
+  ;; (lispyville-set-key-theme '(operators c-w additional))
+  ;; )
+  ;;     (add-hook 'lispy-mode-hook #'lispyville-mode)
 #+end_src
 * Magit/Forge
 #+begin_src emacs-lisp
@@ -189,15 +227,124 @@ comom for mode specific stuff?
 #+end_src
 
 * Dired
+
+Dired is a built-in file manager for Emacs that does some pretty amazing things!  Here are some key bindings you should try out:
+WK Indicate that I get which key, they have sub commands.
+
+** Key Bindings
+
+**** Navigation
+
+*Emacs* / *Evil*
+- =n= / =j= - next line
+- =p= / =k= - previous line
+- =j= / =J= - jump to file in buffer
+- =RET= - select file or directory
+- =^= - go to parent directory
+- =S-RET= / =g O= - Open file in "other" window
+- =M-RET= - Show file in other window without focusing (previewing files)
+- =g o= (=dired-view-file=) - Open file but in a "preview" mode, close with =q=
+- =g= / =g r= Refresh the buffer with =revert-buffer= after changing configuration (and after filesystem changes!)
+
+**** Marking files
+
+- =m= - Marks a file
+- =u= - Unmarks a file
+- =U= - Unmarks all files in buffer
+- =* t= / =t= - Inverts marked files in buffer
+- =% m= - WK Mark files in buffer using regular expression
+- =*= - WK Lots of other auto-marking functions
+- =k= / =K= - "Kill" marked items (refresh buffer with =g= / =g r= to get them back)
+- Many operations can be done on a single file if there are no active marks!
+
+**** Copying and Renaming files
+
+- =C= - Copy marked files (or if no files are marked, the current file)
+- Copying single and multiple files
+- =U= - Unmark all files in buffer
+- =R= - Rename marked files, renaming multiple is a move!
+- =% R= - Rename based on regular expression: =^test= , =old-\&=
+
+*Power command*: =C-x C-q= (=dired-toggle-read-only=) - Makes all file names in the buffer editable directly to rename them!  Press =Z Z= to confirm renaming or =Z Q= to abort.
+
+**** Deleting files
+
+- =D= - Delete marked file
+- =d= - Mark file for deletion
+- =x= - Execute deletion for marks
+- =delete-by-moving-to-trash= - Move to trash instead of deleting permanently
+
+**** Creating and extracting archives
+
+- =Z= - Compress or uncompress a file or folder to (=.tar.gz=)
+- =c= - Compress selection to a specific file
+- =dired-compress-files-alist= - Bind compression commands to file extension
+
+**** Other common operations
+
+- =T= - Touch (change timestamp)
+- =M= - Change file mode
+- =O= - Change file owner
+- =G= - Change file group
+- =S= - Create a symbolic link to this file
+- =L= - Load an Emacs Lisp file into Emacs
+
+** Configuration
+
 #+begin_src emacs-lisp
-; Load extra dired stuff to enable dired-jump
- (add-hook 'dired-load-hook
-            (function (lambda () (load "dired-x"))))
+   ;(add-hook 'dired-load-hook
+   ;           (function (lambda () (load "dired-x"))))
+
+    (use-package dired
+      :ensure nil
+      :commands (dired dired-jump)
+      :bind (("C--" . dired-jump))
+      :config
+      (evil-collection-define-key 'normal 'dired-mode-map
+	"h" 'dired-single-up-directory
+	"l" 'dired-single-buffer) ;; do i want l to open file in preview so i can close it with q then use ret to open file
+  ) 
+
+  ; Prevent opening new buffers all the time
+    (use-package dired-single
+      :commands (dired dired-jump))
+
+    (use-package dired-hide-dotfiles
+;      :hook (dired-mode . dired-hide-dotfiles-mode)
+      :config
+      (evil-collection-define-key 'normal 'dired-mode-map
+	"H" 'dired-hide-dotfiles-mode))
+
 #+end_src
-* Shells
+* Eshell
 Show eshell at startup
 #+begin_src emacs-lisp
-(add-hook 'emacs-startup-hook #'eshell)
+    (defun fav/configure-eshell ()
+    ;; Save command history when commands are entered
+    (add-hook 'eshell-pre-command-hook 'eshell-save-some-history)
+
+    ;; Truncate buffer for performance
+    (add-to-list 'eshell-output-filter-functions 'eshell-truncate-buffer)
+
+    ;; Bind some useful keys for evil-mode
+    (evil-define-key '(normal insert visual) eshell-mode-map (kbd "C-r") 'counsel-esh-history)
+    (evil-normalize-keymaps)
+
+    (setq eshell-history-size         10000
+	  eshell-buffer-maximum-lines 10000
+	  eshell-hist-ignoredups t ; dont put consecutive commands in history
+	  eshell-scroll-to-bottom-on-input t))
+
+  (use-package eshell
+    :hook (eshell-first-time-mode . fav/configure-eshell)
+    :config
+
+    (with-eval-after-load 'esh-opt
+      (setq eshell-destroy-buffer-when-process-dies t)
+      (setq eshell-visual-commands '("htop" "zsh" "vim")))
+    )
+
+     (add-hook 'emacs-startup-hook #'eshell)
 #+end_src
 * Custom keybinding
 #+begin_src emacs-lisp
@@ -210,13 +357,15 @@ Show eshell at startup
 ;; Make killing current buffer faster
 (global-set-key (kbd "C-x k") 'kill-this-buffer)
 
-(global-set-key (kbd "C-;") 'fav/toggle-buffer)
-(global-set-key (kbd "M-;") 'other-window)
+(global-set-key (kbd "C-;") 'other-window)
+(global-set-key (kbd "M-;") 'fav/toggle-buffer)
 
-(global-set-key (kbd "C-'") 'org-agenda-list)
-(global-set-key (kbd "M-'") 'counsel-org-agenda-headlines) 
+(global-set-key (kbd "C-'") 'counsel-org-agenda-headlines) 
+(global-set-key (kbd "M-'") 'org-agenda-list)
 (global-set-key (kbd "C-M-'") 'org-agenda) 
 
-(global-set-key (kbd "C--") 'dired-jump) 
 ;(define-key KEYMAP KEY DEF)
 #+end_src
+
+#+RESULTS:
+: dired-jump

@@ -32,6 +32,13 @@
 
 (load-theme 'wombat)
 
+(use-package which-key
+  :defer 0
+  :diminish which-key-mode
+  :config
+  (which-key-mode)
+  (setq which-key-idle-delay 1))
+
 ; Using M-o while inside a ivy buffer shows any special things one can do in that buffer
 ; Using C-c C-o persist an ivy search buffer for example with ripgrep
 (use-package counsel
@@ -80,7 +87,7 @@
   (projectile-mode)
 (def-projectile-commander-method ?s
   "Open a *shell* buffer for the project."
-  (projectile-run-shell))
+  (projectile-run-eshell))
 
 (def-projectile-commander-method ?c
   "Run `compile' in the project."
@@ -94,7 +101,7 @@
   "Open project root in dired."
   (projectile-dired))
 
-(def-projectile-commander-method ?/
+(def-projectile-commander-method ?j
   "rg project"
   (-projectile-rg))
   ;; NOTE: Set this to the folder where you keep your Git repos!
@@ -105,6 +112,16 @@
   (setq projectile-switch-project-action #'projectile-commander)
   ;(setq projectile-switch-project-action #'projectile-commander) ; First thing to happen when switching project
   )
+
+;;  (use-package lispy)
+;;       ; todo add this as hook in use-package
+;;     (add-hook 'emacs-lisp-mode-hook (lambda () (lispy-mode 1)))
+
+;;   (use-package lispyville
+;;   :config
+;; (lispyville-set-key-theme '(operators c-w additional))
+;; )
+;;     (add-hook 'lispy-mode-hook #'lispyville-mode)
 
 (use-package magit
   :custom
@@ -127,11 +144,55 @@
 (org-babel-do-load-languages 'org-babel-load-languages
 			     '((emacs-lisp . t)))
 
-; Load extra dired stuff to enable dired-jump
- (add-hook 'dired-load-hook
-            (function (lambda () (load "dired-x"))))
+;(add-hook 'dired-load-hook
+   ;           (function (lambda () (load "dired-x"))))
 
-(add-hook 'emacs-startup-hook #'eshell)
+    (use-package dired
+      :ensure nil
+      :commands (dired dired-jump)
+      :bind (("C--" . dired-jump))
+      :config
+      (evil-collection-define-key 'normal 'dired-mode-map
+	"h" 'dired-single-up-directory
+	"l" 'dired-single-buffer) ;; do i want l to open file in preview so i can close it with q then use ret to open file
+  ) 
+
+  ; Prevent opening new buffers all the time
+    (use-package dired-single
+      :commands (dired dired-jump))
+
+    (use-package dired-hide-dotfiles
+;      :hook (dired-mode . dired-hide-dotfiles-mode)
+      :config
+      (evil-collection-define-key 'normal 'dired-mode-map
+	"H" 'dired-hide-dotfiles-mode))
+
+(defun fav/configure-eshell ()
+  ;; Save command history when commands are entered
+  (add-hook 'eshell-pre-command-hook 'eshell-save-some-history)
+
+  ;; Truncate buffer for performance
+  (add-to-list 'eshell-output-filter-functions 'eshell-truncate-buffer)
+
+  ;; Bind some useful keys for evil-mode
+  (evil-define-key '(normal insert visual) eshell-mode-map (kbd "C-r") 'counsel-esh-history)
+  (evil-normalize-keymaps)
+
+  (setq eshell-history-size         10000
+	eshell-buffer-maximum-lines 10000
+	eshell-hist-ignoredups t ; dont put consecutive commands in history
+	eshell-scroll-to-bottom-on-input t))
+
+(use-package eshell
+  :hook (eshell-first-time-mode . fav/configure-eshell)
+  :config
+
+  (with-eval-after-load 'esh-opt
+    (setq eshell-destroy-buffer-when-process-dies t)
+    (setq eshell-visual-commands '("htop" "zsh" "vim")))
+  )
+
+   (add-hook 'emacs-startup-hook #'eshell)
 
 (defun fav/toggle-buffer ()
   "Flips to the last-visited buffer in this window."
@@ -142,12 +203,11 @@
 ;; Make killing current buffer faster
 (global-set-key (kbd "C-x k") 'kill-this-buffer)
 
-(global-set-key (kbd "C-;") 'fav/toggle-buffer)
-(global-set-key (kbd "M-;") 'other-window)
+(global-set-key (kbd "C-;") 'other-window)
+(global-set-key (kbd "M-;") 'fav/toggle-buffer)
 
-(global-set-key (kbd "C-'") 'org-agenda-list)
-(global-set-key (kbd "M-'") 'counsel-org-agenda-headlines) 
+(global-set-key (kbd "C-'") 'counsel-org-agenda-headlines) 
+(global-set-key (kbd "M-'") 'org-agenda-list)
 (global-set-key (kbd "C-M-'") 'org-agenda) 
 
-(global-set-key (kbd "C--") 'dired-jump) 
 ;(define-key KEYMAP KEY DEF)
