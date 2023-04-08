@@ -72,20 +72,22 @@ To update packages M-x list-packages then we will be prometed to type U for outd
 ** General
 #+begin_src emacs-lisp
 
-;; Cleanup Emacs user interface
-(setq inhibit-startup-message t)
+  ;; Cleanup Emacs user interface
+  (setq inhibit-startup-message t)
 
-(scroll-bar-mode -1) ; Disable visible scrollbar
-(tool-bar-mode -1)  ; Disable the toolbar
-(tooltip-mode -1) ; Disable tooltips
-(set-fringe-mode 10)
-(menu-bar-mode -1) ; Disable the menu bar
-(setq visible-bell t) ; Turn off sound and show flashing warning instead
+  (scroll-bar-mode -1) ; Disable visible scrollbar
+  (tool-bar-mode -1)  ; Disable the toolbar
+  (tooltip-mode -1) ; Disable tooltips
+  (set-fringe-mode 10)
+  (menu-bar-mode -1) ; Disable the menu bar
+  (setq visible-bell t) ; Turn off sound and show flashing warning instead
 #+end_src
 
 ** Font configuration
+Install Fira Code
+https://dev.to/josuerodriguez98/installing-firacode-on-windows-and-ubuntu-1fn1
 #+begin_src emacs-lisp
-(set-face-attribute 'default nil :family "Consolas" :height 145 :weight 'normal)
+(set-face-attribute 'default nil :family "Fira Code" :height 140 :weight 'normal)
 #+end_src
 
 ** Theme
