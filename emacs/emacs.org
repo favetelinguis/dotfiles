@@ -1,7 +1,6 @@
 #+title My emacs configuration
 #+PROPERTY: header-args:emacs-lisp  :tangle ./init.el
 #+STARTUP: fold
-
 * Philosopy of my configuratio
     Things I think Emacs will do for me:
     1. Note taking over multiple projects and support tasks - org mode
@@ -24,31 +23,53 @@ comom for mode specific stuff?
 
 To update packages M-x list-packages then we will be prometed to type U for outdated packages, follow instructions
 
-* Use-Package setup
+* Use-Package
+** Details
+:hook Package loaded first time one of the hooks are invoked
+:bind Package loaded first time one of the keys are used
+:commands Package loaded first time one of the commands are used
+:mode Package loaded firt time a file with a prticular extension is opened
+:after Package loaded after other package
+:defer Default if no other option is used, will defaear loading till after startup
+:demand t Package is loaded at startup
+
+:config Is run after package is loaded
+
+** Config
 #+begin_src emacs-lisp
-;; Initialize package sources
-(require 'package)
+  ;; Initialize package sources
+  (require 'package)
 
-(setq package-archives '(("melpa" . "https://melpa.org/packages/")
-                         ("org" . "https://orgmode.org/elpa/") ;; Get latest org mode
-                         ("elpa" . "https://elpa.gnu.org/packages/")))
+  (setq package-archives '(("melpa" . "https://melpa.org/packages/")
+                           ("org" . "https://orgmode.org/elpa/") ;; Get latest org mode
+                           ("elpa" . "https://elpa.gnu.org/packages/")))
 
-(package-initialize)
-(unless package-archive-contents
- (package-refresh-contents))
+  (package-initialize)
+  (unless package-archive-contents
+   (package-refresh-contents))
 
-;; Initialize use-package on non-Linux platforms
-(unless (package-installed-p 'use-package)
-   (package-install 'use-package))
+  ;; Initialize use-package on non-Linux platforms
+  (unless (package-installed-p 'use-package)
+     (package-install 'use-package))
 
-(require 'use-package)
-(setq use-package-always-ensure t) ; Install packages if they are not avaliable already
-; To update the package list use M-x list-packages this can be good if i get error trying to instal new packages
-; C-h f function v variable k keybinding h general help
+  (require 'use-package)
+  (setq use-package-always-ensure t) ; Install packages if they are not avaliable already
+  ;; (setq use-package-verbose t) ; uncomment for debugging config, prints more to messages buffer
+  ; To update the package list use M-x list-packages this can be good if i get error trying to instal new packages
+  ; C-h f function v variable k keybinding h general help
 
 #+end_src
 
+* Start with tweeking the GC
+#+begin_src emacs-lisp
+    (use-package gcmh
+  :ensure t
+  :demand t
+  :config
+  (gcmh-mode 1))
+#+end_src
 * Basic UI Configuration
+** General
 #+begin_src emacs-lisp
 
 ;; Cleanup Emacs user interface
@@ -64,12 +85,12 @@ To update packages M-x list-packages then we will be prometed to type U for outd
 
 ** Font configuration
 #+begin_src emacs-lisp
-(set-face-attribute 'default nil :family "Inconsolata" :height 145 :weight 'normal)
+(set-face-attribute 'default nil :family "Consolas" :height 145 :weight 'normal)
 #+end_src
 
 ** Theme
 #+begin_src emacs-lisp
-(load-theme 'wombat)
+(load-theme 'tango-dark)
 #+end_src
 
 * Which Key
@@ -187,12 +208,13 @@ Try using lispy without any evil adjustments
 #+end_src
 * Magit/Forge
 #+begin_src emacs-lisp
-(use-package magit
-  :custom
-  (magit-display-buffer-function #'magit-display-buffer-same-window-except-diff-v1))
+  (use-package magit
+     :custom
+     (magit-display-buffer-function #'magit-display-buffer-same-window-except-diff-v1)
+  )
 
-(use-package forge
-  :after magit)
+  (use-package forge
+    :after magit)
 #+end_src
 * Org Mode
   M-x org-agenda OR org-agenda-list
@@ -209,15 +231,17 @@ Try using lispy without any evil adjustments
   Make better symlinks babel generate files that i symlink, i also commit the generated files
   https://www.gnu.org/software/stow/ use this to create symlinks
 #+begin_src emacs-lisp
-  (use-package org
-    :custom ; dont use setq in config use custom instead!
-    ;; (org-agenda-files '("~/orgfiles/tasks.org"))
-    (org-confirm-babel-evaluate nil) ; dont have to confirm each execute block
-    (org-agenda-start-with-log-mode t)
-    (org-log-done 'time)
-    (require 'org-tempo)
-    (add-to-list 'org-structure-template-alist '("el" . "src emacs-lisp")) ; <el <TAB>
-    )
+    (use-package org
+      :custom ; dont use setq in config use custom instead!
+      ;; (org-agenda-files '("~/orgfiles/tasks.org"))
+      (org-confirm-babel-evaluate nil) ; dont have to confirm each execute block
+      (org-agenda-start-with-log-mode t)
+      (org-log-done 'time)
+      :config
+      (require 'org-tempo)
+     (add-to-list 'org-structure-template-alist '("sh" . "src shell"))
+      (add-to-list 'org-structure-template-alist '("el" . "src emacs-lisp")) ; <el <TAB>
+      )
 #+end_src
 ** Configure Babel Languages
 #+begin_src emacs-lisp
@@ -337,6 +361,7 @@ Show eshell at startup
 
   (use-package eshell
     :hook (eshell-first-time-mode . fav/configure-eshell)
+  :custom (eshell-banner-message "")
     :config
 
     (with-eval-after-load 'esh-opt

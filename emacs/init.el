@@ -15,8 +15,15 @@
 
 (require 'use-package)
 (setq use-package-always-ensure t) ; Install packages if they are not avaliable already
+;; (setq use-package-verbose t) ; uncomment for debugging config, prints more to messages buffer
 ; To update the package list use M-x list-packages this can be good if i get error trying to instal new packages
 ; C-h f function v variable k keybinding h general help
+
+(use-package gcmh
+:ensure t
+:demand t
+:config
+(gcmh-mode 1))
 
 ;; Cleanup Emacs user interface
 (setq inhibit-startup-message t)
@@ -28,9 +35,9 @@
 (menu-bar-mode -1) ; Disable the menu bar
 (setq visible-bell t) ; Turn off sound and show flashing warning instead
 
-(set-face-attribute 'default nil :family "Inconsolata" :height 145 :weight 'normal)
+(set-face-attribute 'default nil :family "Consolas" :height 145 :weight 'normal)
 
-(load-theme 'wombat)
+(load-theme 'tango-dark)
 
 (use-package which-key
   :defer 0
@@ -124,8 +131,9 @@
 ;;     (add-hook 'lispy-mode-hook #'lispyville-mode)
 
 (use-package magit
-  :custom
-  (magit-display-buffer-function #'magit-display-buffer-same-window-except-diff-v1))
+   :custom
+   (magit-display-buffer-function #'magit-display-buffer-same-window-except-diff-v1)
+)
 
 (use-package forge
   :after magit)
@@ -136,7 +144,9 @@
   (org-confirm-babel-evaluate nil) ; dont have to confirm each execute block
   (org-agenda-start-with-log-mode t)
   (org-log-done 'time)
+  :config
   (require 'org-tempo)
+ (add-to-list 'org-structure-template-alist '("sh" . "src shell"))
   (add-to-list 'org-structure-template-alist '("el" . "src emacs-lisp")) ; <el <TAB>
   )
 
@@ -185,6 +195,7 @@
 
 (use-package eshell
   :hook (eshell-first-time-mode . fav/configure-eshell)
+:custom (eshell-banner-message "")
   :config
 
   (with-eval-after-load 'esh-opt
