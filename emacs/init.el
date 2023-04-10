@@ -222,6 +222,18 @@
 
 ;(define-key KEYMAP KEY DEF)
 
+(defun fav/read-openai-key ()
+  (with-temp-buffer
+    (insert-file-contents "~/key.txt")
+    (string-trim (buffer-string))))
+
+(use-package gptel
+  :init
+  (setq-default gptel-model "gpt-3.5-turbo"
+                gptel-playback t
+                gptel-default-mode 'org-mode
+                gptel-api-key #'fav/read-openai-key))
+
 (when (file-exists-p "~/.emacs.d/custom-packages/custom.el")
  (add-to-list 'load-path "~/.emacs.d/custom-packages")
  (require 'my-custom))

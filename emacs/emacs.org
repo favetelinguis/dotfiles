@@ -395,6 +395,24 @@ Show eshell at startup
 #+RESULTS:
 : dired-jump
 
+* AI assistance
+** Chat GPT
+Start with gptel or do 
+Run with C-c <RET>
+Put my api key in a file as shown below
+#+begin_src emacs-lisp
+(defun fav/read-openai-key ()
+  (with-temp-buffer
+    (insert-file-contents "~/key.txt")
+    (string-trim (buffer-string))))
+
+(use-package gptel
+  :init
+  (setq-default gptel-model "gpt-3.5-turbo"
+                gptel-playback t
+                gptel-default-mode 'org-mode
+                gptel-api-key #'fav/read-openai-key))
+#+end_src
 * My packages
 Load all my stuff that are local for this machine in custom.el.
 
