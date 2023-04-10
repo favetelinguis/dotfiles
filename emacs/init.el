@@ -136,17 +136,21 @@
 (use-package forge
   :after magit)
 
-(use-package org
-  :custom ; dont use setq in config use custom instead!
-  ;; (org-agenda-files '("~/orgfiles/tasks.org"))
-  (org-confirm-babel-evaluate nil) ; dont have to confirm each execute block
-  (org-agenda-start-with-log-mode t)
-  (org-log-done 'time)
-  :config
-  (require 'org-tempo)
- (add-to-list 'org-structure-template-alist '("sh" . "src shell"))
-  (add-to-list 'org-structure-template-alist '("el" . "src emacs-lisp")) ; <el <TAB>
-  )
+(defun fav/org-mode-setup ()
+	(visual-line-mode 1) ; Make text wrap when at the end of window
+)
+    (use-package org
+      :custom ; dont use setq in config use custom instead!
+      ;; (org-agenda-files '("~/orgfiles/tasks.org"))
+      (org-confirm-babel-evaluate nil) ; dont have to confirm each execute block
+      (org-agenda-start-with-log-mode t)
+      (org-log-done 'time)
+      :hook (org-mode . fav/org-mode-setup)
+      :config
+      (require 'org-tempo)
+     (add-to-list 'org-structure-template-alist '("sh" . "src shell"))
+      (add-to-list 'org-structure-template-alist '("el" . "src emacs-lisp")) ; <el <TAB>
+      )
 
 ; C-c C-c eval block of code
 (org-babel-do-load-languages 'org-babel-load-languages
