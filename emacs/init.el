@@ -141,7 +141,7 @@
 )
     (use-package org
       :custom ; dont use setq in config use custom instead!
-      ;; (org-agenda-files '("~/orgfiles/tasks.org"))
+      (org-agenda-files '("~/roam-notes/"))
       (org-confirm-babel-evaluate nil) ; dont have to confirm each execute block
       (org-agenda-start-with-log-mode t)
       (org-log-done 'time)
@@ -151,6 +151,19 @@
      (add-to-list 'org-structure-template-alist '("sh" . "src shell"))
       (add-to-list 'org-structure-template-alist '("el" . "src emacs-lisp")) ; <el <TAB>
       )
+
+(use-package org-roam
+		  :custom
+		(org-roam-directory "~/roam-notes")
+      (org-roam-completion-everywhere t)
+	      :bind
+    (("C-c n l" . org-roam-buffer-toggle)
+	    ("C-c n f" . org-roam-node-find)
+	  ("C-c n i" . org-roam-node-insert)
+  :map org-mode-map
+("C-M-i" . completion-at-point))
+	:config
+      (org-roam-setup))
 
 ; C-c C-c eval block of code
 (org-babel-do-load-languages 'org-babel-load-languages
@@ -220,9 +233,7 @@
 (global-set-key (kbd "C-;") 'other-window)
 (global-set-key (kbd "M-;") 'fav/toggle-buffer)
 
-(global-set-key (kbd "C-'") 'counsel-org-agenda-headlines) 
-(global-set-key (kbd "M-'") 'org-agenda-list)
-(global-set-key (kbd "C-M-'") 'org-agenda) 
+(global-set-key (kbd "C-'") 'org-agenda) 
 
 ;(define-key KEYMAP KEY DEF)
 
