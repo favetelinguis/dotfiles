@@ -175,8 +175,12 @@ https://dev.to/josuerodriguez98/installing-firacode-on-windows-and-ubuntu-1fn1
     (projectile-dired))
 
   (def-projectile-commander-method ?j
+    "Jump to project buffer."
+    (projectile-switch-to-buffer))
+
+  (def-projectile-commander-method ?/
     "rg project"
-    (-projectile-rg))
+    (counsel-rg))
     ;; NOTE: Set this to the folder where you keep your Git repos!
   ;  (setq projectile-create-missing-test-files t)
     :init
@@ -187,26 +191,19 @@ https://dev.to/josuerodriguez98/installing-firacode-on-windows-and-ubuntu-1fn1
     )
 #+end_src
 
-* Development
-** Lisp
+* ELisp
 What is the recommended elisp dev setup?
-Completion = Using completion-at-point for completion?
+Completion = completion-at-point M-<TAB>
 Diagnostics = Using flymake-mode - flymake-show-buffer-diagnostic
-Go to reference xref-find-references
+Go to reference xref-find-references gd and gr in evil works out of the box
 Formatting?
 https://github.com/p3r7/awesome-elisp
 https://dawranliou.com/blog/structural-editing-in-vanilla-emacs/
-Try using lispy without any evil adjustments
 #+begin_src emacs-lisp
-       ;;  (use-package lispy)
-  ;;       ; todo add this as hook in use-package
-  ;;     (add-hook 'emacs-lisp-mode-hook (lambda () (lispy-mode 1)))
+  (add-hook 'emacs-lisp-mode-hook 'flymake-mode)
 
-  ;;   (use-package lispyville
-  ;;   :config
-  ;; (lispyville-set-key-theme '(operators c-w additional))
-  ;; )
-  ;;     (add-hook 'lispy-mode-hook #'lispyville-mode)
+  (setq flymake-log-level 'warning)
+
 #+end_src
 * Magit/Forge
 #+begin_src emacs-lisp
@@ -375,24 +372,41 @@ Show eshell at startup
 #+end_src
 * Custom keybinding
 #+begin_src emacs-lisp
-(defun fav/toggle-buffer ()
-  "Flips to the last-visited buffer in this window."
-  (interactive)
-  (switch-to-buffer (other-buffer (current-buffer))))
+  (defun fav/toggle-buffer ()
+    "Flips to the last-visited buffer in this window."
+    (interactive)
+    (switch-to-buffer (other-buffer (current-buffer))))
 
 
-;; Make killing current buffer faster
-(global-set-key (kbd "C-x k") 'kill-this-buffer)
+  ;; Make killing current buffer faster
+  ;; (global-set-key (kbd "M-SPC") 'execute-extended-command)
+  (global-set-key (kbd "C-x k") 'kill-this-buffer)
 
-(global-set-key (kbd "C-;") 'other-window)
-(global-set-key (kbd "M-;") 'fav/toggle-buffer)
+  (global-set-key (kbd "C-;") 'other-window)
+  (global-set-key (kbd "M-;") 'fav/toggle-buffer)
 
-(global-set-key (kbd "C-'") 'counsel-org-agenda-headlines) 
-(global-set-key (kbd "M-'") 'org-agenda-list)
-(global-set-key (kbd "C-M-'") 'org-agenda) 
+  (global-set-key (kbd "C-'") 'counsel-org-agenda-headlines) 
+  (global-set-key (kbd "M-'") 'org-agenda-list)
+  (global-set-key (kbd "C-M-'") 'org-agenda) 
 
-;(define-key KEYMAP KEY DEF)
+  ;(define-key KEYMAP KEY DEF)
 #+end_src
 
 #+RESULTS:
 : dired-jump
+
+* My packages
+Load all my stuff that are local for this machine in custom.el.
+
+Start with something like this in custom.el
+
+(defun am-i-here ()
+  (interactive)
+  (message "im here"))
+
+(provide 'custom)
+#+begin_src emacs-lisp
+  (when (file-exists-p "~/.emacs.d/custom-packages/custom.el")
+   (add-to-list 'load-path "~/.emacs.d/custom-packages")
+   (require 'my-custom))
+#+end_src

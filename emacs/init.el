@@ -109,8 +109,12 @@
   (projectile-dired))
 
 (def-projectile-commander-method ?j
+  "Jump to project buffer."
+  (projectile-switch-to-buffer))
+
+(def-projectile-commander-method ?/
   "rg project"
-  (-projectile-rg))
+  (counsel-rg))
   ;; NOTE: Set this to the folder where you keep your Git repos!
 ;  (setq projectile-create-missing-test-files t)
   :init
@@ -120,15 +124,9 @@
   ;(setq projectile-switch-project-action #'projectile-commander) ; First thing to happen when switching project
   )
 
-;;  (use-package lispy)
-;;       ; todo add this as hook in use-package
-;;     (add-hook 'emacs-lisp-mode-hook (lambda () (lispy-mode 1)))
+(add-hook 'emacs-lisp-mode-hook 'flymake-mode)
 
-;;   (use-package lispyville
-;;   :config
-;; (lispyville-set-key-theme '(operators c-w additional))
-;; )
-;;     (add-hook 'lispy-mode-hook #'lispyville-mode)
+(setq flymake-log-level 'warning)
 
 (use-package magit
    :custom
@@ -212,6 +210,7 @@
 
 
 ;; Make killing current buffer faster
+;; (global-set-key (kbd "M-SPC") 'execute-extended-command)
 (global-set-key (kbd "C-x k") 'kill-this-buffer)
 
 (global-set-key (kbd "C-;") 'other-window)
@@ -222,3 +221,7 @@
 (global-set-key (kbd "C-M-'") 'org-agenda) 
 
 ;(define-key KEYMAP KEY DEF)
+
+(when (file-exists-p "~/.emacs.d/custom-packages/custom.el")
+ (add-to-list 'load-path "~/.emacs.d/custom-packages")
+ (require 'my-custom))
