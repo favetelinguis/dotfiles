@@ -241,6 +241,8 @@ https://dawranliou.com/blog/structural-editing-in-vanilla-emacs/
 	(org-agenda-start-with-log-mode t)
 	(org-log-done 'time)
 	:hook (org-mode . fav/org-mode-setup)
+	:bind
+	(("M-'" . org-agenda) )
 	:config
 	(require 'org-tempo)
        (add-to-list 'org-structure-template-alist '("sh" . "src shell"))
@@ -256,9 +258,8 @@ https://dawranliou.com/blog/structural-editing-in-vanilla-emacs/
 		:bind
       (("C-c n l" . org-roam-buffer-toggle)
 	      ("C-c n f" . org-roam-node-find)
-	    ("C-c n i" . org-roam-node-insert)
-    :map org-mode-map
-  ("C-M-i" . completion-at-point))
+	      ("C-'" . org-roam-node-find)
+	    ("C-c n i" . org-roam-node-insert))
 	  :config
 	(org-roam-setup))
 #+end_src
@@ -405,7 +406,6 @@ Show eshell at startup
   (global-set-key (kbd "C-;") 'other-window)
   (global-set-key (kbd "M-;") 'fav/toggle-buffer)
 
-  (global-set-key (kbd "C-'") 'org-agenda) 
 
   ;(define-key KEYMAP KEY DEF)
 #+end_src

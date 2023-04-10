@@ -146,6 +146,8 @@
       (org-agenda-start-with-log-mode t)
       (org-log-done 'time)
       :hook (org-mode . fav/org-mode-setup)
+      :bind
+      (("M-'" . org-agenda) )
       :config
       (require 'org-tempo)
      (add-to-list 'org-structure-template-alist '("sh" . "src shell"))
@@ -153,17 +155,16 @@
       )
 
 (use-package org-roam
-		  :custom
-		(org-roam-directory "~/roam-notes")
-      (org-roam-completion-everywhere t)
-	      :bind
-    (("C-c n l" . org-roam-buffer-toggle)
-	    ("C-c n f" . org-roam-node-find)
-	  ("C-c n i" . org-roam-node-insert)
-  :map org-mode-map
-("C-M-i" . completion-at-point))
-	:config
-      (org-roam-setup))
+	      :custom
+	    (org-roam-directory "~/roam-notes")
+  (org-roam-completion-everywhere t)
+	  :bind
+(("C-c n l" . org-roam-buffer-toggle)
+	("C-c n f" . org-roam-node-find)
+	("C-'" . org-roam-node-find)
+      ("C-c n i" . org-roam-node-insert))
+    :config
+  (org-roam-setup))
 
 ; C-c C-c eval block of code
 (org-babel-do-load-languages 'org-babel-load-languages
@@ -233,7 +234,6 @@
 (global-set-key (kbd "C-;") 'other-window)
 (global-set-key (kbd "M-;") 'fav/toggle-buffer)
 
-(global-set-key (kbd "C-'") 'org-agenda) 
 
 ;(define-key KEYMAP KEY DEF)
 
