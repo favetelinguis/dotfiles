@@ -130,12 +130,13 @@
 (use-package yaml-mode)
 
 (use-package magit
-   :custom
-   (magit-display-buffer-function #'magit-display-buffer-same-window-except-diff-v1)
-)
+     :custom
+     (magit-display-buffer-function #'magit-display-buffer-same-window-except-diff-v1)
+  )
 
-(use-package forge
-  :after magit)
+  (use-package forge
+    :after magit)
+(setq auth-sources '("~/.authinfo")) ; Set where api key is stored for forge, check dock for format
 
 (defun fav/org-mode-setup ()
 	(visual-line-mode 1) ; Make text wrap when at the end of window
@@ -242,3 +243,16 @@
 (when (file-exists-p "~/.emacs.d/custom-packages/custom.el")
  (add-to-list 'load-path "~/.emacs.d/custom-packages")
  (require 'my-custom))
+(custom-set-variables
+ ;; custom-set-variables was added by Custom.
+ ;; If you edit it by hand, you could mess it up, so be careful.
+ ;; Your init file should contain only one such instance.
+ ;; If there is more than one, they won't work right.
+ '(package-selected-packages
+   '(emacsql-sqlite emacsql-sqlite3 yaml-mode which-key use-package projectile org-roam gptel gcmh forge evil-commentary evil-collection dired-single dired-hide-dotfiles counsel)))
+(custom-set-faces
+ ;; custom-set-faces was added by Custom.
+ ;; If you edit it by hand, you could mess it up, so be careful.
+ ;; Your init file should contain only one such instance.
+ ;; If there is more than one, they won't work right.
+ )

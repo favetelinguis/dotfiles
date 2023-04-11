@@ -211,9 +211,48 @@ https://dawranliou.com/blog/structural-editing-in-vanilla-emacs/
 #+end_src
 * Magit/Forge
 ** Setup
-- [ ] Use multiple ssh keys for multiple repos on same machine
-- [ ] Set different user.name and user.email for different repos
-- [ ] Have forge use multiple github repos
+Note the below setup is tailored to work with my projectile setup to find projects.
+- Set different user.name and user.email for different repos
+In ~/.gitconfig set the folowing.
+#+begin_src 
+[includeIf "gitdir:~/repos/<customer 1>/**/.git"]
+	   path = .gitconfig-<customer 1>
+[includeIf "gitdir:~/repos/<customer 2>/**/.git"]
+	   path = .gitconfig-<customer 2>
+[includeIf "gitdir:~/repos/private/**/.git"]
+	   path = .gitconfig-private
+#+end_src
+Then in each .gitconfig-<post-fix> set what should be included.
+#+begin_src 
+[user]
+	email = henke@henkelarsson.se
+	name = Henrik Larsson
+#+end_src
+- Use multiple ssh keys for multiple repos on same machine
+[[https://docs.github.com/en/authentication/connecting-to-github-with-ssh/generating-a-new-ssh-key-and-adding-it-to-the-ssh-agent][Generate an ssh key]]
+#+begin_src 
+
+#+end_src
+And update your ~/.ssh/config to something like.
+How to handle if I want to use different ssh keys and they all have git@github.com url?
+#+begin_src 
+Host github.com
+    HostName github.com
+    IdentitiesOnly yes
+
+Match host github.com user git
+    # Set your private SSH key, this will match all repos cloned with git@github.com.
+    IdentityFile ~/.ssh/myprivategitrepo
+
+# Check the repo file .git/config under url to check what user is used to clone the repo.
+Match host github.com user <company 1 user>
+    IdentityFile ~/.ssh/id_github_<company 1 user>
+
+Match host github.com user <company 2 user>
+    IdentityFile ~/.ssh/id_github_org_<company 2 user>
+#+end_src
+- Have forge use multiple github repos
+[[https://magit.vc/manual/forge/Getting-Started.html][Follow instructions]]
 ** Configuration
 #+begin_src emacs-lisp
   (use-package magit
@@ -223,6 +262,7 @@ https://dawranliou.com/blog/structural-editing-in-vanilla-emacs/
 
   (use-package forge
     :after magit)
+(setq auth-sources '("~/.authinfo")) ; Set where api key is stored for forge, check dock for format
 #+end_src
 * Org Mode
 ** Basic
