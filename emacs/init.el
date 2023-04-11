@@ -145,9 +145,11 @@
       (org-confirm-babel-evaluate nil) ; dont have to confirm each execute block
       (org-agenda-start-with-log-mode t)
       (org-log-done 'time)
+(org-agenda-span 'day)
       :hook (org-mode . fav/org-mode-setup)
       :bind
-      (("M-'" . org-agenda) )
+      (("M-'" . org-agenda)
+       ("C-M-'" . counsel-org-agenda-headlines))
       :config
       (require 'org-tempo)
      (add-to-list 'org-structure-template-alist '("sh" . "src shell"))
