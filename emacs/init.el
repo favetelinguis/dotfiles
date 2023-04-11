@@ -119,14 +119,15 @@
 ;  (setq projectile-create-missing-test-files t)
   :init
   (when (file-directory-p "~/repos")
-    (setq projectile-project-search-path '("~/repos")))
+    (setq projectile-project-search-path '(("~/repos" . 2))))
   (setq projectile-switch-project-action #'projectile-commander)
-  ;(setq projectile-switch-project-action #'projectile-commander) ; First thing to happen when switching project
   )
 
 (add-hook 'emacs-lisp-mode-hook 'flymake-mode)
 
 (setq flymake-log-level 'warning)
+
+(use-package yaml-mode)
 
 (use-package magit
    :custom
@@ -223,21 +224,8 @@
 
    (add-hook 'emacs-startup-hook #'eshell)
 
-(defun fav/toggle-buffer ()
-  "Flips to the last-visited buffer in this window."
-  (interactive)
-  (switch-to-buffer (other-buffer (current-buffer))))
-
-
-;; Make killing current buffer faster
-;; (global-set-key (kbd "M-SPC") 'execute-extended-command)
 (global-set-key (kbd "C-x k") 'kill-this-buffer)
-
 (global-set-key (kbd "C-;") 'other-window)
-(global-set-key (kbd "M-;") 'fav/toggle-buffer)
-
-
-;(define-key KEYMAP KEY DEF)
 
 (defun fav/read-openai-key ()
   (with-temp-buffer

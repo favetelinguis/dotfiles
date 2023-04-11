@@ -185,13 +185,13 @@ https://dev.to/josuerodriguez98/installing-firacode-on-windows-and-ubuntu-1fn1
   ;  (setq projectile-create-missing-test-files t)
     :init
     (when (file-directory-p "~/repos")
-      (setq projectile-project-search-path '("~/repos")))
+      (setq projectile-project-search-path '(("~/repos" . 2))))
     (setq projectile-switch-project-action #'projectile-commander)
-    ;(setq projectile-switch-project-action #'projectile-commander) ; First thing to happen when switching project
     )
 #+end_src
 
-* ELisp
+* Programming languages
+** ELisp
 What is the recommended elisp dev setup?
 Completion = completion-at-point M-<TAB> C-M-i??
 Diagnostics = Using flymake-mode - flymake-show-buffer-diagnostic
@@ -205,7 +205,16 @@ https://dawranliou.com/blog/structural-editing-in-vanilla-emacs/
   (setq flymake-log-level 'warning)
 
 #+end_src
+** Yaml
+#+begin_src emacs-lisp
+(use-package yaml-mode)
+#+end_src
 * Magit/Forge
+** Setup
+- [ ] Use multiple ssh keys for multiple repos on same machine
+- [ ] Set different user.name and user.email for different repos
+- [ ] Have forge use multiple github repos
+** Configuration
 #+begin_src emacs-lisp
   (use-package magit
      :custom
@@ -395,26 +404,9 @@ Show eshell at startup
 #+end_src
 * Custom keybinding
 #+begin_src emacs-lisp
-  (defun fav/toggle-buffer ()
-    "Flips to the last-visited buffer in this window."
-    (interactive)
-    (switch-to-buffer (other-buffer (current-buffer))))
-
-
-  ;; Make killing current buffer faster
-  ;; (global-set-key (kbd "M-SPC") 'execute-extended-command)
   (global-set-key (kbd "C-x k") 'kill-this-buffer)
-
   (global-set-key (kbd "C-;") 'other-window)
-  (global-set-key (kbd "M-;") 'fav/toggle-buffer)
-
-
-  ;(define-key KEYMAP KEY DEF)
 #+end_src
-
-#+RESULTS:
-: dired-jump
-
 * AI assistance
 ** Chat GPT
 Start with gptel or do 
