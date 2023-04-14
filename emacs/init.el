@@ -64,30 +64,12 @@
          ("C-d" . ivy-reverse-i-search-kill))
   :init (ivy-mode 1))
 
-(use-package evil
-  :init
-  (setq evil-want-keybinding nil)
-  (setq evil-want-integration t)
-  :config
-  (evil-mode 1)
-  (define-key evil-insert-state-map (kbd "C-g") 'evil-normal-state))
-
-(use-package evil-collection
-  :after evil
-  :config
-  (evil-collection-init))
-
-(use-package evil-commentary
-  :after evil
-  :config
-  (evil-commentary-mode))
-
 ; Serch projects p search f search files sr search using rg xe eshell q switch between open projects
 ; Depends of fd and ripgrep
 ; Add shortcut to open projet in idea
 (use-package projectile
   :custom ((projectile-completion-system 'ivy))
-  :bind ("C-SPC" . projectile-commander)
+  :bind ("M-SPC" . projectile-commander)
 ;  :bind-keymap
 ;  ("C-c p" . projectile-command-map)
   :config
@@ -122,6 +104,9 @@
     (setq projectile-project-search-path '(("~/repos" . 2))))
   (setq projectile-switch-project-action #'projectile-commander)
   )
+
+(use-package lispy)
+(add-hook 'emacs-lisp-mode-hook (lambda () (lispy-mode 1)))
 
 (add-hook 'emacs-lisp-mode-hook 'flymake-mode)
 
@@ -174,28 +159,11 @@
 (org-babel-do-load-languages 'org-babel-load-languages
 			     '((emacs-lisp . t)))
 
-;(add-hook 'dired-load-hook
-   ;           (function (lambda () (load "dired-x"))))
+(use-package simple-httpd)
 
-    (use-package dired
-      :ensure nil
-      :commands (dired dired-jump)
-      :bind (("C--" . dired-jump))
-      :config
-      (evil-collection-define-key 'normal 'dired-mode-map
-	"h" 'dired-single-up-directory
-	"l" 'dired-single-buffer) ;; do i want l to open file in preview so i can close it with q then use ret to open file
-  ) 
-
-  ; Prevent opening new buffers all the time
-    (use-package dired-single
-      :commands (dired dired-jump))
-
-    (use-package dired-hide-dotfiles
-;      :hook (dired-mode . dired-hide-dotfiles-mode)
-      :config
-      (evil-collection-define-key 'normal 'dired-mode-map
-	"H" 'dired-hide-dotfiles-mode))
+(use-package dired
+  :ensure nil
+  :bind (("C--" . dired-jump)))
 
 (defun fav/configure-eshell ()
   ;; Save command history when commands are entered
@@ -203,10 +171,6 @@
 
   ;; Truncate buffer for performance
   (add-to-list 'eshell-output-filter-functions 'eshell-truncate-buffer)
-
-  ;; Bind some useful keys for evil-mode
-  (evil-define-key '(normal insert visual) eshell-mode-map (kbd "C-r") 'counsel-esh-history)
-  (evil-normalize-keymaps)
 
   (setq eshell-history-size         10000
 	eshell-buffer-maximum-lines 10000
@@ -243,16 +207,3 @@
 (when (file-exists-p "~/.emacs.d/custom-packages/custom.el")
  (add-to-list 'load-path "~/.emacs.d/custom-packages")
  (require 'my-custom))
-(custom-set-variables
- ;; custom-set-variables was added by Custom.
- ;; If you edit it by hand, you could mess it up, so be careful.
- ;; Your init file should contain only one such instance.
- ;; If there is more than one, they won't work right.
- '(package-selected-packages
-   '(emacsql-sqlite emacsql-sqlite3 yaml-mode which-key use-package projectile org-roam gptel gcmh forge evil-commentary evil-collection dired-single dired-hide-dotfiles counsel)))
-(custom-set-faces
- ;; custom-set-faces was added by Custom.
- ;; If you edit it by hand, you could mess it up, so be careful.
- ;; Your init file should contain only one such instance.
- ;; If there is more than one, they won't work right.
- )

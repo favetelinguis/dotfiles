@@ -125,26 +125,6 @@ https://dev.to/josuerodriguez98/installing-firacode-on-windows-and-ubuntu-1fn1
          ("C-d" . ivy-reverse-i-search-kill))
   :init (ivy-mode 1))
 #+end_src
-* Evil
-#+begin_src emacs-lisp
-(use-package evil
-  :init
-  (setq evil-want-keybinding nil)
-  (setq evil-want-integration t)
-  :config
-  (evil-mode 1)
-  (define-key evil-insert-state-map (kbd "C-g") 'evil-normal-state))
-
-(use-package evil-collection
-  :after evil
-  :config
-  (evil-collection-init))
-
-(use-package evil-commentary
-  :after evil
-  :config
-  (evil-commentary-mode))
-#+end_src
 * Projectile
 #+begin_src emacs-lisp
 
@@ -153,7 +133,7 @@ https://dev.to/josuerodriguez98/installing-firacode-on-windows-and-ubuntu-1fn1
   ; Add shortcut to open projet in idea
   (use-package projectile
     :custom ((projectile-completion-system 'ivy))
-    :bind ("C-SPC" . projectile-commander)
+    :bind ("M-SPC" . projectile-commander)
   ;  :bind-keymap
   ;  ("C-c p" . projectile-command-map)
     :config
@@ -189,13 +169,18 @@ https://dev.to/josuerodriguez98/installing-firacode-on-windows-and-ubuntu-1fn1
     (setq projectile-switch-project-action #'projectile-commander)
     )
 #+end_src
-
+* Lisp
+** Lispy
+#+begin_src emacs-lisp
+  (use-package lispy)
+  (add-hook 'emacs-lisp-mode-hook (lambda () (lispy-mode 1)))
+#+end_src
 * Programming languages
 ** ELisp
 What is the recommended elisp dev setup?
 Completion = completion-at-point M-<TAB> C-M-i??
 Diagnostics = Using flymake-mode - flymake-show-buffer-diagnostic
-Go to reference xref-find-references gd and gr in evil works out of the box
+Go to reference xref-find-references
 Formatting?
 https://github.com/p3r7/awesome-elisp
 https://dawranliou.com/blog/structural-editing-in-vanilla-emacs/
@@ -321,94 +306,19 @@ Match host github.com user <company 2 user>
 			     '((emacs-lisp . t)))
 #+end_src
 
+** Webserver to serve a site
+M-x httpd-serve-directory
+For example to serve my site use path =public/= and go to =http://localhost8080=
+#+begin_src emacs-lisp
+  (use-package simple-httpd)
+#+end_src
 * Dired
-
-Dired is a built-in file manager for Emacs that does some pretty amazing things!  Here are some key bindings you should try out:
-WK Indicate that I get which key, they have sub commands.
-
-** Key Bindings
-
-**** Navigation
-
-*Emacs* / *Evil*
-- =n= / =j= - next line
-- =p= / =k= - previous line
-- =j= / =J= - jump to file in buffer
-- =RET= - select file or directory
-- =^= - go to parent directory
-- =S-RET= / =g O= - Open file in "other" window
-- =M-RET= - Show file in other window without focusing (previewing files)
-- =g o= (=dired-view-file=) - Open file but in a "preview" mode, close with =q=
-- =g= / =g r= Refresh the buffer with =revert-buffer= after changing configuration (and after filesystem changes!)
-
-**** Marking files
-
-- =m= - Marks a file
-- =u= - Unmarks a file
-- =U= - Unmarks all files in buffer
-- =* t= / =t= - Inverts marked files in buffer
-- =% m= - WK Mark files in buffer using regular expression
-- =*= - WK Lots of other auto-marking functions
-- =k= / =K= - "Kill" marked items (refresh buffer with =g= / =g r= to get them back)
-- Many operations can be done on a single file if there are no active marks!
-
-**** Copying and Renaming files
-
-- =C= - Copy marked files (or if no files are marked, the current file)
-- Copying single and multiple files
-- =U= - Unmark all files in buffer
-- =R= - Rename marked files, renaming multiple is a move!
-- =% R= - Rename based on regular expression: =^test= , =old-\&=
-
-*Power command*: =C-x C-q= (=dired-toggle-read-only=) - Makes all file names in the buffer editable directly to rename them!  Press =Z Z= to confirm renaming or =Z Q= to abort.
-
-**** Deleting files
-
-- =D= - Delete marked file
-- =d= - Mark file for deletion
-- =x= - Execute deletion for marks
-- =delete-by-moving-to-trash= - Move to trash instead of deleting permanently
-
-**** Creating and extracting archives
-
-- =Z= - Compress or uncompress a file or folder to (=.tar.gz=)
-- =c= - Compress selection to a specific file
-- =dired-compress-files-alist= - Bind compression commands to file extension
-
-**** Other common operations
-
-- =T= - Touch (change timestamp)
-- =M= - Change file mode
-- =O= - Change file owner
-- =G= - Change file group
-- =S= - Create a symbolic link to this file
-- =L= - Load an Emacs Lisp file into Emacs
-
 ** Configuration
 
 #+begin_src emacs-lisp
-   ;(add-hook 'dired-load-hook
-   ;           (function (lambda () (load "dired-x"))))
-
     (use-package dired
       :ensure nil
-      :commands (dired dired-jump)
-      :bind (("C--" . dired-jump))
-      :config
-      (evil-collection-define-key 'normal 'dired-mode-map
-	"h" 'dired-single-up-directory
-	"l" 'dired-single-buffer) ;; do i want l to open file in preview so i can close it with q then use ret to open file
-  ) 
-
-  ; Prevent opening new buffers all the time
-    (use-package dired-single
-      :commands (dired dired-jump))
-
-    (use-package dired-hide-dotfiles
-;      :hook (dired-mode . dired-hide-dotfiles-mode)
-      :config
-      (evil-collection-define-key 'normal 'dired-mode-map
-	"H" 'dired-hide-dotfiles-mode))
+      :bind (("C--" . dired-jump))) 
 
 #+end_src
 * Eshell
@@ -420,10 +330,6 @@ Show eshell at startup
 
     ;; Truncate buffer for performance
     (add-to-list 'eshell-output-filter-functions 'eshell-truncate-buffer)
-
-    ;; Bind some useful keys for evil-mode
-    (evil-define-key '(normal insert visual) eshell-mode-map (kbd "C-r") 'counsel-esh-history)
-    (evil-normalize-keymaps)
 
     (setq eshell-history-size         10000
 	  eshell-buffer-maximum-lines 10000
