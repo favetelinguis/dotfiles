@@ -404,3 +404,7 @@ C-w show source
     (avy-setup-default)
     (global-set-key (kbd "C-;") 'avy-goto-char-timer))
 #+end_src
+
+
+
+

@@ -39,6 +39,8 @@
 
 (load-theme 'tango-dark)
 
+(auto-save-visited-mode 1)
+
 (use-package which-key
   :defer 0
   :diminish which-key-mode
