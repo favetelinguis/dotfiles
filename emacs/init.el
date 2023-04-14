@@ -207,3 +207,9 @@
 (when (file-exists-p "~/.emacs.d/custom-packages/custom.el")
  (add-to-list 'load-path "~/.emacs.d/custom-packages")
  (require 'my-custom))
+
+(use-package company
+  :init
+  (add-hook 'after-init-hook 'global-company-mode))
+
+(global-set-key (kbd "C-\\") 'company-complete)
