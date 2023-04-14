@@ -190,7 +190,6 @@
    (add-hook 'emacs-startup-hook #'eshell)
 
 (global-set-key (kbd "C-x k") 'kill-this-buffer)
-(global-set-key (kbd "C-;") 'other-window)
 
 (defun fav/read-openai-key ()
   (with-temp-buffer
@@ -213,3 +212,8 @@
   (add-hook 'after-init-hook 'global-company-mode))
 
 (global-set-key (kbd "C-\\") 'company-complete)
+
+(use-package avy
+  :init
+  (avy-setup-default)
+  (global-set-key (kbd "C-;") 'avy-goto-char-timer))

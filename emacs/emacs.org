@@ -351,7 +351,6 @@ Show eshell at startup
 * Custom keybinding
 #+begin_src emacs-lisp
   (global-set-key (kbd "C-x k") 'kill-this-buffer)
-  (global-set-key (kbd "C-;") 'other-window)
 #+end_src
 * AI assistance
 ** Chat GPT
@@ -396,4 +395,12 @@ C-w show source
     (add-hook 'after-init-hook 'global-company-mode))
 
   (global-set-key (kbd "C-\\") 'company-complete)
+#+end_src
+
+* Avy
+#+begin_src emacs-lisp
+  (use-package avy
+    :init
+    (avy-setup-default)
+    (global-set-key (kbd "C-;") 'avy-goto-char-timer))
 #+end_src
