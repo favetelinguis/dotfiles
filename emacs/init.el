@@ -231,10 +231,12 @@ kept-old-versions 5    ; and how many of the old
   (avy-setup-default)
   (global-set-key (kbd "C-;") 'avy-goto-char-timer))
 
-(use-package equake
+(use-package yequake
   :custom
-  (equake-size-height 0.6)
-  (equake-opacity-active 100)
-  :config
-  ;; prevent accidental frame closure:
-  (advice-add #'save-buffers-kill-terminal :before-while #'equake-kill-emacs-advice))
+  (yequake-frames
+   '(("main"
+      (width . 1.0)
+      (height . 0.6)
+      (alpha 1.0)
+      (buffer-fns . (eshell))
+      (frame-parameters . ((undecorated . t)))))))

@@ -427,18 +427,20 @@ C-w show source
 
 
 
-* Equake
+* Yequake
 ** Setup
-Start emacs with ~emacs --deamon~ and then
-setup a shortcut in your os to ~emacsclient -n -e '(equake-invoke)'~
+Start emacs with ~emacs --daemon~ and then
+setup a shortcut in your os to ~emacsclient -n -e '(yequake-toggle "main")'~
 ** Config
 #+begin_src emacs-lisp
-      (use-package equake
-	:custom
-	(equake-size-height 0.6)
-	(equake-opacity-active 100)
-	:config
-	;; prevent accidental frame closure:
-	(advice-add #'save-buffers-kill-terminal :before-while #'equake-kill-emacs-advice))
+  (use-package yequake
+    :custom
+    (yequake-frames
+     '(("main"
+	(width . 1.0)
+	(height . 0.6)
+	(alpha 1.0)
+	(buffer-fns . (eshell))
+	(frame-parameters . ((undecorated . t)))))))
 #+end_src
 
