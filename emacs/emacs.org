@@ -427,3 +427,18 @@ C-w show source
 
 
 
+* Equake
+** Setup
+Start emacs with ~emacs --deamon~ and then
+setup a shortcut in your os to ~emacsclient -n -e '(equake-invoke)'~
+** Config
+#+begin_src emacs-lisp
+      (use-package equake
+	:custom
+	(equake-size-height 0.6)
+	(equake-opacity-active 100)
+	:config
+	;; prevent accidental frame closure:
+	(advice-add #'save-buffers-kill-terminal :before-while #'equake-kill-emacs-advice))
+#+end_src
+
