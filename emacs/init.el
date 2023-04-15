@@ -240,3 +240,8 @@ kept-old-versions 5    ; and how many of the old
       (alpha 1.0)
       (buffer-fns . (eshell))
       (frame-parameters . ((undecorated . t)))))))
+
+(use-package customer-mode
+  :ensure nil
+  :load-path "~/repos/customer/"
+  :bind (("C-c ." . customer)))

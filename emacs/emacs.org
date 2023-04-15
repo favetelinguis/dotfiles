@@ -444,3 +444,11 @@ setup a shortcut in your os to ~emacsclient -n -e '(yequake-toggle "main")'~
 	(frame-parameters . ((undecorated . t)))))))
 #+end_src
 
+
+* My customer packages
+#+begin_src emacs-lisp
+    (use-package customer-mode
+      :ensure nil
+      :load-path "~/repos/customer/"
+      :bind (("C-c ." . customer)))
+#+end_src
