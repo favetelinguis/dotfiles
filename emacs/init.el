@@ -41,6 +41,14 @@
 
 (auto-save-visited-mode 1)
 
+(setq backup-directory-alist '(("." . "~/.emacs.d/backup"))
+backup-by-copying t    ; Don't delink hardlinks
+version-control t      ; Use version numbers on backups
+delete-old-versions t  ; Automatically delete excess backups
+kept-new-versions 20   ; how many of the newest versions to keep
+kept-old-versions 5    ; and how many of the old
+)
+
 (use-package which-key
   :defer 0
   :diminish which-key-mode
@@ -51,8 +59,7 @@
 ; Using M-o while inside a ivy buffer shows any special things one can do in that buffer
 ; Using C-c C-o persist an ivy search buffer for example with ripgrep
 (use-package counsel
-  :bind (("C-s" . swiper)
-         :map ivy-minibuffer-map
+  :bind (:map ivy-minibuffer-map
          ("TAB" . ivy-alt-done)	
          ("C-l" . ivy-alt-done)
          ("C-j" . ivy-next-line)
@@ -109,10 +116,14 @@
 
 (use-package lispy)
 (add-hook 'emacs-lisp-mode-hook (lambda () (lispy-mode 1)))
+(add-hook 'clojure-mode-hook (lambda () (lispy-mode 1)))
 
 (add-hook 'emacs-lisp-mode-hook 'flymake-mode)
 
 (setq flymake-log-level 'warning)
+
+(use-package clojure-mode)
+(use-package cider)
 
 (use-package yaml-mode)
 

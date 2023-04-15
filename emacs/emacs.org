@@ -68,8 +68,8 @@ To update packages M-x list-packages then we will be prometed to type U for outd
   :config
   (gcmh-mode 1))
 #+end_src
-* Basic UI Configuration
-** General
+* Basic Configuration
+** UI
 #+begin_src emacs-lisp
 
   ;; Cleanup Emacs user interface
@@ -95,6 +95,21 @@ https://dev.to/josuerodriguez98/installing-firacode-on-windows-and-ubuntu-1fn1
 (load-theme 'tango-dark)
 #+end_src
 
+** Backups and autosave
+Autosave every 5 seconds back to same file, creates no extra files.
+Create backup files in dedicated dir.
+#+begin_src emacs-lisp
+  (auto-save-visited-mode 1)
+
+  (setq backup-directory-alist '(("." . "~/.emacs.d/backup"))
+  backup-by-copying t    ; Don't delink hardlinks
+  version-control t      ; Use version numbers on backups
+  delete-old-versions t  ; Automatically delete excess backups
+  kept-new-versions 20   ; how many of the newest versions to keep
+  kept-old-versions 5    ; and how many of the old
+  )
+#+end_src
+
 * Which Key
 #+begin_src emacs-lisp
 (use-package which-key
@@ -110,8 +125,7 @@ https://dev.to/josuerodriguez98/installing-firacode-on-windows-and-ubuntu-1fn1
 ; Using M-o while inside a ivy buffer shows any special things one can do in that buffer
 ; Using C-c C-o persist an ivy search buffer for example with ripgrep
 (use-package counsel
-  :bind (("C-s" . swiper)
-         :map ivy-minibuffer-map
+  :bind (:map ivy-minibuffer-map
          ("TAB" . ivy-alt-done)	
          ("C-l" . ivy-alt-done)
          ("C-j" . ivy-next-line)
@@ -174,8 +188,8 @@ https://dev.to/josuerodriguez98/installing-firacode-on-windows-and-ubuntu-1fn1
 #+begin_src emacs-lisp
   (use-package lispy)
   (add-hook 'emacs-lisp-mode-hook (lambda () (lispy-mode 1)))
+  (add-hook 'clojure-mode-hook (lambda () (lispy-mode 1)))
 #+end_src
-* Programming languages
 ** ELisp
 What is the recommended elisp dev setup?
 Completion = completion-at-point M-<TAB> C-M-i??
@@ -190,7 +204,12 @@ https://dawranliou.com/blog/structural-editing-in-vanilla-emacs/
   (setq flymake-log-level 'warning)
 
 #+end_src
-** Yaml
+** Clojure
+#+begin_src emacs-lisp
+  (use-package clojure-mode)
+  (use-package cider)
+#+end_src
+* Yaml
 #+begin_src emacs-lisp
 (use-package yaml-mode)
 #+end_src
