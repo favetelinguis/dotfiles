@@ -215,6 +215,7 @@ https://dawranliou.com/blog/structural-editing-in-vanilla-emacs/
 #+end_src
 * Magit/Forge
 ** Setup
+If I get error when staring magit use =(use-package sqlite3)= and build it.
 Note the below setup is tailored to work with my projectile setup to find projects.
 - Set different user.name and user.email for different repos
 In ~/.gitconfig set the folowing.
