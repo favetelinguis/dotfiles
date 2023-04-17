@@ -260,14 +260,16 @@ Match host github.com user <company 2 user>
 [[https://magit.vc/manual/forge/Getting-Started.html][Follow instructions]]
 ** Configuration
 #+begin_src emacs-lisp
-  (use-package magit
-     :custom
-     (magit-display-buffer-function #'magit-display-buffer-same-window-except-diff-v1)
-  )
+      (use-package magit
+	 :custom
+	 (magit-display-buffer-function #'magit-display-buffer-same-window-except-diff-v1)
+      )
 
-  (use-package forge
-    :after magit)
-(setq auth-sources '("~/.authinfo")) ; Set where api key is stored for forge, check dock for format
+      (use-package forge
+	:after magit
+    :init
+  (setq forge-database-connector 'sqlite))
+    (setq auth-sources '("~/.authinfo")) ; Set where api key is stored for forge, check dock for format
 #+end_src
 * Org Mode
 ** Basic
