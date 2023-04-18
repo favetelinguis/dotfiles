@@ -3,3 +3,17 @@
 
 *~
 *#
+/emacs.d/org-roam.db
+/emacs.d/backup/
+/emacs.d/history
+/emacs.d/url/
+/emacs.d/auto-save-list/
+/emacs.d/transient/
+!/emacs.d/eshell/alias
+!/emacs.d/straight/versions/default.el
+/emacs.d/straight/build/**
+/emacs.d/straight/repos/**
+/emacs.d/straight/build-cache.el
+/emacs.d/eshell/history
+/emacs.d/eshell/lastdir
+/emacs.d/projects
