@@ -29,8 +29,8 @@
 (global-set-key (kbd "C-c n l") 'org-roam-buffer-toggle)
 (global-set-key (kbd "C-c n f") 'org-roam-node-find)
 (global-set-key (kbd "C-c n n") 'org-roam-capture)
-(global-set-key (kbd "C-c n i") 'org-roam-node-insert)
-(global-set-key (kbd "C-c n I") 'org-roam-node-insert-immediate)
+(global-set-key (kbd "C-c n i") 'org-roam-node-insert-immediate)
+(global-set-key (kbd "C-c n I") 'org-roam-node-insert)
 
 (require 'org-roam-dailies)
 ;; Prefix key for all dailies commands
