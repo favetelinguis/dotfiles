@@ -1,3 +1,5 @@
+;; Make sure to run  M-x org-roam-db-sync
+
 (defun fav/org-mode-setup ()
   (visual-line-mode 1)) ; Make text wrap when at the end of window
 
