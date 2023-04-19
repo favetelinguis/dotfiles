@@ -15,13 +15,22 @@
 (add-to-list 'org-structure-template-alist '("sh" . "src shell"))
 (add-to-list 'org-structure-template-alist '("el" . "src emacs-lisp"))
 
+(defun org-roam-node-insert-immediate (arg &rest args)
+  (interactive "P")
+  (let ((args (cons arg args))
+        (org-roam-capture-templates (list (append (car org-roam-capture-templates)
+                                                  '(:immediate-finish t)))))
+    (apply #'org-roam-node-insert args)))
+
 ;; Setup org-roam
 (straight-use-package 'org-roam)
 (setq org-roam-directory "~/roam-notes")
 (setq org-roam-completion-everywhere t)
 (global-set-key (kbd "C-c n l") 'org-roam-buffer-toggle)
 (global-set-key (kbd "C-c n f") 'org-roam-node-find)
+(global-set-key (kbd "C-c n n") 'org-roam-capture)
 (global-set-key (kbd "C-c n i") 'org-roam-node-insert)
+(global-set-key (kbd "C-c n I") 'org-roam-node-insert-immediate)
 
 (require 'org-roam-dailies)
 ;; Prefix key for all dailies commands
