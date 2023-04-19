@@ -8,7 +8,7 @@
 (setq org-log-done 'time)
 (setq org-agenda-span 'day)
 (add-hook 'org-mode-hook 'fav/org-mode-setup)
-(global-set-key (kbd "M-'") 'org-agenda)
+(global-set-key (kbd "C-c n a") 'org-agenda)
 (require 'org-tempo)
 (add-to-list 'org-structure-template-alist '("sh" . "src shell"))
 (add-to-list 'org-structure-template-alist '("el" . "src emacs-lisp"))
@@ -19,7 +19,12 @@
 (setq org-roam-completion-everywhere t)
 (global-set-key (kbd "C-c n l") 'org-roam-buffer-toggle)
 (global-set-key (kbd "C-c n f") 'org-roam-node-find)
-(global-set-key (kbd "C-'") 'org-roam-node-find)
 (global-set-key (kbd "C-c n i") 'org-roam-node-insert)
+
+(require 'org-roam-dailies)
+;; Prefix key for all dailies commands
+(global-set-key (kbd "C-c n d") 'org-roam-dailies-map)
+(define-key org-roam-dailies-map (kbd "Y") 'org-roam-dailies-capture-yesterday)
+(define-key org-roam-dailies-map (kbd "T") 'org-roam-dailies-capture-tomorrow)
 
 (provide 'init-org)
