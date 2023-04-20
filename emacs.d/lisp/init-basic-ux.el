@@ -1,14 +1,21 @@
 ;; Autosave every 5 seconds to the same file, dont create backupfiles
-(auto-save-visited-mode 1)
+;;(auto-save-visited-mode 1)
+
+;; Remove auto-saved filed when buffer is killed
+;; default is to remove it when its saved only.
+(setq kill-buffer-delete-auto-save-files t)
+
+;; Make switching to other window easier
+(global-set-key (kbd "M-o") 'other-window)
 
 ;; Handle backupfile outside projects directory
 (setq backup-directory-alist '(("." . "~/.emacs.d/backup"))
-backup-by-copying t    ; Don't delink hardlinks
-version-control t      ; Use version numbers on backups
-delete-old-versions t  ; Automatically delete excess backups
-kept-new-versions 20   ; how many of the newest versions to keep
-kept-old-versions 5    ; and how many of the old
-)
+      backup-by-copying t    ; Don't delink hardlinks
+      version-control t      ; Use version numbers on backups
+      delete-old-versions t  ; Automatically delete excess backups
+      kept-new-versions 20   ; how many of the newest versions to keep
+      kept-old-versions 5    ; and how many of the old
+      )
 
 ;; Allow all disabled comands as default, for example a in dired
 (setq disabled-command-function nil)
