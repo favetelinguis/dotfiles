@@ -8,6 +8,10 @@
 ;; Make switching to other window easier
 (global-set-key (kbd "M-o") 'other-window)
 
+;; Turn on relative line numbers
+(global-display-line-numbers-mode 1)
+(setq display-line-numbers-type 'relative)
+
 ;; Handle backupfile outside projects directory
 (setq backup-directory-alist '(("." . "~/.emacs.d/backup"))
       backup-by-copying t    ; Don't delink hardlinks
