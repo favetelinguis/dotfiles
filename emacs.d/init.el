@@ -20,6 +20,7 @@
 (require 'init-lisps)
 (require 'init-yaml)
 (require 'init-eshell)
+(require 'init-lsp)
 ;; End load config for features and modes
 
 ;; Allow access from emacsclient
