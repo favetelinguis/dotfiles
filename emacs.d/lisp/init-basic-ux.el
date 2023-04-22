@@ -1,6 +1,9 @@
 ;; Autosave every 5 seconds to the same file, dont create backupfiles
 ;;(auto-save-visited-mode 1)
 
+;; Highlight current line in buffer
+(global-hl-line-mode +1)
+
 ;; Remove auto-saved filed when buffer is killed
 ;; default is to remove it when its saved only.
 (setq kill-buffer-delete-auto-save-files t)
