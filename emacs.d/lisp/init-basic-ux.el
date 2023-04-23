@@ -10,6 +10,7 @@
 
 ;; Make switching to other window easier
 (global-set-key (kbd "M-o") 'other-window)
+(global-set-key (kbd "M-i") 'imenu)
 
 ;; Turn on relative line numbers
 (global-display-line-numbers-mode 1)
