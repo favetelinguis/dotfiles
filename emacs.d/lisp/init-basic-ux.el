@@ -39,6 +39,6 @@
 (menu-bar-mode -1) ; Disable the menu bar
 (setq visible-bell t) ; Turn off sound and show flashing warning instead
 
-(set-face-attribute 'default nil :family "Fira Code" :height 140 :weight 'normal)
+(set-face-attribute 'default nil :family "Fira Code" :height 115 :weight 'normal)
 
 (provide 'init-basic-ux)
