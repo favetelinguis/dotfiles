@@ -1,6 +1,10 @@
 ;; Autosave every 5 seconds to the same file, dont create backupfiles
 ;;(auto-save-visited-mode 1)
 
+;; Cycle whitelist options when pressing M-SPC
+(global-set-key [remap just-one-space]
+'cycle-spacing)
+
 ;; Highlight current line in buffer
 (global-hl-line-mode +1)
 
