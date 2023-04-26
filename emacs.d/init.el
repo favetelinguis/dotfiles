@@ -21,6 +21,7 @@
 (require 'init-yaml)
 (require 'init-eshell)
 (require 'init-lsp)
+(require 'init-programming)
 ;; End load config for features and modes
 
 ;; Allow access from emacsclient
