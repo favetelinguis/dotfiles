@@ -22,6 +22,7 @@
 (require 'init-eshell)
 (require 'init-lsp)
 (require 'init-programming)
+(require 'init-readers)
 ;; End load config for features and modes
 
 ;; Allow access from emacsclient
