@@ -48,4 +48,34 @@
 (global-set-key (kbd "M-j") 'consult-buffer)
 (global-set-key (kbd "M-J") 'consult-projectile)
 
+(defun embark-magit-status (path)
+  "Run `magit-status` on repo containing the embark target."
+  (interactive "GPath: ")
+  (magit-status path))
+
+(defun embark-consult-ripgrep (path)
+  "Run consult-ripgrep in project root."
+  (interactive "GPath: ")
+  (consult-ripgrep path))
+
+;; Copy of projectile-run-eshell but I overriede the default project root
+(defun embark-eshell (path)
+  "Launch eshell from project root"
+  (interactive "GPath: ")
+  (let ((project (projectile-acquire-root path)))
+    (projectile-with-default-dir project
+      (let ((eshell-buffer-name (projectile-generate-process-name "eshell" t project)))
+        (eshell)))))
+
+(require 'compat-29)
+(require 'embark)
+(defvar-keymap embark-projectile-map
+  :doc "Keymap for Embark projectile actions."
+  :parent embark-general-map
+  "v" 'embark-magit-status
+  "d" 'dired
+  "s" 'embark-eshell
+  "g" 'embark-consult-ripgrep)
+(add-to-list 'embark-keymap-alist '(consult-projectile-project . embark-projectile-map))
+
 (provide 'init-navigation)
