@@ -45,7 +45,7 @@
 (when (file-directory-p "~/repos")
       (setq projectile-project-search-path '(("~/repos" . 2))))
 (straight-use-package 'consult-projectile)
-(global-set-key (kbd "M-J") 'consult-buffer)
-(global-set-key (kbd "M-j") 'consult-projectile)
+(global-set-key (kbd "M-j") 'consult-buffer)
+(global-set-key (kbd "M-J") 'consult-projectile)
 
 (provide 'init-navigation)
