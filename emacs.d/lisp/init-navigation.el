@@ -24,7 +24,7 @@
      (cdr (ring-ref avy-ring 0))))
   t)
 (require 'avy)
-(setf (alist-get ?. avy-dispatch-alist) 'avy-action-embark)
+(setf (alist-get ?\; avy-dispatch-alist) 'avy-action-embark)
 
 ;; Required by consult for some things
 (recentf-mode 1)
@@ -36,7 +36,6 @@
 ;; Consult only setup commands, no modes or key bindings as default
 (straight-use-package 'consult)
 (straight-use-package 'embark-consult)
-(global-set-key (kbd "M-j") 'consult-buffer)
 (global-set-key (kbd "M-i") 'consult-imenu)
 
 ;; Setup prjectile with consult and embark
@@ -46,6 +45,7 @@
 (when (file-directory-p "~/repos")
       (setq projectile-project-search-path '(("~/repos" . 2))))
 (straight-use-package 'consult-projectile)
-(global-set-key (kbd "M-J") 'consult-projectile)
+(global-set-key (kbd "M-J") 'consult-buffer)
+(global-set-key (kbd "M-j") 'consult-projectile)
 
 (provide 'init-navigation)
