@@ -12,6 +12,7 @@
 (require 'init-package-manager)
 
 ;; Start load config for features and modes
+(require 'init-navigation)
 (require 'init-minibuffer)
 (require 'init-git)
 (require 'init-yequake)

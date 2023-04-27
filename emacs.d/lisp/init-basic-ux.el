@@ -1,6 +1,3 @@
-;; Autosave every 5 seconds to the same file, dont create backupfiles
-;;(auto-save-visited-mode 1)
-
 ;; Cycle whitelist options when pressing M-SPC
 (global-set-key [remap just-one-space]
 'cycle-spacing)
@@ -12,9 +9,9 @@
 ;; default is to remove it when its saved only.
 (setq kill-buffer-delete-auto-save-files t)
 
-;; Make switching to other window easier
-(global-set-key (kbd "M-o") 'other-window)
-(global-set-key (kbd "M-i") 'imenu)
+;; Index all git projects under the following path
+(require 'project)
+(project-remember-projects-under "~/repos" t)
 
 ;; Turn on relative line numbers
 (global-display-line-numbers-mode 1)
