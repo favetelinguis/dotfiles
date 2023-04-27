@@ -9,10 +9,6 @@
 ;; default is to remove it when its saved only.
 (setq kill-buffer-delete-auto-save-files t)
 
-;; Index all git projects under the following path
-(require 'project)
-(project-remember-projects-under "~/repos" t)
-
 ;; Turn on relative line numbers
 (global-display-line-numbers-mode 1)
 (setq display-line-numbers-type 'relative)

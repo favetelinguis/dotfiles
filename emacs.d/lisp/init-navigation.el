@@ -39,8 +39,13 @@
 (global-set-key (kbd "M-j") 'consult-buffer)
 (global-set-key (kbd "M-i") 'consult-imenu)
 
-;; Make project.el search buffer
-(straight-use-package 'consult-project-extra)
-(global-set-key (kbd "M-J") 'consult-project-extra-find)
+;; Setup prjectile with consult and embark
+(straight-use-package 'projectile)
+(projectile-mode +1)
+(define-key projectile-mode-map (kbd "C-c p") 'projectile-command-map)
+(when (file-directory-p "~/repos")
+      (setq projectile-project-search-path '(("~/repos" . 2))))
+(straight-use-package 'consult-projectile)
+(global-set-key (kbd "M-J") 'consult-projectile)
 
 (provide 'init-navigation)
