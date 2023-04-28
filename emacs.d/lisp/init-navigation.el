@@ -62,10 +62,8 @@
 (defun embark-eshell (path)
   "Launch eshell from project root"
   (interactive "GPath: ")
-  (let ((project (projectile-acquire-root path)))
-    (projectile-with-default-dir project
-      (let ((eshell-buffer-name (projectile-generate-process-name "eshell" t project)))
-        (eshell)))))
+  (let ((projectile-project-root path))
+    (projectile-run-eshell)))
 
 (require 'compat-29)
 (require 'embark)
