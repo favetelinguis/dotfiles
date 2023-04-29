@@ -92,4 +92,14 @@
 (define-key embark-buffer-map   (kbd "O") (my/embark-ace-action switch-to-buffer))
 (define-key embark-bookmark-map (kbd "O") (my/embark-ace-action bookmark-jump))
 
+;; Some consult overrides
+(global-set-key (kbd "C-y") 'consult-yank-from-kill-ring)
+(define-key projectile-command-map (kbd "g") 'consult-ripgrep)
+(setq xref-show-xrefs-function #'consult-xref
+      xref-show-xrefs #'consult-xref)
+
+;; Custom binding for easier register access
+(global-set-key (kbd "M-#") 'consult-register)
+(global-set-key (kbd "M-'") 'consult-register-store)
+
 (provide 'init-navigation)

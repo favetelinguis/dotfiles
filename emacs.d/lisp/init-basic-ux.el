@@ -10,8 +10,8 @@
 (setq kill-buffer-delete-auto-save-files t)
 
 ;; Turn on relative line numbers
-(global-display-line-numbers-mode 1)
-(setq display-line-numbers-type 'relative)
+;;(global-display-line-numbers-mode 1)
+;;(setq display-line-numbers-type 'relative)
 
 ;; Handle backupfile outside projects directory
 (setq backup-directory-alist '(("." . "~/.emacs.d/backup"))
