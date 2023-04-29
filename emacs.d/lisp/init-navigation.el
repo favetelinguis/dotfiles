@@ -76,4 +76,20 @@
   "g" 'embark-consult-ripgrep)
 (add-to-list 'embark-keymap-alist '(consult-projectile-project . embark-projectile-map))
 
+;; Integrate ace-window with embark works with 2 or more windows
+;; taken from https://karthinks.com/software/fifteen-ways-to-use-embark/
+(eval-when-compile
+  (defmacro my/embark-ace-action (fn)
+    `(defun ,(intern (concat "my/embark-ace-" (symbol-name fn))) ()
+       (interactive)
+       (with-demoted-errors "%s"
+         (require 'ace-window)
+         (let ((aw-dispatch-always t))
+           (aw-switch-to-window (aw-select nil))
+           (call-interactively (symbol-function ',fn)))))))
+
+(define-key embark-file-map     (kbd "O") (my/embark-ace-action find-file))
+(define-key embark-buffer-map   (kbd "O") (my/embark-ace-action switch-to-buffer))
+(define-key embark-bookmark-map (kbd "O") (my/embark-ace-action bookmark-jump))
+
 (provide 'init-navigation)
