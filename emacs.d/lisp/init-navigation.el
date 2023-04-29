@@ -37,6 +37,7 @@
 (straight-use-package 'consult)
 (straight-use-package 'embark-consult)
 (global-set-key (kbd "M-i") 'consult-imenu)
+(global-set-key (kbd "M-I") 'consult-imenu-multi)
 
 ;; Setup prjectile with consult and embark
 (straight-use-package 'projectile)
@@ -93,13 +94,22 @@
 (define-key embark-bookmark-map (kbd "O") (my/embark-ace-action bookmark-jump))
 
 ;; Some consult overrides
-(global-set-key (kbd "C-y") 'consult-yank-from-kill-ring)
+(global-set-key (kbd "M-y") 'consult-yank-from-kill-ring)
 (define-key projectile-command-map (kbd "g") 'consult-ripgrep)
 (setq xref-show-xrefs-function #'consult-xref
       xref-show-xrefs #'consult-xref)
 
+;; Optionally configure the register formatting. This improves the register
+;; preview for `consult-register', `consult-register-load',
+;; `consult-register-store' and the Emacs built-ins.
+(setq register-preview-delay 0.5
+      register-preview-function #'consult-register-format)
+
+;; Optionally tweak the register preview window.
+;; This adds thin lines, sorting and hides the mode line of the window.
+(advice-add #'register-preview :override #'consult-register-window)
+
 ;; Custom binding for easier register access
-(global-set-key (kbd "M-#") 'consult-register)
-(global-set-key (kbd "M-'") 'consult-register-store)
+(global-set-key (kbd "C-x r v") 'view-register)
 
 (provide 'init-navigation)
