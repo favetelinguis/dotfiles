@@ -78,6 +78,8 @@
 (after! org
   (setq org-agenda-start-with-log-mode 't)
   (setq org-log-done 'note)
+  (setq +org-capture-todo-file "README.org")
+  (setq +org-capture-notes-file "README.org")
   (setq org-capture-templates
         '(("t" "Personal todo" entry
            (file+headline +org-capture-todo-file "Inbox")
@@ -86,22 +88,22 @@
            (file+headline +org-capture-notes-file "Inbox")
            "* %u %?\n" :prepend t)
           ("j" "Journal" entry
-  (file+olp+datetree +org-capture-journal-file)
-  "* %U %?\n" :prepend t)
- ("p" "Templates for projects")
- ("pt" "Project-local todo" entry
-  (file+headline +org-capture-project-todo-file "Inbox")
-  "* TODO %?\n%i\n%a" :prepend t)
- ("pn" "Project-local notes" entry
-  (file+headline +org-capture-project-notes-file "Inbox")
-  "* %U %?\n%i\n%a" :prepend t)
- ("pc" "Project-local changelog" entry
-  (file+headline +org-capture-project-changelog-file "Unreleased")
-  "* %U %?\n%i\n%a" :prepend t)
- ("o" "Centralized templates for projects")
- ("ot" "Project todo" entry #'+org-capture-central-project-todo-file "* TODO %?\n %i\n %a" :heading "Tasks" :prepend nil)
- ("on" "Project notes" entry #'+org-capture-central-project-notes-file "* %U %?\n %i\n %a" :heading "Notes" :prepend t)
- ("oc" "Project changelog" entry #'+org-capture-central-project-changelog-file "* %U %?\n %i\n %a" :heading "Changelog" :prepend t))))
+           (file+olp+datetree +org-capture-journal-file)
+           "* %U %?\n" :prepend t)
+          ("p" "Templates for projects")
+          ("pt" "Project-local todo" entry
+           (file+headline +org-capture-project-todo-file "TODOs")
+           "* TODO %?\n%i\n%a" :prepend t)
+          ("pn" "Project-local notes" entry
+           (file+headline +org-capture-project-notes-file "Notes")
+           "* %U %?\n%i\n%a" :prepend t)
+          ("pc" "Project-local changelog" entry
+           (file+headline +org-capture-project-changelog-file "Unreleased")
+           "* %U %?\n%i\n%a" :prepend t)
+          ("o" "Centralized templates for projects")
+          ("ot" "Project todo" entry #'+org-capture-central-project-todo-file "* TODO %?\n %i\n %a" :heading "Tasks" :prepend nil)
+          ("on" "Project notes" entry #'+org-capture-central-project-notes-file "* %U %?\n %i\n %a" :heading "Notes" :prepend t)
+          ("oc" "Project changelog" entry #'+org-capture-central-project-changelog-file "* %U %?\n %i\n %a" :heading "Changelog" :prepend t))))
 
 (setq projectile-project-search-path '(("~/repos" . 1)))
 (setq projectile-auto-discover 't)
@@ -112,6 +114,43 @@
     (string-trim (buffer-string))))
 
 (setq-default gptel-model "gpt-3.5-turbo"
-                gptel-playback t
-                gptel-default-mode 'org-mode
-                gptel-api-key #'fav/read-openai-key)
+              gptel-playback t
+              gptel-default-mode 'org-mode
+              gptel-api-key #'fav/read-openai-key)
+
+(map! :leader
+      (:prefix-map ("k" . "smartparens-mode")
+       :desc "sp-forward-slurp-sexp" "s" #'sp-forward-slurp-sexp
+       :desc "sp-forward-sexp" "L" #'sp-forward-sexp
+       :desc "sp-backward-sexp" "H" #'sp-backward-sexp
+       :desc "sp-splice-sexp-killing-backward" "e" #'sp-splice-sexp-killing-backward
+       ;; "C-M-u" #'sp-backward-up-sexp
+       ;; "C-M-d" #'sp-down-sexp
+       ;; "C-M-p" #'sp-backward-down-sexp
+       ;; "C-M-n" #'sp-up-sexp
+       ;; "C-M-s" #'sp-splice-sexp
+       :desc "sp-backward-slurp-sexp" "S" #'sp-backward-slurp-sexp
+       :desc "sp-backward-barf-sexp" "B" #'sp-backward-barf-sexp))
+
+(with-eval-after-load 'evil-maps
+  (define-key evil-normal-state-map (kbd ";") 'avy-goto-char-timer))
+(defun fav/open-new-eww ()
+  "Will call eww with prefix command which should open a
+   new eww and not replace old"
+  (interactive)
+  (let ((current-prefix-arg '(4))) ; C-u
+    (call-interactively 'eww)))
+
+(map! (:leader (:prefix "o" :desc "Open new eww" :nv "w" #'fav/open-new-eww)))
+
+(general-define-key
+ :states '(normal)
+ :keymaps 'eww-mode-map
+ "r" '(eww-reload :which-key "Reload page"))
+
+(general-define-key
+ :states '(normal)
+ "ge" '(flycheck-next-error :which-key "Flycheck next error")
+ "gE" '(flycheck-previous-error :which-key "Flycheck next error"))
+
+(setq doom-localleader-key ",")

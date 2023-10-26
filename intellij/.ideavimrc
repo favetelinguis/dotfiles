@@ -17,9 +17,6 @@ nnoremap <c-i> :action Forward<CR>
 " Dont enter select mode when refactor
 set idearefactormode=keep
 
-# Exit insert
-imap ii <Esc>
-
 " PLUGINS
 set NERDTree
 set commentary
@@ -31,65 +28,68 @@ nnoremap \e :e ~/.ideavimrc<CR>
 nnoremap \r :action IdeaVim.ReloadVimRc.reload<CR>
 nnoremap \a :actionlist<CR>
 
-" Window
-map ; <c-w>w
-
 " Find
-map fb :action RecentFiles<CR>
+map <Leader>pp :action ManageRecentProjects<CR>
+map <leader>bb :action RecentFiles<CR>
+map <leader>. :NERDTreeFind<CR>
+map <leader><leader> :action GotoFile<CR>
+map <leader>: :action GotoAction<CR>
+map <leader>/ :action FindInPath<CR>
+
 map fl :action RecentLocations<CR>
-map f/ :action FindInPath<CR>
-map fe :NERDTreeFind<CR>
-map ff :action GotoFile<CR>
-map fs :action FileStructurePopup<CR>
-map fa :action GotoAction<CR>
-map fu :action ShowUsages<CR>
 map fc :action GotoClass<CR>
-map fp :action ManageRecentProjects<CR>
 map fm :action ShowBookmarks<CR>
 
 " GoTo
-nmap gd :action GotoDeclaration<CR>
-nmap gi :action GotoImplementation<CR>
-nmap gt :action GotoTest<CR>
+nmap gd :action GotoImplementation<CR>
+map gD :action ShowUsages<CR>
 nmap ge :action GotoNextError<CR>
 nmap gE :action GotoPreviousError<CR>
 
+nmap gi :action GotoDeclaration<CR>
+nmap gt :action GotoTest<CR>
+
 " Easymotion
-map s <Plug>(easymotion-s)
+map ; <Plug>(easymotion-s)
 
 " Toolwindows
 " Shift Esc -           Hide Toolwindow
 " Esc -                 Jump to editor from Toolwindow
 " Alt - Right/Left      Switch Tab
-nnoremap <leader>aa :action ToolWindowsGroup<CR>
+nnoremap <leader>oo :action ToolWindowsGroup<CR>
+nnoremap <leader>oq :action HideAllWindows<CR>
+
+"Close intellj
+nnoremap <leader>qq :action Exit<CR>
+
 nnoremap <leader>aj :action JumpToLastWindow<CR>
-nnoremap <leader>ah :action HideAllWindows<CR>
 
-" Git
-nnoremap <leader>gm :action Git.Menu<CR>
+" Buffer
+map <Leader>bk :action CloseContent<CR>
 
-" Buffer"
-map <Leader>bq :action CloseAllEditors<CR>
-map <Leader>bc :nohl<CR>
-nnoremap <leader>bx :1,$d<CR>
-map <Leader>bw :action SplitVertically<CR>
+"Window
+map <Leader>wv :action SplitVertically<CR>
+map <Leader>ws :action SplitHorizontally<CR>
+map <Leader>ww <c-w>w
+map <Leader>wh <c-w>h
+map <Leader>wj <c-w>j
+map <Leader>wk <c-w>k
+map <Leader>wl <c-w>l
+map <Leader>wq :action Unsplit<CR>
 
-
-" Refactor
-nnoremap <leader>cm :action Refactorings.QuickListPopupAction<CR>
+" Code related
+map <leader>cs :action FileStructurePopup<CR>
+nnoremap <leader>cr :action Refactorings.QuickListPopupAction<CR>
 
 " Run
 nnoremap <leader>rr :action ContextRun<CR>
-nnoremap <leader>rc :action RunClass<CR>
-nnoremap <leader>rm :action ChooseRunConfiguration<CR>
+nnoremap <leader>rd :action ContextDebug<CR>
+nnoremap <leader>rt :action RerunFailedTests<CR>
+nnoremap <leader>rd :action ToggleLineBreakpoint<CR>
+nnoremap <leader>r. :action ChooseRunConfiguration<CR>
 nnoremap <leader>ra :action Rerun<CR>
 
-" Test
-nnoremap <leader>tf :action RerunFailedTests<CR>
-
-" Debug
-nnoremap <leader>dd :action ContextDebug<CR>
-nnoremap <leader>db :action ToggleLineBreakpoint<CR>
+nnoremap <leader>rc :action RunClass<CR>
 
 " --- Clojure
 " Find
@@ -111,19 +111,19 @@ nnoremap <leader>ke :action :cursive.actions.paredit/splice-killing-backwards<CR
 nnoremap <leader>kE :action :cursive.actions.paredit/splice-killing-forwards<CR>
 nnoremap <leader>kf :action :cursive.actions.paredit/thread-form<CR>
 " Repl
-nnoremap <leader>ss :action :cursive.repl.actions/jump-to-repl<CR>
-nnoremap <leader>sb :action :cursive.repl.actions/load-file<CR>
-nnoremap <leader>sr :action :cursive.repl.actions/sync-files<CR>
+nnoremap ,rb :action :cursive.repl.actions/jump-to-repl<CR>
+nnoremap ,eb :action :cursive.repl.actions/load-file<CR>
+nnoremap ,sr :action :cursive.repl.actions/sync-files<CR>
 " Eval
-nnoremap <leader>em :action :cursive.repl.actions/macroexpansion<CR>
-nnoremap <leader>el :action :cursive.repl.actions/run-last-sexp<CR>
-nnoremap <leader>ee :action :cursive.repl.actions/run-top-sexp<CR>
-nnoremap <leader>ef :action Cursive.Repl.Command.eval-to-file<cr> :action Synchronize<cr>
+nnoremap ,em :action :cursive.repl.actions/macroexpansion<CR>
+nnoremap ,ee :action :cursive.repl.actions/run-last-sexp<CR>
+nnoremap ,er :action :cursive.repl.actions/run-top-sexp<CR>
+nnoremap ,ef :action Cursive.Repl.Command.eval-to-file<cr> :action Synchronize<cr>
 " Test
-nnoremap <leader>tx :action :cursive.testing.actions/remove-test-markers<CR>
-nnoremap <leader>tr :action :cursive.testing.actions/rerun-last-test <CR>
-nnoremap <leader>ta :action :cursive.testing.actions/run-ns-tests <CR>
-nnoremap <leader>tt :action :cursive.testing.actions/run-single-test<CR>
+nnoremap ,tx :action :cursive.testing.actions/remove-test-markers<CR>
+nnoremap ,tr :action :cursive.testing.actions/rerun-last-test <CR>
+nnoremap ,ta :action :cursive.testing.actions/run-ns-tests <CR>
+nnoremap ,tt :action :cursive.testing.actions/run-single-test<CR>
 " ---
 
 " Handlers
