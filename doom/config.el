@@ -20,6 +20,7 @@
 ;;
 ;; See 'C-h v doom-font' for documentation and more examples of what they
 ;; accept. For example:
+(setq doom-font "Fira Code")
 ;;
 ;;(setq doom-font (font-spec :family "Fira Code" :size 12 :weight 'semi-light)
 ;;      doom-variable-pitch-font (font-spec :family "Fira Sans" :size 13))
@@ -32,7 +33,9 @@
 ;; There are two ways to load a theme. Both assume the theme is installed and
 ;; available. You can either set `doom-theme' or manually load a theme with the
 ;; `load-theme' function. This is the default:
-(setq doom-theme 'doom-homage-white)
+;; (setq doom-theme 'doom-homage-white)
+(setq doom-theme 'doom-myalabaster)
+;; (setq doom-theme 'alabaster)
 
 ;; This determines the style of line numbers in effect. If set to `nil', line
 ;; numbers are disabled. For relative line numbers, set this to `relative'.
@@ -78,8 +81,6 @@
 (after! org
   (setq org-agenda-start-with-log-mode 't)
   (setq org-log-done 'note)
-  (setq +org-capture-todo-file "README.org")
-  (setq +org-capture-notes-file "README.org")
   (setq org-capture-templates
         '(("t" "Personal todo" entry
            (file+headline +org-capture-todo-file "Inbox")
@@ -92,10 +93,10 @@
            "* %U %?\n" :prepend t)
           ("p" "Templates for projects")
           ("pt" "Project-local todo" entry
-           (file+headline +org-capture-project-todo-file "TODOs")
+           (file+headline +org-capture-project-todo-file "Inbox")
            "* TODO %?\n%i\n%a" :prepend t)
           ("pn" "Project-local notes" entry
-           (file+headline +org-capture-project-notes-file "Notes")
+           (file+headline +org-capture-project-notes-file "Inbox")
            "* %U %?\n%i\n%a" :prepend t)
           ("pc" "Project-local changelog" entry
            (file+headline +org-capture-project-changelog-file "Unreleased")
@@ -105,7 +106,7 @@
           ("on" "Project notes" entry #'+org-capture-central-project-notes-file "* %U %?\n %i\n %a" :heading "Notes" :prepend t)
           ("oc" "Project changelog" entry #'+org-capture-central-project-changelog-file "* %U %?\n %i\n %a" :heading "Changelog" :prepend t))))
 
-(setq projectile-project-search-path '(("~/repos" . 1)))
+(setq projectile-project-search-path '(("~/repos" . 2)))
 (setq projectile-auto-discover 't)
 
 (defun fav/read-openai-key ()
@@ -117,7 +118,6 @@
               gptel-playback t
               gptel-default-mode 'org-mode
               gptel-api-key #'fav/read-openai-key)
-
 (map! :leader
       (:prefix-map ("k" . "smartparens-mode")
        :desc "sp-forward-slurp-sexp" "s" #'sp-forward-slurp-sexp
@@ -134,6 +134,22 @@
 
 (with-eval-after-load 'evil-maps
   (define-key evil-normal-state-map (kbd ";") 'avy-goto-char-timer))
+
+(defun cust/vsplit-file-open (f)
+  (let ((evil-vsplit-window-right t))
+    (+evil/window-vsplit-and-follow)
+    (find-file f)))
+
+(defun cust/split-file-open (f)
+  (let ((evil-split-window-below t))
+    (+evil/window-split-and-follow)
+    (find-file f)))
+
+(map! :after embark
+      :map embark-file-map
+      "V" #'cust/vsplit-file-open
+      "X" #'cust/split-file-open)
+
 (defun fav/open-new-eww ()
   "Will call eww with prefix command which should open a
    new eww and not replace old"
@@ -148,9 +164,11 @@
  :keymaps 'eww-mode-map
  "r" '(eww-reload :which-key "Reload page"))
 
-(general-define-key
- :states '(normal)
- "ge" '(flycheck-next-error :which-key "Flycheck next error")
- "gE" '(flycheck-previous-error :which-key "Flycheck next error"))
-
 (setq doom-localleader-key ",")
+
+(defun fav/start-idea ()
+  (interactive)
+  (projectile-run-async-shell-command-in-root "idea ."))
+
+(map! (:leader (:prefix "p" :desc "Open IDEA" :nv "I" #'fav/start-idea)))
+
