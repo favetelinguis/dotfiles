@@ -22,6 +22,8 @@ set NERDTree
 set commentary
 set surround
 set easymotion
+let g:EasyMotion_do_mapping = 0               "Disable easymotion default bindings since leader leader collide with my FindFile binding
+"set which-key "do not work when tested 2023
 
 " Shortcuts not used while programming under \
 nnoremap \e :e ~/.ideavimrc<CR>
@@ -41,12 +43,13 @@ map fc :action GotoClass<CR>
 map fm :action ShowBookmarks<CR>
 
 " GoTo
-nmap gd :action GotoImplementation<CR>
+nmap gd :action GotoDeclaration<CR>
+nmap gi :action GotoImplementation<CR>
 map gD :action ShowUsages<CR>
 nmap ge :action GotoNextError<CR>
 nmap gE :action GotoPreviousError<CR>
+nmap gt :action GotoTest<CR>
 
-nmap gi :action GotoDeclaration<CR>
 nmap gt :action GotoTest<CR>
 
 " Easymotion
@@ -70,12 +73,12 @@ map <Leader>bk :action CloseContent<CR>
 "Window
 map <Leader>wv :action SplitVertically<CR>
 map <Leader>ws :action SplitHorizontally<CR>
-map <Leader>ww <c-w>w
-map <Leader>wh <c-w>h
-map <Leader>wj <c-w>j
-map <Leader>wk <c-w>k
-map <Leader>wl <c-w>l
 map <Leader>wq :action Unsplit<CR>
+map <Leader>wh <c-w>w
+map <Leader>wj <c-w>j
+map <Leader>wk <c-w>k 
+map <Leader>wl <c-w>l
+map <Leader>ww <c-w>w
 
 " Code related
 map <leader>cs :action FileStructurePopup<CR>
@@ -85,9 +88,9 @@ nnoremap <leader>cr :action Refactorings.QuickListPopupAction<CR>
 nnoremap <leader>rr :action ContextRun<CR>
 nnoremap <leader>rd :action ContextDebug<CR>
 nnoremap <leader>rt :action RerunFailedTests<CR>
-nnoremap <leader>rd :action ToggleLineBreakpoint<CR>
+nnoremap <leader>r<leader> :action ToggleLineBreakpoint<CR>
 nnoremap <leader>r. :action ChooseRunConfiguration<CR>
-nnoremap <leader>ra :action Rerun<CR>
+nnoremap <leader>rR :action Rerun<CR>
 
 nnoremap <leader>rc :action RunClass<CR>
 
