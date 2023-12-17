@@ -78,7 +78,13 @@
 ;; You can also try 'gd' (or 'C-c c d') to jump to their definition and see how
 ;; they are implemented.
 
+;; Setup plantuml with ord-babel
+(setq org-plantuml-jar-path
+      (expand-file-name "~/org/utils/plantuml-1.2023.13.jar"))
+
 (after! org
+  (add-to-list 'org-src-lang-modes '("plantuml" . plantuml))
+  (org-babel-do-load-languages 'org-babel-do-load-languages '((plantuml . t)))
   (setq org-agenda-start-with-log-mode 't)
   (setq org-log-done 'note)
   (setq org-capture-templates
@@ -171,4 +177,3 @@
   (projectile-run-async-shell-command-in-root "idea ."))
 
 (map! (:leader (:prefix "p" :desc "Open IDEA" :nv "I" #'fav/start-idea)))
-
