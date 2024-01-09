@@ -20,7 +20,7 @@
 ;;
 ;; See 'C-h v doom-font' for documentation and more examples of what they
 ;; accept. For example:
-(setq doom-font (font-spec :family "Fira Code" :size 14))
+(setq doom-font (font-spec :family "Fira Code" :size 15))
 ;;
 ;;(setq doom-font (font-spec :family "Fira Code" :size 12 :weight 'semi-light)
 ;;      doom-variable-pitch-font (font-spec :family "Fira Sans" :size 13))
@@ -177,3 +177,12 @@
   (projectile-run-async-shell-command-in-root "idea ."))
 
 (map! (:leader (:prefix "p" :desc "Open IDEA" :nv "I" #'fav/start-idea)))
+
+(after! cider
+  (use-package! clay)
+  (map! :localleader
+        :map clojure-mode-map
+        :desc "start" "s s" #'clay/start
+        :desc "send defun at point" "s d" #'clay/make-defun-at-point
+        :desc "send last sexp" "s e" #'clay/make-last-sexp
+        :desc "send ns as html" "s h" #'clay/make-ns-html))

@@ -51,3 +51,5 @@
 
 (package! tldr)
 (package! gptel)
+(package! clay
+  :recipe (:host nil :repo "https://github.com/scicloj/clay.el.git"))
