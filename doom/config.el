@@ -88,15 +88,26 @@
   (org-babel-do-load-languages 'org-babel-do-load-languages '((plantuml . t)))
   (setq org-agenda-start-with-log-mode 't)
   (setq org-log-done 'note)
-  ;; All my note taking is done in rome, only use org for todo management
+
+  (defun fav/org-capture-project-notes-file ()
+    "Find the nearest `+org-capture-notes-file' in a parent directory, otherwise,
+opens a blank one at the project root. Throws an error if not in a project."
+    (+org--capture-local-root "README.org"))
+
   (setq org-capture-templates
         '(("t" "Personal todo" entry
            (file+headline +org-capture-todo-file "Inbox")
-           "* [ ] %?\n" :prepend t)
-          ("p" "Project todo" entry #'+org-capture-central-project-todo-file "* TODO %?\n %i\n %a" :heading "Tasks" :prepend nil)
-          ("l" "Project-local todo" entry
-           (file+headline +org-capture-project-todo-file "Inbox")
-           "* TODO %?\n%i\n%a" :prepend t))))
+           "* [ ] %?\n%i\n" :prepend t)
+
+          ("n" "Project-local notes" entry
+           (file+headline fav/org-capture-project-notes-file "Inbox")
+           "* %U %?\n%i\n" :prepend t)
+
+          ("p" "Project todo" entry #'+org-capture-central-project-todo-file
+           "* TODO %?\n %i\n" :heading "Tasks" :prepend nil)
+          ))
+  ;; end
+  )
 
 (setq projectile-project-search-path '(("~/repos" . 2)))
 (setq projectile-auto-discover 't)
