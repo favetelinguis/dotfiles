@@ -95,17 +95,14 @@ opens a blank one at the project root. Throws an error if not in a project."
     (+org--capture-local-root "README.org"))
 
   (setq org-capture-templates
-        '(("t" "Personal todo" entry
-           (file+headline +org-capture-todo-file "Inbox")
-           "* [ ] %?\n%i\n" :prepend t)
-
+        '(("t" "Project todo" entry #'+org-capture-central-project-todo-file
+           "* TODO %?\n %i\n" :heading "Tasks" :prepend nil)
           ("n" "Project-local notes" entry
            (file+headline fav/org-capture-project-notes-file "Inbox")
            "* %U %?\n%i\n" :prepend t)
-
-          ("p" "Project todo" entry #'+org-capture-central-project-todo-file
-           "* TODO %?\n %i\n" :heading "Tasks" :prepend nil)
-          ))
+          ("p" "Personal todo" entry
+           (file+headline +org-capture-todo-file "Inbox")
+           "* [ ] %?\n%i\n" :prepend t)))
   ;; end
   )
 
