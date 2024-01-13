@@ -82,25 +82,18 @@
 (setq org-plantuml-jar-path
       (expand-file-name "~/org/utils/plantuml-1.2023.13.jar"))
 
+;; Need to have this before org or else it is not loaded
+(map! :leader "d" #'org-roam-dailies-capture-today)
 (after! org
-  (map! :leader "d" #'org-roam-dailies-capture-today)
   (map! (:leader (:prefix "n" :desc "consult org agenda" :nv "h" #'consult-org-agenda)))
   (add-to-list 'org-src-lang-modes '("plantuml" . plantuml))
   (org-babel-do-load-languages 'org-babel-do-load-languages '((plantuml . t)))
   (setq org-agenda-start-with-log-mode 't)
   (setq org-log-done 'note)
 
-  (defun fav/org-capture-project-notes-file ()
-    "Find the nearest `+org-capture-notes-file' in a parent directory, otherwise,
-opens a blank one at the project root. Throws an error if not in a project."
-    (+org--capture-local-root "README.org"))
-
   (setq org-capture-templates
         '(("t" "Project todo" entry #'+org-capture-central-project-todo-file
            "* TODO %?\n %i\n" :heading "Tasks" :prepend nil)
-          ("n" "Project-local notes" entry
-           (file+headline fav/org-capture-project-notes-file "Inbox")
-           "* %U %?\n%i\n" :prepend t)
           ("p" "Personal todo" entry
            (file+headline +org-capture-todo-file "Inbox")
            "* [ ] %?\n%i\n" :prepend t)))
