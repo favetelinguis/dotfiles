@@ -83,6 +83,7 @@
       (expand-file-name "~/org/utils/plantuml-1.2023.13.jar"))
 
 (after! org
+  (map! :leader "d" #'org-roam-dailies-capture-today)
   (map! (:leader (:prefix "n" :desc "consult org agenda" :nv "h" #'consult-org-agenda)))
   (add-to-list 'org-src-lang-modes '("plantuml" . plantuml))
   (org-babel-do-load-languages 'org-babel-do-load-languages '((plantuml . t)))
