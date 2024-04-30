@@ -1,0 +1,77 @@
+FROM quay.io/toolbx/arch-toolbox
+
+# Essential pacman system tools
+RUN pacman -Syu --noconfirm && \
+    pacman -S \
+        wget \
+        base-devel \
+        git \
+        --noconfirm
+
+# Devtools from pacman
+RUN pacman -S \
+    cmake \
+    ripgrep \
+    fd \
+    rlwrap \
+    chezmoi \
+    --noconfirm
+
+# Add user since paru can not build as root
+RUN useradd -m --shell=/bin/bash build && usermod -L build && \
+    echo "build ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers && \
+    echo "root ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers
+
+# Add paru and install AUR packages
+USER build
+WORKDIR /home/build
+RUN git clone https://aur.archlinux.org/paru-bin.git --single-branch && \
+    cd paru-bin && \
+    makepkg -si --noconfirm && \
+    cd .. && \
+    rm -drf paru-bin && \
+    paru -S \
+    emacs-nativecomp \
+    mise-bin \
+    babashka-bin \
+    cljfmt-bin \
+    clj-kondo-bin \
+    clojure-lsp-bin \
+    --noconfirm
+USER root
+WORKDIR /
+
+ENV PATH="~/.config/emacs/bin:$PATH"
+ENV PATH="~/.local/share/mise/shims:$PATH"
+
+# Use the host install of podman
+RUN ln -fs /usr/bin/distrobox-host-exec /usr/bin/podman
+
+
+# Cleanup
+RUN userdel -r build && \
+    rm -drf /home/build && \
+    sed -i '/build ALL=(ALL) NOPASSWD: ALL/d' /etc/sudoers && \
+    sed -i '/root ALL=(ALL) NOPASSWD: ALL/d' /etc/sudoers && \
+    rm -rf \
+        /tmp/* \
+        /var/cache/pacman/pkg/*
+# How to make a emacs 29 compiled with all good stuff in distrobox.
+# Layer the emacs and put all my tools over that image as my base?
+# Will org etc be reused between emacs instance?
+# Will starting a emacs client from host system get tools from devbox env
+
+# Use multi layer
+# Use build user check https://github.com/ublue-os/bazzite-arch/blob/main/Containerfile
+# https://github.com/ublue-os/arch-distrobox/blob/main/Containerfile
+
+# Make babashaka taska that build and clean up etc and enter delete etc
+# Make github action to create my image
+# Understand the chezmoi and how to get it working with doom emacs
+
+# Rebuild
+# distrobox stop -> rm -> (podman build) -> create
+# distrobox create mybox -i devbox
+
+# Cleanup
+# podman image prune --all

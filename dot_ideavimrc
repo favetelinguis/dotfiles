@@ -1,0 +1,142 @@
+" IDEA shortcuts
+" Shift - k             Show help under cursor
+" Ctrl - r              Replace
+
+" Basic settings
+let mapleader = " "
+set scrolloff=5
+set hlsearch
+set ignorecase
+set smartcase
+set incsearch
+" Use system clipboard as default
+set clipboard+=unnamed
+" Built-in navigation to navigated items works better
+nnoremap <c-o> :action Back<CR>
+nnoremap <c-i> :action Forward<CR>
+" Dont enter select mode when refactor
+set idearefactormode=keep
+
+" PLUGINS
+set NERDTree
+set commentary
+set surround
+set easymotion
+let g:EasyMotion_do_mapping = 0               "Disable easymotion default bindings since leader leader collide with my FindFile binding
+"set which-key "do not work when tested 2023
+
+" Shortcuts not used while programming under \
+nnoremap \e :e ~/.ideavimrc<CR>
+nnoremap \r :action IdeaVim.ReloadVimRc.reload<CR>
+nnoremap \a :actionlist<CR>
+
+" Find
+map <Leader>pp :action ManageRecentProjects<CR>
+map <leader>bb :action RecentFiles<CR>
+map <leader>. :NERDTreeFind<CR>
+map <leader><leader> :action GotoFile<CR>
+map <leader>: :action GotoAction<CR>
+map <leader>/ :action FindInPath<CR>
+
+map fl :action RecentLocations<CR>
+map fc :action GotoClass<CR>
+map fm :action ShowBookmarks<CR>
+
+" GoTo
+nmap gd :action GotoDeclaration<CR>
+nmap gi :action GotoImplementation<CR>
+map gD :action ShowUsages<CR>
+nmap ge :action GotoNextError<CR>
+nmap gE :action GotoPreviousError<CR>
+nmap gt :action GotoTest<CR>
+
+nmap gt :action GotoTest<CR>
+
+" Easymotion
+map ; <Plug>(easymotion-s)
+
+" Toolwindows
+" Shift Esc -           Hide Toolwindow
+" Esc -                 Jump to editor from Toolwindow
+" Alt - Right/Left      Switch Tab
+nnoremap <leader>oo :action ToolWindowsGroup<CR>
+nnoremap <leader>oq :action HideAllWindows<CR>
+
+"Close intellj
+nnoremap <leader>qq :action Exit<CR>
+
+nnoremap <leader>aj :action JumpToLastWindow<CR>
+
+" Buffer
+map <Leader>bk :action CloseContent<CR>
+
+" Some note
+map <Leader>nt :action ActivateTODOToolWindow<CR>
+
+
+"Window
+map <Leader>wv :action SplitVertically<CR>
+map <Leader>ws :action SplitHorizontally<CR>
+map <Leader>wmm :action Unsplit<CR>
+map <Leader>wh <c-w>w
+map <Leader>wj <c-w>j
+map <Leader>wk <c-w>k 
+map <Leader>wl <c-w>l
+map <Leader>ww <c-w>w
+
+" Code related
+map <leader>cs :action FileStructurePopup<CR>
+nnoremap <leader>cr :action Refactorings.QuickListPopupAction<CR>
+
+" Run
+nnoremap <leader>rr :action ContextRun<CR>
+nnoremap <leader>rd :action ContextDebug<CR>
+nnoremap <leader>rt :action RerunFailedTests<CR>
+nnoremap <leader>r<leader> :action ToggleLineBreakpoint<CR>
+nnoremap <leader>r. :action ChooseRunConfiguration<CR>
+nnoremap <leader>rR :action Rerun<CR>
+
+nnoremap <leader>rc :action RunClass<CR>
+
+" --- Clojure
+" Find
+nmap fk :action GotoKeyword<CR>
+nmap fn :action GotoNamespace<CR>
+
+" Paredit
+nnoremap <c-h> :action :cursive.actions.paredit/backward<CR>
+nnoremap <c-j> :action :cursive.actions.paredit/forward-down<CR>
+nnoremap <c-k> :action :cursive.actions.paredit/backward-up<CR>
+nnoremap <c-l> :action :cursive.actions.paredit/forward<CR>
+nnoremap <c-m> %
+nnoremap <leader>kB :action :cursive.actions.paredit/barf-backwards<CR>
+nnoremap <leader>kb :action :cursive.actions.paredit/barf-forwards<CR>
+nnoremap <leader>kx :action :cursive.actions.paredit/kill-sexp<CR>
+nnoremap <leader>kS :action :cursive.actions.paredit/slurp-backwards<CR>
+nnoremap <leader>ks :action :cursive.actions.paredit/slurp-forwards<CR>
+nnoremap <leader>ke :action :cursive.actions.paredit/splice-killing-backwards<CR>
+nnoremap <leader>kE :action :cursive.actions.paredit/splice-killing-forwards<CR>
+nnoremap <leader>kf :action :cursive.actions.paredit/thread-form<CR>
+" Repl
+nnoremap ,rb :action :cursive.repl.actions/jump-to-repl<CR>
+nnoremap ,eb :action :cursive.repl.actions/load-file<CR>
+nnoremap ,sr :action :cursive.repl.actions/sync-files<CR>
+" Eval
+nnoremap ,em :action :cursive.repl.actions/macroexpansion<CR>
+nnoremap ,ee :action :cursive.repl.actions/run-last-sexp<CR>
+nnoremap ,er :action :cursive.repl.actions/run-top-sexp<CR>
+nnoremap ,ef :action Cursive.Repl.Command.eval-to-file<cr> :action Synchronize<cr>
+" Test
+nnoremap ,tx :action :cursive.testing.actions/remove-test-markers<CR>
+nnoremap ,tr :action :cursive.testing.actions/rerun-last-test <CR>
+nnoremap ,ta :action :cursive.testing.actions/run-ns-tests <CR>
+nnoremap ,tt :action :cursive.testing.actions/run-single-test<CR>
+" ---
+
+" Handlers
+" n - normal mode
+" i - insert mode
+" x - visual mode
+" v - visual and select modes
+" a - all modes
+sethandler <C-v> n-v:vim i:ide
