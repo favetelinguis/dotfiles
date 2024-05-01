@@ -1,0 +1,16 @@
+FROM registry.opensuse.org/opensuse/distrobox
+
+WORKDIR /tmp/emacs
+RUN sudo zypper in -t pattern devel_C_C++ && \
+    git clone git://git.sv.gnu.org/emacs.git /tmp/emacs && \
+    ./autogen.sh && \
+    sudo zypper in glib2-devel gtk3-devel libgccjit0-devel-gcc13 gnutls-devel mailutils && \
+    ./configure --with-native-compilation --with-pgtk --with-mailutils CFLAGS='-march=native' && \
+    make -j6 && \
+    make install -j6
+
+WORKDIR /
+
+# Do i need someting like zupper update?
+# Checkout some other branch 29 can i do that with git clone?
+# https://www.masteringemacs.org/article/speed-up-emacs-libjansson-native-elisp-compilation
