@@ -178,10 +178,10 @@
 
 ;; CLI tools installed by Mise
 ;; See: https://www.emacswiki.org/emacs/ExecPath
-;; (when (executable-find "mise")
-;;   (let ((shims-path (concat (getenv "HOME") "/.local/share/mise/shims")))
-;;     (setenv "PATH" (concat shims-path ":" (getenv "PATH")))
-;;     (setq exec-path (cons shims-path exec-path))))
+(when (executable-find "mise")
+  (let ((shims-path (concat (getenv "HOME") "/.local/share/mise/shims")))
+    (setenv "PATH" (concat shims-path ":" (getenv "PATH")))
+    (setq exec-path (cons shims-path exec-path))))
 
 (use-package! chezmoi
   :config

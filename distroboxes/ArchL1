@@ -1,0 +1,25 @@
+# https://github.com/greyltc-org/docker-archlinux-aur
+FROM ghcr.io/greyltc-org/archlinux-aur:paru
+
+RUN aur-install \
+    emacs-nativecomp \
+    mise-bin \
+    babashka-bin \
+    cljfmt-bin \
+    clj-kondo-bin \
+    clojure-lsp-bin \
+    cmake \
+    ripgrep \
+    fd \
+    rlwrap \
+    chezmoi
+
+# Setup Doom Emacs commands
+ENV PATH="~/.config/emacs/bin:$PATH"
+# Setup Mise shims
+ENV PATH="~/.local/share/mise/shims:$PATH"
+
+# Share some commands with host
+RUN ln -fs /usr/bin/distrobox-host-exec /usr/bin/podman
+RUN ln -fs /usr/bin/distrobox-host-exec /usr/bin/distrobox
+RUN ln -fs /usr/bin/distrobox-host-exec /usr/bin/flatpak

@@ -55,3 +55,4 @@
   :recipe (:host nil :repo "https://github.com/scicloj/clay.el.git"))
 (package! x509-mode)
 (package! chezmoi)
+(package! babashka)
