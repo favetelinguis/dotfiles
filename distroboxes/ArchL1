@@ -19,6 +19,9 @@ ENV PATH="~/.config/emacs/bin:$PATH"
 # Setup Mise shims
 ENV PATH="~/.local/share/mise/shims:$PATH"
 
+# Add my global gitignore
+RUN git config --global core.excludesfile "%USERPROFILE%\.gitignore_global"
+
 # Share some commands with host
 RUN ln -fs /usr/bin/distrobox-host-exec /usr/bin/podman
 RUN ln -fs /usr/bin/distrobox-host-exec /usr/bin/distrobox

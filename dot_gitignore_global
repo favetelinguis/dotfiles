@@ -1,0 +1,35 @@
+# Global git ignore ~/.config/git/ignore
+
+# This should contains things specific to a local environment, such as IDE, OS, or editor.
+# This shouldn't contain anything created or used by project command line build tools.
+
+# IDEs
+.idea
+.vscode
+
+# Clojure LSP
+.lsp
+.clj-kondo
+
+# Vim
+tags
+/.vim/
+Session.vim
+
+# JVM
+hs_err_pid*
+
+# macOS
+.DS_Store
+
+# Windows
+Thumbs.db
+
+# Linux
+nohup.out
+
+# Sandbox files
+junk*
+
+# See header comment for why these aren't ignored globally:
+# *.log
