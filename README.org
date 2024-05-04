@@ -2,5 +2,14 @@
 
 My $HOME managed by chezmoi.
 
-# SSH for github
-On a new computer to setup SSH run `gh auth` it should handle generation and adding ssh key to github.
+* Setup Aeon from scratch
+1. Run *distrobox enter*
+2. Run *sh -c "$(curl -fsLS get.chezmoi.io)" -- init --apply favetelinguis*
+3. Build and create the distrobox I want and enter the new box.
+4. Run *gh auth login* select the SSH option.
+5. Step two is setup with https might want to edit the project .git/config to be ssh once that is setup.
+6. Now run whatever command from bb.ed in chezmoi root, for example install Doom Emacs.
+
+
+* Rebuiling my devimage
+1. Run *doom sync* in new image since often that says it need to rebuild packages when i recreate image.
