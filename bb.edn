@@ -1,0 +1,7 @@
+{:tasks
+ {register-global-gitignore {:doc "Register my global gitignore with gitconfig"
+                             :task (shell "git config --global core.excludesfile '~/.gitignore_global'")}
+  install-doom-emacs {:doc "Install Doom Emacs"
+                      :task (shell "git config --global core.excludesfile '~/.gitignore_global'")}
+  initialize-chezmoi {:doc "Install Doom Emacs, requires me to setup SSH for github first on new computer"
+                      :task (shell "chezmoi init --ssh favetelinguis")}}}

@@ -13,6 +13,6 @@
                     (run 'db-rm)
                     (run 'db-create))}
   pm-build {:doc "Build docker image"
-            :task (shell "podman build -f CoreBox -t devbox .")}
+            :task (shell "podman build -f ArchL1 -t devbox .")}
   pm-clean {:doc "Cleanup unused images"
             :task (shell "podman image prune --all")}}}

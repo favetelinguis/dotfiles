@@ -1,3 +1,6 @@
 #+title: Readme
 
 My $HOME managed by chezmoi.
+
+# SSH for github
+On a new computer to setup SSH run `gh auth` it should handle generation and adding ssh key to github.
