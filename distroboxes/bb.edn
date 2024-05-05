@@ -7,11 +7,11 @@
              :task (shell "distrobox create devbox -i devbox")}
   db-enter {:doc "Enter the created distrobox"
             :task (shell "distrobox enter devbox")}
-  remake {:doc "Will kill and build and create a new devbox ready to enter"
-          :task (do (run 'pm-build)
-                    (run 'db-stop)
-                    (run 'db-rm)
-                    (run 'db-create))}
+  ;; remake {:doc "Will kill and build and create a new devbox ready to enter"
+  ;;         :task (do (run 'pm-build)
+  ;;                   (run 'db-stop)
+  ;;                   (run 'db-rm)
+  ;;                   (run 'db-create))}
   pm-build {:doc "Build docker image"
             :task (shell "podman build -f ArchL1 -t devbox .")}
   pm-clean {:doc "Cleanup unused images"

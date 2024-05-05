@@ -79,8 +79,9 @@
 ;; they are implemented.
 
 ;; Setup plantuml with ord-babel
+;; The path is use here is where my Arch distrobox installs to
 (setq org-plantuml-jar-path
-      (expand-file-name "~/org/utils/plantuml-1.2023.13.jar"))
+      (expand-file-name "/usr/share/java/plantuml/plantuml.jar"))
 
 ;; Need to have this before org or else it is not loaded
 (map! :leader "d" #'org-roam-dailies-capture-today)
