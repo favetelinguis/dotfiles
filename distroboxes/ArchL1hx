@@ -3,33 +3,22 @@ FROM ghcr.io/greyltc-org/archlinux-aur:paru
 
 # git is installed from base
 RUN aur-install \
-    emacs-nativecomp \
     mise-bin \
+    chezmoi \
     github-cli \
     babashka-bin \
-    # For clojure-mode emacs
-    cljfmt-bin \
-    # For clojure-mode emacs
-    clj-kondo-bin \
-    # For clojure-mode emacs
-    clojure-lsp-bin \
-    # For Emacs vterm
-    cmake \
-    # For Doom emacs
-    ripgrep \
-    # For Doom emacs
-    fd \
+    helix \
+    alacritty \
+    alacritty-themes \
     # For clj command
     rlwrap \
-    # For Emacs org mode to show graphs
-    graphviz \
-    # For Emacs to render plantuml in org files
-    plantuml \
-    # Dotfile manager
-    chezmoi
+    fish \
+    fzf \
+    starship \
+    lazygit \
+    ripgrep \
+    zoxide
 
-# Setup Doom Emacs commands
-ENV PATH="~/.config/emacs/bin:$PATH"
 # Setup Mise shims
 ENV PATH="~/.local/share/mise/shims:$PATH"
 

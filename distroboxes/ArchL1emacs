@@ -1,0 +1,46 @@
+# https://github.com/greyltc-org/docker-archlinux-aur
+FROM ghcr.io/greyltc-org/archlinux-aur:paru
+
+# update mirrorlist not always needed, base image will update mirrors when it rebuilds
+ADD https://raw.githubusercontent.com/greyltc/docker-archlinux/master/get-new-mirrors.sh /usr/bin/get-new-mirrors
+RUN chmod +x /usr/bin/get-new-mirrors
+RUN get-new-mirrors
+
+# git is installed from base
+RUN aur-install \
+    emacs-nativecomp \
+    jetbrains-toolbox \
+    chezmoi \
+    asdf-vm \
+    direnv \
+    just \
+    github-cli \
+    babashka-bin \
+    # For clojure-mode emacs
+    cljfmt-bin \
+    # For clojure-mode emacs
+    clj-kondo-bin \
+    # For clojure-mode emacs
+    clojure-lsp-bin \
+    # For Emacs vterm
+    cmake \
+    # For Doom emacs
+    ripgrep \
+    # For Doom emacs
+    fd \
+    # For clj command
+    rlwrap \
+    # For Emacs org mode to show graphs
+    graphviz \
+    # For Emacs to render plantuml in org files
+    plantuml
+
+# Setup Doom Emacs commands
+ENV PATH="~/.config/emacs/bin:$PATH"
+# Added by Toolbox to .profile to access installed IDEs
+ENV PATH="$PATH:~/.local/share/JetBrains/Toolbox/scripts"
+
+# Share some commands with host
+RUN ln -fs /usr/bin/distrobox-host-exec /usr/bin/podman
+RUN ln -fs /usr/bin/distrobox-host-exec /usr/bin/distrobox
+RUN ln -fs /usr/bin/distrobox-host-exec /usr/bin/flatpak

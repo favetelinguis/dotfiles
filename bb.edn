@@ -1,5 +1,0 @@
-{:tasks
- {register-global-gitignore {:doc "Register my global gitignore with gitconfig"
-                             :task (shell "git config --global core.excludesfile '~/.gitignore_global'")}
-  install-doom-emacs {:doc "Install Doom Emacs"
-                      :task (shell "git clone --depth 1 https://github.com/doomemacs/doomemacs ~/.config/emacs && doom install")}}}

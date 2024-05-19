@@ -55,4 +55,7 @@
   :recipe (:host nil :repo "https://github.com/scicloj/clay.el.git"))
 (package! x509-mode)
 (package! chezmoi)
-(package! babashka)
+(package! just-mode)
+(package! justl)
+(package! asdf
+  :recipe (:host nil :repo "https://github.com/tabfugnic/asdf.el"))

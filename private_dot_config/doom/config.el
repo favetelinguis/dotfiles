@@ -177,20 +177,13 @@
         :desc "send ns as html" "s h" #'clay/make-ns-html))
 
 
-;; CLI tools installed by Mise
-;; See: https://www.emacswiki.org/emacs/ExecPath
-(when (executable-find "mise")
-  (let ((shims-path (concat (getenv "HOME") "/.local/share/mise/shims")))
-    (setenv "PATH" (concat shims-path ":" (getenv "PATH")))
-    (setq exec-path (cons shims-path exec-path))))
-
 (use-package! chezmoi
   :config
   (load "~/.config/emacs/.local/straight/repos/chezmoi.el/extensions/chezmoi-magit.el" nil 'nomessage)
   (load "~/.config/emacs/.local/straight/repos/chezmoi.el/extensions/chezmoi-dired.el" nil 'nomessage))
 
 (use-package chezmoi-magit)
-(map! (:leader (:prefix "f" :desc "Chezmoi find" :nv "." #'chezmoi-find)))
+(map! (:leader (:prefix "f" :desc "Chezmoi find" :nv "p" #'chezmoi-find)))
 (defun chezmoi--evil-insert-state-enter ()
   "Run after evil-insert-state-entry."
   (chezmoi-template-buffer-display nil (point))
@@ -211,3 +204,15 @@
       (remove-hook 'evil-insert-state-entry-hook #'chezmoi--evil-insert-state-enter 1)
       (remove-hook 'evil-insert-state-exit-hook #'chezmoi--evil-insert-state-exit 1))))
 (add-hook 'chezmoi-mode-hook #'chezmoi-evil)
+
+(use-package! justl
+  :config
+  (map! :map justl-mode-map :n "e" 'justl-exec-recipe)
+  (with-eval-after-load 'evil-maps
+    (define-key evil-normal-state-map (kbd "'") 'justl)))
+
+(use-package! asdf
+  :init
+  (setq asdf-binary "/opt/asdf-vm/bin/asdf")
+  :config
+  (asdf-enable))

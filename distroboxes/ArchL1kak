@@ -1,0 +1,37 @@
+# https://github.com/greyltc-org/docker-archlinux-aur
+FROM ghcr.io/greyltc-org/archlinux-aur:paru
+
+# update mirrorlist
+ADD https://raw.githubusercontent.com/greyltc/docker-archlinux/master/get-new-mirrors.sh /usr/bin/get-new-mirrors
+RUN chmod +x /usr/bin/get-new-mirrors
+RUN get-new-mirrors
+
+# git is installed from base
+RUN aur-install \
+    mise-bin \
+    chezmoi \
+    github-cli \
+    kakoune \
+    kakoune-lsp \
+    tmux \
+    starship \
+    ripgrep \
+    fd \
+    eza \
+    fzf \
+    lf \
+    bat \
+    # For tmux and kakoune yank paste to X11 clipboard
+    xclip \
+    lazygit \
+    babashka-bin \
+    cljfmt-bin \
+    clj-kondo-bin \
+    clojure-lsp-bin \
+    # For clj command
+    rlwrap 
+
+# Share some commands with host
+RUN ln -fs /usr/bin/distrobox-host-exec /usr/bin/podman
+RUN ln -fs /usr/bin/distrobox-host-exec /usr/bin/distrobox
+RUN ln -fs /usr/bin/distrobox-host-exec /usr/bin/flatpak
