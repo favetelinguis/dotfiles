@@ -214,3 +214,9 @@
   (setq asdf-binary "/opt/asdf-vm/bin/asdf")
   :config
   (asdf-enable))
+
+;; Allows me to start jetbrains ides from inside emacs
+(when (executable-find "jetbrains-toolbox")
+  (let ((path (concat (getenv "HOME") "/.local/share/JetBrains/Toolbox/scripts")))
+    (setenv "PATH" (concat path ":" (getenv "PATH")))
+    (setq exec-path (cons path exec-path))))
