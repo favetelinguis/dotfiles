@@ -18,3 +18,6 @@ git clone https://github.com/tmux-plugins/tpm ~/.tmux/plugins/tpm
 
 * Rebuiling my devimage
 1. Run *doom sync* in new image since often that says it need to rebuild packages when i recreate image.
+
+* pass
+https://medium.com/@davidpiegza/using-pass-in-a-team-1aa7adf36592
