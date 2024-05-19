@@ -127,8 +127,10 @@
        :desc "sp-backward-slurp-sexp" "S" #'sp-backward-slurp-sexp
        :desc "sp-backward-barf-sexp" "B" #'sp-backward-barf-sexp))
 
-(with-eval-after-load 'evil-maps
-  (define-key evil-normal-state-map (kbd ";") 'avy-goto-char-timer))
+;; Use this with prefix to go to any window
+(use-package! avy
+  :config
+  (map! :n ";" 'avy-goto-char-timer))
 
 (defun cust/vsplit-file-open (f)
   (let ((evil-vsplit-window-right t))
@@ -207,9 +209,13 @@
 
 (use-package! justl
   :config
-  (map! :map justl-mode-map :n "e" 'justl-exec-recipe)
-  (with-eval-after-load 'evil-maps
-    (define-key evil-normal-state-map (kbd "'") 'justl)))
+  (defun my/justl (arg)
+    (interactive "P")
+    (if arg
+        (justl-exec-default-recipe)
+      (justl)))
+  (map! :n "'" 'my/justl)
+  (map! :map justl-mode-map :n "e" 'justl-exec-recipe))
 
 (use-package! asdf
   :init
