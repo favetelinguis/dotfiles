@@ -77,6 +77,9 @@
 ;;
 ;; You can also try 'gd' (or 'C-c c d') to jump to their definition and see how
 ;; they are implemented.
+(use-package! emacs
+  :config
+  (setq doom-localleader-key ","))
 
 ;; Setup plantuml with ord-babel
 ;; The path is use here is where my Arch distrobox installs to
@@ -101,18 +104,17 @@
   ;; end
   )
 
-(setq projectile-project-search-path '(("~/repos" . 2)))
-(setq projectile-auto-discover 't)
+(use-package! gptel
+  :config
+  (defun fav/read-openai-key ()
+    (with-temp-buffer
+      (insert-file-contents "~/key.txt")
+      (string-trim (buffer-string))))
 
-(defun fav/read-openai-key ()
-  (with-temp-buffer
-    (insert-file-contents "~/key.txt")
-    (string-trim (buffer-string))))
-
-(setq-default gptel-model "gpt-3.5-turbo"
-              gptel-playback t
-              gptel-default-mode 'org-mode
-              gptel-api-key #'fav/read-openai-key)
+  (setq-default gptel-model "gpt-3.5-turbo"
+                gptel-playback t
+                gptel-default-mode 'org-mode
+                gptel-api-key #'fav/read-openai-key))
 (map! :leader
       (:prefix-map ("k" . "smartparens-mode")
        :desc "sp-forward-slurp-sexp" "s" #'sp-forward-slurp-sexp
@@ -132,42 +134,32 @@
   :config
   (map! :n ";" 'avy-goto-char-timer))
 
-(defun cust/vsplit-file-open (f)
-  (let ((evil-vsplit-window-right t))
-    (+evil/window-vsplit-and-follow)
-    (find-file f)))
+(use-package! embark
+  :config
+  (defun cust/vsplit-file-open (f)
+    (let ((evil-vsplit-window-right t))
+      (+evil/window-vsplit-and-follow)
+      (find-file f)))
 
-(defun cust/split-file-open (f)
-  (let ((evil-split-window-below t))
-    (+evil/window-split-and-follow)
-    (find-file f)))
+  (defun cust/split-file-open (f)
+    (let ((evil-split-window-below t))
+      (+evil/window-split-and-follow)
+      (find-file f)))
 
-(map! :after embark
-      :map embark-file-map
-      "V" #'cust/vsplit-file-open
-      "X" #'cust/split-file-open)
+  (map! :map embark-file-map
+        "V" #'cust/vsplit-file-open
+        "X" #'cust/split-file-open))
 
-(defun fav/open-new-eww ()
-  "Will call eww with prefix command which should open a
-   new eww and not replace old"
-  (interactive)
-  (let ((current-prefix-arg '(4))) ; C-u
-    (call-interactively 'eww)))
 
-(map! (:leader (:prefix "o" :desc "Open new eww" :nv "w" #'fav/open-new-eww)))
-
-(general-define-key
- :states '(normal)
- :keymaps 'eww-mode-map
- "r" '(eww-reload :which-key "Reload page"))
-
-(setq doom-localleader-key ",")
-
-(defun fav/start-idea ()
-  (interactive)
-  (projectile-run-async-shell-command-in-root "idea ."))
-
-(map! (:leader (:prefix "p" :desc "Open IDEA" :nv "I" #'fav/start-idea)))
+(use-package! projectile
+  :init
+  (setq projectile-project-search-path '(("~/repos" . 2)))
+  (setq projectile-auto-discover 't)
+  :config
+  (defun my/start-idea ()
+    (interactive)
+    (projectile-run-async-shell-command-in-root "idea ."))
+  (map! (:leader (:prefix "p" :desc "Open IDEA" :nv "I" #'my/start-idea))))
 
 (after! cider
   (use-package! clay)
@@ -182,30 +174,30 @@
 (use-package! chezmoi
   :config
   (load "~/.config/emacs/.local/straight/repos/chezmoi.el/extensions/chezmoi-magit.el" nil 'nomessage)
-  (load "~/.config/emacs/.local/straight/repos/chezmoi.el/extensions/chezmoi-dired.el" nil 'nomessage))
+  (load "~/.config/emacs/.local/straight/repos/chezmoi.el/extensions/chezmoi-dired.el" nil 'nomessage)
 
-(use-package chezmoi-magit)
-(map! (:leader (:prefix "f" :desc "Chezmoi find" :nv "p" #'chezmoi-find)))
-(defun chezmoi--evil-insert-state-enter ()
-  "Run after evil-insert-state-entry."
-  (chezmoi-template-buffer-display nil (point))
-  (remove-hook 'after-change-functions #'chezmoi-template--after-change 1))
+  (use-package chezmoi-magit)
+  (map! (:leader (:prefix "f" :desc "Chezmoi find" :nv "p" #'chezmoi-find)))
+  (defun chezmoi--evil-insert-state-enter ()
+    "Run after evil-insert-state-entry."
+    (chezmoi-template-buffer-display nil (point))
+    (remove-hook 'after-change-functions #'chezmoi-template--after-change 1))
 
-(defun chezmoi--evil-insert-state-exit ()
-  "Run after evil-insert-state-exit."
-  (chezmoi-template-buffer-display nil)
-  (chezmoi-template-buffer-display t)
-  (add-hook 'after-change-functions #'chezmoi-template--after-change nil 1))
+  (defun chezmoi--evil-insert-state-exit ()
+    "Run after evil-insert-state-exit."
+    (chezmoi-template-buffer-display nil)
+    (chezmoi-template-buffer-display t)
+    (add-hook 'after-change-functions #'chezmoi-template--after-change nil 1))
 
-(defun chezmoi-evil ()
-  (if chezmoi-mode
+  (defun chezmoi-evil ()
+    (if chezmoi-mode
+        (progn
+          (add-hook 'evil-insert-state-entry-hook #'chezmoi--evil-insert-state-enter nil 1)
+          (add-hook 'evil-insert-state-exit-hook #'chezmoi--evil-insert-state-exit nil 1))
       (progn
-        (add-hook 'evil-insert-state-entry-hook #'chezmoi--evil-insert-state-enter nil 1)
-        (add-hook 'evil-insert-state-exit-hook #'chezmoi--evil-insert-state-exit nil 1))
-    (progn
-      (remove-hook 'evil-insert-state-entry-hook #'chezmoi--evil-insert-state-enter 1)
-      (remove-hook 'evil-insert-state-exit-hook #'chezmoi--evil-insert-state-exit 1))))
-(add-hook 'chezmoi-mode-hook #'chezmoi-evil)
+        (remove-hook 'evil-insert-state-entry-hook #'chezmoi--evil-insert-state-enter 1)
+        (remove-hook 'evil-insert-state-exit-hook #'chezmoi--evil-insert-state-exit 1))))
+  (add-hook 'chezmoi-mode-hook #'chezmoi-evil))
 
 (use-package! justl
   :config
