@@ -220,3 +220,7 @@
   (let ((path (concat (getenv "HOME") "/.local/share/JetBrains/Toolbox/scripts")))
     (setenv "PATH" (concat path ":" (getenv "PATH")))
     (setq exec-path (cons path exec-path))))
+
+(use-package! pass
+  :config
+  (map! (:leader (:prefix "o" :desc "pass" :nv "p" #'pass))))
