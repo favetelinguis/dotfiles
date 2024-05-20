@@ -1,4 +1,4 @@
 /.clj-kondo/
 /.lsp/
 /.idea
-flycheck_config.el
+**/flycheck_config.el
