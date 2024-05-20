@@ -18,3 +18,7 @@ java:
 # Install Clojure
 clojure: java
     asdf plugin add clojure https://github.com/asdf-community/asdf-clojure.git
+
+# Install NodeJs
+node:
+    asdf plugin add nodejs https://github.com/asdf-vm/asdf-nodejs.git
