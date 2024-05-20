@@ -30,8 +30,13 @@ nnoremap \e :e ~/.ideavimrc<CR>
 nnoremap \r :action IdeaVim.ReloadVimRc.reload<CR>
 nnoremap \a :actionlist<CR>
 
-" Find
+" Project settings
 map <Leader>pp :action ManageRecentProjects<CR>
+map <Leader>pt :action ActivateTODOToolWindow<CR>
+map <Leader>pr :action RunAnything<CR>
+map <Leader>p<tab> :action NextProjectWindow<CR>
+
+" Find
 map <leader>bb :action RecentFiles<CR>
 map <leader>. :NERDTreeFind<CR>
 map <leader><leader> :action GotoFile<CR>
@@ -69,10 +74,6 @@ nnoremap <leader>aj :action JumpToLastWindow<CR>
 
 " Buffer
 map <Leader>bk :action CloseContent<CR>
-
-" Some note
-map <Leader>nt :action ActivateTODOToolWindow<CR>
-
 
 "Window
 map <Leader>wv :action SplitVertically<CR>

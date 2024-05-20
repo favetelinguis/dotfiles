@@ -1,0 +1,34 @@
+set-option global ui_options terminal_assistant=none terminal_status_on_top=true
+
+set-option global scrolloff 9999,5
+
+map global user -docstring 'open fuzzy finder' <space> ': edit %sh{fzf-tmux --color=16 --preview "bat --style=numbers,changes --color always {}" -}<ret>'
+map global user -docstring 'edit' . ': edit '
+map global user -docstring 'grep' / ': grep '
+map global user -docstring 'buffer' , ': buffer '
+map global user y '<a-|>xclip -i -selection clipboard<ret>'
+# map global user p '!xclip -o<ret>'
+# Not sure which I want to use
+map global user p '!xclip -selection clipboard -o<ret>'
+map global user ! ': e -scratch<ret> !'
+
+set-option global grepcmd 'rg --column --smart-case --sort path'
+
+declare-user-mode repl
+map global repl -docstring 'evaluate' e ':repl-send-text<ret>'
+map global repl -docstring 'clj' c ':repl-new clojure<ret>'
+map global repl -docstring 'bb' b ':repl-new bb<ret>'
+map global repl -docstring 'bash' s ':repl-new bash<ret>'
+map global user -docstring 'repl mode' r ':enter-user-mode repl<ret>'
+map global user -docstring 'edit kakrc' e ':e ~/.config/kak/kakrc<ret>'
+
+# Setup clojure
+hook global WinSetOption filetype=clojure %{
+    set-option buffer tabstop 4
+    set-option buffer indentwidth 0
+    # If there is a structure error format delete everything, should only format if cljfmt return success
+    set-option buffer formatcmd 'cljfmt fix -'
+    set-option buffer lintcmd 'clj-kondo --lint -'
+    # hook buffer BufWritePre .* format-buffer
+    # hook buffer BufWritePre .* lint-buffer
+}

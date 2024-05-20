@@ -201,6 +201,7 @@
 
 (use-package! justl
   :config
+  (setq justl-per-recipe-buffer t)
   (defun my/justl (arg)
     (interactive "P")
     (if arg
