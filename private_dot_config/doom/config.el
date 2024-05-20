@@ -81,10 +81,10 @@
   :config
   (setq doom-localleader-key ","))
 
-;; Setup plantuml with ord-babel
 ;; The path is use here is where my Arch distrobox installs to
-(setq org-plantuml-jar-path
-      (expand-file-name "/usr/share/java/plantuml/plantuml.jar"))
+(use-package! plantuml-mode
+  :config
+  (setq plantuml-jar-path (expand-file-name "/usr/share/java/plantuml/plantuml.jar")))
 
 ;; Need to have this before org or else it is not loaded
 (map! :leader "d" #'org-roam-dailies-capture-today)
