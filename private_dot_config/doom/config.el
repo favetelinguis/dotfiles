@@ -131,9 +131,11 @@
        :desc "sp-backward-barf-sexp" "B" #'sp-backward-barf-sexp))
 
 ;; Use this with prefix to go to any window
-(use-package! avy
-  :config
-  (map! :n ";" 'avy-goto-char-timer))
+(after! evil
+  (use-package! avy
+    :config
+    (setq avy-timeout-seconds 0.3)
+    (map! :n "s" (lambda () (interactive) (let ((current-prefix-arg '(4))) (call-interactively #'avy-goto-char-timer))))))
 
 (use-package! embark
   :config
@@ -208,7 +210,7 @@
     (if arg
         (justl-exec-default-recipe)
       (justl)))
-  (map! :n "'" 'my/justl)
+  (map! :n ";" 'my/justl)
   (map! :map justl-mode-map :n "e" 'justl-exec-recipe))
 
 (use-package! asdf
