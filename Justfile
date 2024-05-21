@@ -7,8 +7,19 @@ doom-emacs:
     git clone --depth 1 https://github.com/doomemacs/doomemacs ~/.config/emacs && doom install
 
 # Will first rebuild the image and then recreate the distrobox based on the ini file
-make-distrobox NAME:
-    podman build --no-cache -f ./distroboxes/ArchL1{{NAME}} -t {{NAME}}devbox .
+ make-distrobox NAME='emacs':
+    #!/usr/bin/env bash
+    set -euxo pipefail
+    if command -v docker &> /dev/null; then
+        echo "Docker installation found"
+        docker build --progress plain --no-cache -f ./distroboxes/ArchL1{{NAME}} -t {{NAME}}devbox .
+    elif command -v podman &> /dev/null; then
+        echo "Podman installation found"
+        podman build --no-cache -f ./distroboxes/ArchL1{{NAME}} -t {{NAME}}devbox .
+    else
+        echo "Docker or podman installation not found."
+        exit 1
+    fi
     distrobox assemble create --file ./distroboxes/distrobox.ini -n {{NAME}}Devbox
 
 # Install Java
