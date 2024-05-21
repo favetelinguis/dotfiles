@@ -131,11 +131,10 @@
        :desc "sp-backward-barf-sexp" "B" #'sp-backward-barf-sexp))
 
 ;; Use this with prefix to go to any window
-(after! evil
-  (use-package! avy
-    :config
-    (setq avy-timeout-seconds 0.3)
-    (map! :n "s" (lambda () (interactive) (let ((current-prefix-arg '(4))) (call-interactively #'avy-goto-char-timer))))))
+(use-package! avy
+  :config
+  (setq avy-timeout-seconds 0.3)
+  (map! :vn "s" (lambda () (interactive) (let ((current-prefix-arg '(4))) (call-interactively #'avy-goto-char-timer)))))
 
 (use-package! embark
   :config
