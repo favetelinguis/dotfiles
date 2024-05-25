@@ -50,7 +50,6 @@
 
   ;; Cleanup Emacs user interface
   (setq inhibit-startup-message t)
-
   (scroll-bar-mode -1) ; Disable visible scrollbar
   (tool-bar-mode -1)  ; Disable the toolbar
   (tooltip-mode -1) ; Disable tooltips
@@ -105,6 +104,8 @@
     (meow-motion-overwrite-define-key
      '("n" . meow-next)
      '("p" . meow-prev)
+     '("J" . pop-global-mark)
+     '("K" . my/remove-current-mark)
      '("<escape>" . ignore))
     (meow-leader-define-key
      ;; SPC j/k will run the original command in MOTION state.
@@ -167,6 +168,7 @@
      '("L" . meow-right-expand)
      '("m" . meow-join)
      '("j" . my/jumper)
+     '("J" . pop-global-mark)
      '("o" . meow-block)
      '("O" . meow-to-block)
      '("s" . meow-yank)
@@ -176,7 +178,7 @@
      '("r" . meow-replace)
      '("R" . meow-swap-grab)
      '("k" . meow-kill)
-     '("K" . meow-clipboard-kill)
+     '("K" . my/remove-current-mark)
      '("t" . meow-till)
      '("u" . meow-undo)
      '("U" . meow-undo-in-selection)
@@ -191,6 +193,19 @@
      '("z" . meow-pop-selection)
      '("'" . repeat)
      '("<escape>" . ignore)))
+  (defun my/remove-current-mark ()
+    "Remove the current mark from the mark ring and the global mark ring."
+    (interactive)
+    (when (mark)
+      (let ((current-mark (mark-marker)))
+        ;; Deactivate the current mark
+        (deactivate-mark)
+        ;; Remove the current mark from the local mark ring
+        (setq mark-ring (delete current-mark mark-ring))
+        ;; Remove the current mark from the global mark ring
+        (setq global-mark-ring (delete current-mark global-mark-ring))
+        ;; Ensure the current mark is not set
+        (set-marker current-mark nil))))
   :config
   (setq meow-cheatsheet-physical-layout meow-cheatsheet-physical-layout-ansi)
   (meow-setup)
