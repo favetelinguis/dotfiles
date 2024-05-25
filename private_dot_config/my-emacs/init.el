@@ -29,6 +29,11 @@
 
 (use-package emacs
   :config
+  ;;; Prevent Extraneous Tabs
+  (setq-default indent-tabs-mode nil)
+  ;; Dont write custom data into init.el
+  (setq custom-file (concat user-emacs-directory "custom.el"))
+  (setq custom-file "~/.emacs.d/custom.el")
   
   ;; Remove auto-saved filed when buffer is killed
   ;; default is to remove it when its saved only.
@@ -60,13 +65,14 @@
   (set-fringe-mode 10)
   (menu-bar-mode -1) ; Disable the menu bar
   (setq visible-bell t) ; Turn off sound and show flashing warning instead
-  ;; Dissable UI elements
   (menu-bar-mode -1)
   (scroll-bar-mode -1)
   (tool-bar-mode -1)  (global-set-key (kbd "M-o") 'other-window)
   (blink-cursor-mode 0)
+  (setq use-short-answers t)
   ;; Unbind useless things to make meow leader better
   (global-unset-key (kbd "C-x C-0"))
+  (global-unset-key (kbd "C-x C-v"))
   (global-unset-key (kbd "C-h C-f"))
   (global-unset-key (kbd "C-h C-m"))
   (setq help-window-select t)
@@ -262,12 +268,13 @@
   :demand t
   :config (stimmung-themes-load-light))
 
-;; pass
-;; clojure-mode
+(use-package tldr)
+(use-package x509-mode)
+(use-package gptel)
+
+(use-package clojure-mode)
+(use-package cider)
+(use-package markdown-mode)
 ;; cider
-;; tldr
-;; gptel
 ;; clay
-;; x509-mode
-;; dark theme
 ;; investigate what the workflow is for using marks to just to things c-spc will set mark but how to jump to
