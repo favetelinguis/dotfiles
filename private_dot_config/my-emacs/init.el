@@ -205,7 +205,8 @@
         ;; Remove the current mark from the global mark ring
         (setq global-mark-ring (delete current-mark global-mark-ring))
         ;; Ensure the current mark is not set
-        (set-marker current-mark nil))))
+        (set-marker current-mark nil)))
+    (pop-global-mark))
   :config
   (setq meow-cheatsheet-physical-layout meow-cheatsheet-physical-layout-ansi)
   (meow-setup)
