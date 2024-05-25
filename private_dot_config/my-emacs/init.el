@@ -1,13 +1,5 @@
 ;;; -*- lexical-binding: t -*-
 
-;; TODO
-;; meow keybindings under leader do not align with the actual keybindings, is there some fix for this
-;; vertico with lsp eglot test with clojure do completion cadidate work good?
-;; org org-roam org-daily
-;; cider parainfer-rust
-;; rebind esc https://github.com/meow-edit/meow/issues/359
-;; use straight to better allow extensions to be installed?
-
 ;; This needs to be set before use-package is loaded
 (setq use-package-enable-imenu-support t)
 (defvar bootstrap-version)
@@ -79,7 +71,13 @@
   ;; Emacs 28 and newer: Hide commands in M-x which do not work in the current
   ;; mode.  Vertico commands are hidden in normal buffers. This setting is
   ;; useful beyond Vertico.
-  (setq read-extended-command-predicate #'command-completion-default-include-p))
+  (setq read-extended-command-predicate #'command-completion-default-include-p)
+  
+  ;; Allows me to start jetbrains ides from inside emacs
+  (when (executable-find "jetbrains-toolbox")
+    (let ((path (concat (getenv "HOME") "/.local/share/JetBrains/Toolbox/scripts")))
+      (setenv "PATH" (concat path ":" (getenv "PATH")))
+      (setq exec-path (cons path exec-path)))))
 
 (use-package dired
   :straight nil
@@ -140,7 +138,9 @@
      '("-" . negative-argument)
      '(";" . meow-reverse)
      '("," . meow-inner-of-thing)
+     '("<" . sp-splice-sexp-killing-backward)
      '("." . meow-bounds-of-thing)
+     '(">" . sp-forward-slurp-sexp)
      '("[" . meow-beginning-of-thing)
      '("]" . meow-end-of-thing)
      '("a" . meow-append)
@@ -269,11 +269,27 @@
   :config (stimmung-themes-load-light))
 
 (use-package tldr)
-(use-package x509-mode)
-(use-package gptel)
+(use-package gptel
+  :preface
+  (defun my/read-openai-key ()
+    (with-temp-buffer
+      (insert-file-contents "~/key.txt")
+      (string-trim (buffer-string))))
+
+  :config
+  (setq-default gptel-model "gpt-3.5-turbo"
+                gptel-playback t
+                gptel-default-mode 'markdown-mode
+                gptel-api-key #'my/read-openai-key))
 
 (use-package clojure-mode)
+(use-package smartparens
+  :config
+  (smartparens-global-mode t)) ; there is also smartparens-mode
+
 (use-package cider)
+(use-package clay
+  :straight (:host github :repo "scicloj/clay.el"))
 (use-package markdown-mode)
 ;; cider
 ;; clay
