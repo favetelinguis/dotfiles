@@ -193,7 +193,7 @@
    (lambda ()
      (setq meow-insert-timer
            (run-with-idle-timer
-            4 nil
+            3 nil
             (lambda ()
               (when (eq meow--current-state 'insert)
 		(meow--switch-state 'normal)))))))
@@ -242,10 +242,26 @@
   :load-path "straight/repos/chezmoi.el/extensions/")
 
 (use-package apheleia
+  ;; TODO setup for clojure something like this, used in doom
+  ;; (set-formatter! 'cljfmt '("cljfmt" "fix" "-") :modes '(clojure-mode clojurec-mode clojurescript-mode))
   :config
   (apheleia-global-mode +1))
-;; asdf
-;; direnv envrc
+
+(use-package asdf
+  :straight (:host github :repo "tabfugnic/asdf.el")
+  :init
+  (setq asdf-binary "/opt/asdf-vm/bin/asdf")
+  :config
+  (asdf-enable))
+
+(use-package envrc
+  :hook (after-init . envrc-global-mode))
+
+(use-package stimmung-themes
+  :straight (stimmung-themes :host github :repo "motform/stimmung-themes")
+  :demand t
+  :config (stimmung-themes-load-light))
+
 ;; pass
 ;; clojure-mode
 ;; cider
@@ -253,7 +269,5 @@
 ;; gptel
 ;; clay
 ;; x509-mode
-;; just-mode
 ;; dark theme
-;; ivy if i kan make j smart to use both meow and ivy timout on it
 ;; investigate what the workflow is for using marks to just to things c-spc will set mark but how to jump to
