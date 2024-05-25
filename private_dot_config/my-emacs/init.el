@@ -99,7 +99,6 @@
   (setq avy-timeout-seconds 0.4))
 
 (use-package meow
-  :after avy
   :preface
   (defun meow-setup ()
     (setq meow-cheatsheet-layout meow-cheatsheet-layout-qwerty)
@@ -171,11 +170,13 @@
      '("o" . meow-block)
      '("O" . meow-to-block)
      '("s" . meow-yank)
+     '("S" . meow-clipboard-yank)
      '("q" . meow-quit)
      '("Q" . meow-goto-line)
      '("r" . meow-replace)
      '("R" . meow-swap-grab)
      '("k" . meow-kill)
+     '("K" . meow-clipboard-kill)
      '("t" . meow-till)
      '("u" . meow-undo)
      '("U" . meow-undo-in-selection)
@@ -185,7 +186,8 @@
      '("x" . meow-line)
      '("X" . meow-goto-line)
      '("y" . meow-save)
-     '("Y" . meow-sync-grab)
+     '("Y" . meow-clipboard-save)
+     ;; '("Y" . meow-sync-grab) ; TODO where should i put this
      '("z" . meow-pop-selection)
      '("'" . repeat)
      '("<escape>" . ignore)))
@@ -193,24 +195,26 @@
   (setq meow-cheatsheet-physical-layout meow-cheatsheet-physical-layout-ansi)
   (meow-setup)
   (meow-global-mode 1)
+  (meow-setup-indicator)
   ;; Auto exit insert mode after x seconds
-  (add-hook
-   'meow-insert-enter-hook
-   (lambda ()
-     (setq meow-insert-timer
-           (run-with-idle-timer
-            3 nil
-            (lambda ()
-              (when (eq meow--current-state 'insert)
-		(meow--switch-state 'normal)))))))
+  ;; (add-hook
+  ;;  'meow-insert-enter-hook
+  ;;  (lambda ()
+  ;;    (setq meow-insert-timer
+  ;;          (run-with-idle-timer
+  ;;           3 nil
+  ;;           (lambda ()
+  ;;             (when (eq meow--current-state 'insert)
+  ;;       	(meow--switch-state 'normal)))))))
 
-  (add-hook
-   'meow-insert-exit-hook
-   (lambda ()
-     (when (and (bound-and-true-p meow-insert-timer)
-		(timerp meow-insert-timer))
-       (cancel-timer meow-insert-timer)
-       (setq meow-insert-timer nil)))))
+  ;; (add-hook
+  ;;  'meow-insert-exit-hook
+  ;;  (lambda ()
+  ;;    (when (and (bound-and-true-p meow-insert-timer)
+  ;;       	(timerp meow-insert-timer))
+  ;;      (cancel-timer meow-insert-timer)
+  ;;      (setq meow-insert-timer nil))))
+  )
 
 (use-package corfu
   :config
@@ -285,12 +289,31 @@
 (use-package clojure-mode)
 (use-package smartparens
   :config
-  (smartparens-global-mode t)) ; there is also smartparens-mode
+  (smartparens-global-mode t)) ; there is also smartparens-strict-mode
 
 (use-package cider)
 (use-package clay
   :straight (:host github :repo "scicloj/clay.el"))
 (use-package markdown-mode)
-;; cider
-;; clay
-;; investigate what the workflow is for using marks to just to things c-spc will set mark but how to jump to
+
+(use-package org
+  :config
+  (setq org-agenda-files '("todo.org"))
+
+  (setq org-agenda-start-with-log-mode 't)
+  (setq org-log-done 'note)
+  (setq org-capture-templates
+        '(("t" "Todo" entry
+           (file+headline "~/org/todo.org" "Tasks")
+           "* TODO %?\n  %i\n  %a"
+           :prepen t))))
+(use-package org-roam
+  :config
+  (org-roam-complete-everywhere)
+  (org-roam-db-autosync-enable)
+  (meow-leader-define-key
+   '("a" . org-agenda)
+   '("n" . org-capture)
+   '("N" . org-roam-capture)
+   '("d" . org-roam-dailies-capture-today)
+   '("D" . org-roam-dailies-capture-tomorrow)))
