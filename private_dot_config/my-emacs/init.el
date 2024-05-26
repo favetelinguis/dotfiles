@@ -52,18 +52,17 @@
   (setq-default indent-tabs-mode nil)
   ;; Dont write custom data into init.el
   (setq custom-file (concat user-emacs-directory "custom.el"))
-  (setq custom-file "~/.emacs.d/custom.el")
   
   ;; Remove auto-saved filed when buffer is killed
   ;; default is to remove it when its saved only.
-  (setq kill-buffer-delete-auto-save-files t)
+  ;; (setq kill-buffer-delete-auto-save-files t)
 
   ;; Turn on relative line numbers
   ;;(global-display-line-numbers-mode 1)
   ;;(setq display-line-numbers-type 'relative)
 
   ;; Handle backupfile outside projects directory
-  (setq backup-directory-alist (list (concat user-emacs-directory "backup"))
+  (setq backup-directory-alist (list (cons "." (concat user-emacs-directory "backup")))
 	backup-by-copying t    ; Don't delink hardlinks
 	version-control t      ; Use version numbers on backups
 	delete-old-versions t  ; Automatically delete excess backups
@@ -125,10 +124,10 @@
 (use-package avy
   :preface
   (defun my/jumper (&optional arg)
-    (interactive "P")
+    (interactive)
     (if (region-active-p)
 	(meow-search arg)
-      (call-interactively 'avy-goto-word-1 arg)))
+      (avy-goto-word-1)))
   :config
   (setq avy-timeout-seconds 0.4))
 
@@ -373,3 +372,7 @@
    '("N" . org-roam-capture)
    '("d" . org-roam-dailies-capture-today)
    '("D" . org-roam-dailies-capture-tomorrow)))
+
+;; Some issues since n p mean next/prev change in timemachine
+;; so conflict with my setup.
+(use-package git-timemachine)
