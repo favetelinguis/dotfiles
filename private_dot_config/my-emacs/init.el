@@ -1,4 +1,4 @@
-;;; -*- lexical-binding: t -*-
+;;; -*- lexical-binding: t; -*-
 
 ;; This needs to be set before use-package is loaded
 (setq use-package-enable-imenu-support t)
