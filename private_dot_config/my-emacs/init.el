@@ -279,7 +279,6 @@
   :straight (consult-project-extra :type git :host github :repo "Qkessler/consult-project-extra")
   :config
   (meow-leader-define-key
-   '("i" . consult-imenu)
    '("j" . consult-project-extra-find)
    '("J" . consult-project-extra-find-other-window)))
 
@@ -368,6 +367,7 @@
   (meow-leader-define-key
    '("a" . org-agenda)
    '("n" . org-capture)
+   '("e" . consult-flymake)
    '("N" . org-roam-capture)
    '("d" . org-roam-dailies-capture-today)
    '("D" . org-roam-dailies-capture-tomorrow)))
@@ -404,3 +404,24 @@
                 (vc-status 16 16 :left)
                 " "
                 vc-relative-file))))
+(use-package project-mode-line-tag
+  :config
+  (project-mode-line-tag-mode 1))
+
+;; Smarter edit of embark-export for grep-buffers or x-ref buffers
+(use-package wgrep)
+(use-package consult
+  :config
+  (define-key minibuffer-local-map (kbd "M-s") 'consult-history)
+  (define-key minibuffer-local-map (kbd "M-r") 'consult-history)
+  (global-set-key (kbd "C-h C-i") 'consult-info)
+  (global-set-key (kbd "C-s") 'consult-line)
+  (global-set-key (kbd "C-r") 'consult-line-multi)
+  (global-set-key (kbd "C-x C-b") 'consult-buffer)
+  (global-set-key (kbd "C-x p g") 'consult-ripgrep))
+(use-package embark
+  :bind
+  (("C-;" . embark-act)))
+(use-package embark-consult
+  :hook
+  (embark-collect-mode . consult-preview-at-point-mode))
