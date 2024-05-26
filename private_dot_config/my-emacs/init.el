@@ -19,6 +19,25 @@
   (load bootstrap-file nil 'nomessage))
 (setq straight-use-package-by-default t)
 
+;; Setup font START
+(defvar using-sharing-font nil)
+
+(defun set-standard-font ()
+  (set-face-attribute 'default nil :font "Fira Code-10"))
+
+(defun set-sharing-font ()
+  (set-face-attribute 'default nil :font "Fira Code-16"))
+
+(defun switch-font ()
+  "Switches the font between my normal one and the one used to share screen"
+  (interactive)
+  (if using-sharing-font
+      (set-standard-font)
+    (set-sharing-font))
+  (setq using-sharing-font (not using-sharing-font)))
+(set-standard-font)
+;; Setup font DONE
+
 (use-package emacs
   :config
   ;;; Prevent Extraneous Tabs
@@ -283,8 +302,6 @@
   :load-path "straight/repos/chezmoi.el/extensions/")
 
 (use-package apheleia
-  ;; TODO setup for clojure something like this, used in doom
-  ;; (set-formatter! 'cljfmt '("cljfmt" "fix" "-") :modes '(clojure-mode clojurec-mode clojurescript-mode))
   :config
   (apheleia-global-mode +1))
 
