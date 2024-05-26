@@ -38,6 +38,14 @@
 (set-standard-font)
 ;; Setup font DONE
 
+;; (use-package ansi-color
+;;   :preface
+;;   (defun my/ansi-colorize-buffer ()
+;;   (let ((buffer-read-only nil))
+;;     (ansi-color-apply-on-region (point-min) (point-max))))
+;;   :config
+;;   (add-hook 'compilation-filter-hook 'my/ansi-colorize-buffer'))
+
 (use-package emacs
   :config
   ;;; Prevent Extraneous Tabs
