@@ -279,6 +279,7 @@
   :straight (consult-project-extra :type git :host github :repo "Qkessler/consult-project-extra")
   :config
   (meow-leader-define-key
+   '("i" . consult-imenu)
    '("j" . consult-project-extra-find)
    '("J" . consult-project-extra-find-other-window)))
 
