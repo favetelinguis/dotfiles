@@ -53,9 +53,7 @@
   ;; Dont write custom data into init.el
   (setq custom-file (concat user-emacs-directory "custom.el"))
   
-  ;; Remove auto-saved filed when buffer is killed
-  ;; default is to remove it when its saved only.
-  ;; (setq kill-buffer-delete-auto-save-files t)
+  (setq auto-save-default nil)
 
   ;; Turn on relative line numbers
   ;;(global-display-line-numbers-mode 1)
