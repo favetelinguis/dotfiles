@@ -74,8 +74,6 @@
   (global-unset-key (kbd "C-h C-m"))
   (global-unset-key (kbd "C-x C-r"))
   (global-unset-key (kbd "C-x C-d"))
-  (global-set-key (kbd "C-x C-r C-m") 'bookmark-set)
-  (global-set-key (kbd "C-x C-r C-d") 'bookmark-delete)
   (setq help-window-select t)
   ;; Emacs 28 and newer: Hide commands in M-x which do not work in the current
   ;; mode.  Vertico commands are hidden in normal buffers. This setting is
