@@ -122,10 +122,10 @@
 (use-package avy
   :preface
   (defun my/jumper (&optional arg)
-    (interactive)
+    (interactive "P")
     (if (region-active-p)
 	(meow-search arg)
-      (avy-goto-word-1)))
+      (call-interactively 'avy-goto-word-1 arg)))
   :config
   (setq avy-timeout-seconds 0.4))
 
