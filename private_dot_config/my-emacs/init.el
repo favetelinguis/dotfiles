@@ -36,7 +36,7 @@
   ;;(setq display-line-numbers-type 'relative)
 
   ;; Handle backupfile outside projects directory
-  (setq backup-directory-alist '(("." . "~/.emacs.d/backup"))
+  (setq backup-directory-alist (list (concat user-emacs-directory "backup"))
 	backup-by-copying t    ; Don't delink hardlinks
 	version-control t      ; Use version numbers on backups
 	delete-old-versions t  ; Automatically delete excess backups
@@ -46,6 +46,12 @@
 
   ;; Allow all disabled comands as default, for example a in dired
   (setq disabled-command-function nil)
+
+  ;; Improve working with marks
+  ;; https://github.com/VernonGrant/discovering-emacs/blob/main/show-notes/2-efficiency-with-the-mark-ring.md
+  (setq mark-ring-max 6)
+  (setq global-mark-ring-max 8)
+  (setq-default set-mark-command-repeat-pop t)
 
 
   ;; Cleanup Emacs user interface
@@ -66,12 +72,16 @@
   (global-unset-key (kbd "C-x C-v"))
   (global-unset-key (kbd "C-h C-f"))
   (global-unset-key (kbd "C-h C-m"))
+  (global-unset-key (kbd "C-x C-r"))
+  (global-unset-key (kbd "C-x C-d"))
+  (global-set-key (kbd "C-x C-r C-m") 'bookmark-set)
+  (global-set-key (kbd "C-x C-r C-d") 'bookmark-delete)
   (setq help-window-select t)
   ;; Emacs 28 and newer: Hide commands in M-x which do not work in the current
   ;; mode.  Vertico commands are hidden in normal buffers. This setting is
   ;; useful beyond Vertico.
   (setq read-extended-command-predicate #'command-completion-default-include-p)
-  
+
   ;; Allows me to start jetbrains ides from inside emacs
   (when (executable-find "jetbrains-toolbox")
     (let ((path (concat (getenv "HOME") "/.local/share/JetBrains/Toolbox/scripts")))
@@ -90,10 +100,10 @@
 (use-package avy
   :preface
   (defun my/jumper (&optional arg)
-    (interactive)
+    (interactive "P")
     (if (region-active-p)
 	(meow-search arg)
-      (avy-goto-char-timer)))
+      (call-interactively 'avy-goto-word-1 arg)))
   :config
   (setq avy-timeout-seconds 0.4))
 
@@ -242,6 +252,13 @@
   :config
   (vertico-mode +1)
   (setq vertico-cycle t))
+
+(use-package consult-project-extra
+  :straight (consult-project-extra :type git :host github :repo "Qkessler/consult-project-extra")
+  :config
+  (meow-leader-define-key
+   '("j" . consult-project-extra-find)
+   '("J" . consult-project-extra-find-other-window)))
 
 ;; Persist history over Emacs restarts. Vertico sorts by history position.
 (use-package savehist
