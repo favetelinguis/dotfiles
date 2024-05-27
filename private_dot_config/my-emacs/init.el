@@ -144,8 +144,10 @@
 
 (use-package project
   :straight nil
-  :config
-  (project-remember-projects-under "~/repos" t))
+  :preface
+  (defun my/project-refresh ()
+    (interactive)
+    (project-remember-projects-under "~/repos" t)))
 
 (use-package chezmoi)
 (use-package chezmoi-dired
