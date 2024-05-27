@@ -1,5 +1,5 @@
 ;;; -*- lexical-binding: t; -*-
-
+(load-theme 'modus-vivendi)
 ;; This needs to be set before use-package is loaded
 (setq use-package-enable-imenu-support t)
 (defvar bootstrap-version)
@@ -23,7 +23,7 @@
 (defvar using-sharing-font nil)
 
 (defun set-standard-font ()
-  (set-face-attribute 'default nil :font "Fira Code-10"))
+  (set-face-attribute 'default nil :font "Fira Code-12"))
 
 (defun set-sharing-font ()
   (set-face-attribute 'default nil :font "Fira Code-16"))
@@ -36,15 +36,6 @@
     (set-sharing-font))
   (setq using-sharing-font (not using-sharing-font)))
 (set-standard-font)
-;; Setup font DONE
-
-;; (use-package ansi-color
-;;   :preface
-;;   (defun my/ansi-colorize-buffer ()
-;;   (let ((buffer-read-only nil))
-;;     (ansi-color-apply-on-region (point-min) (point-max))))
-;;   :config
-;;   (add-hook 'compilation-filter-hook 'my/ansi-colorize-buffer'))
 
 (use-package emacs
   :config
@@ -91,13 +82,6 @@
   (tool-bar-mode -1)  (global-set-key (kbd "M-o") 'other-window)
   (blink-cursor-mode 0)
   (setq use-short-answers t)
-  ;; Unbind useless things to make meow leader better
-  (global-unset-key (kbd "C-x C-0"))
-  (global-unset-key (kbd "C-x C-v"))
-  (global-unset-key (kbd "C-h C-f"))
-  (global-unset-key (kbd "C-h C-m"))
-  (global-unset-key (kbd "C-x C-r"))
-  (global-unset-key (kbd "C-x C-d"))
   (setq help-window-select t)
   ;; Emacs 28 and newer: Hide commands in M-x which do not work in the current
   ;; mode.  Vertico commands are hidden in normal buffers. This setting is
@@ -109,160 +93,21 @@
     (let ((path (concat (getenv "HOME") "/.local/share/JetBrains/Toolbox/scripts")))
       (setenv "PATH" (concat path ":" (getenv "PATH")))
       (setq exec-path (cons path exec-path)))))
-
+(use-package which-key
+  :config
+  (which-key-mode))
 (use-package dired
   :straight nil
   :config
   (setf dired-kill-when-opening-new-dired-buffer t))
 
 (use-package ibuffer
+  :straight nil
   :config
   (global-set-key (kbd "C-x C-b") 'ibuffer))
 
 (use-package avy
-  :preface
-  (defun my/jumper (&optional arg)
-    (interactive "P")
-    (if (region-active-p)
-	(meow-search arg)
-      (call-interactively 'avy-goto-word-1 arg)))
-  :config
-  (setq avy-timeout-seconds 0.4))
-
-(use-package meow
-  :preface
-  (defun meow-setup ()
-    (setq meow-cheatsheet-layout meow-cheatsheet-layout-qwerty)
-    (meow-motion-overwrite-define-key
-     '("n" . meow-next)
-     '("p" . meow-prev)
-     '("J" . pop-global-mark)
-     '("K" . my/remove-current-mark)
-     '("<escape>" . ignore))
-    (meow-leader-define-key
-     ;; SPC j/k will run the original command in MOTION state.
-     '("n" . "H-n")
-     '("p" . "H-p")
-     ;; Use SPC (0-9) for digit arguments.
-     '("1" . meow-digit-argument)
-     '("2" . meow-digit-argument)
-     '("3" . meow-digit-argument)
-     '("4" . meow-digit-argument)
-     '("5" . meow-digit-argument)
-     '("6" . meow-digit-argument)
-     '("7" . meow-digit-argument)
-     '("8" . meow-digit-argument)
-     '("9" . meow-digit-argument)
-     '("0" . meow-digit-argument)
-     '("/" . meow-keypad-describe-key)
-     '("?" . meow-cheatsheet))
-    (meow-normal-define-key
-     '("0" . meow-expand-0)
-     '("9" . meow-expand-9)
-     '("8" . meow-expand-8)
-     '("7" . meow-expand-7)
-     '("6" . meow-expand-6)
-     '("5" . meow-expand-5)
-     '("4" . meow-expand-4)
-     '("3" . meow-expand-3)
-     '("2" . meow-expand-2)
-     '("1" . meow-expand-1)
-     '("-" . negative-argument)
-     '(";" . meow-reverse)
-     '("," . meow-inner-of-thing)
-     '("<" . sp-splice-sexp-killing-backward)
-     '("." . meow-bounds-of-thing)
-     '(">" . sp-forward-slurp-sexp)
-     '("[" . meow-beginning-of-thing)
-     '("]" . meow-end-of-thing)
-     '("a" . meow-append)
-     '("A" . meow-open-below)
-     '("b" . meow-back-word)
-     '("B" . meow-back-symbol)
-     '("c" . meow-change)
-     '("d" . meow-delete)
-     '("C" . meow-comment)
-     '("D" . meow-backward-delete)
-     '("e" . meow-next-word)
-     '("E" . meow-next-symbol)
-     '("f" . meow-find)
-     '("g" . meow-cancel-selection)
-     '("G" . meow-grab)
-     '("h" . meow-left)
-     '("H" . meow-left-expand)
-     '("i" . meow-insert)
-     '("I" . meow-open-above)
-     '("n" . meow-next)
-     '("N" . meow-next-expand)
-     '("p" . meow-prev)
-     '("P" . meow-prev-expand)
-     '("l" . meow-right)
-     '("L" . meow-right-expand)
-     '("m" . meow-join)
-     '("j" . my/jumper)
-     '("J" . pop-global-mark)
-     '("o" . meow-block)
-     '("O" . meow-to-block)
-     '("s" . meow-yank)
-     '("S" . meow-clipboard-yank)
-     '("q" . meow-quit)
-     '("Q" . meow-goto-line)
-     '("r" . meow-replace)
-     '("R" . meow-swap-grab)
-     '("k" . meow-kill)
-     '("K" . my/remove-current-mark)
-     '("t" . meow-till)
-     '("u" . meow-undo)
-     '("U" . meow-undo-in-selection)
-     '("v" . meow-visit)
-     '("w" . meow-mark-word)
-     '("W" . meow-mark-symbol)
-     '("x" . meow-line)
-     '("X" . meow-goto-line)
-     '("y" . meow-save)
-     '("Y" . meow-clipboard-save)
-     ;; '("Y" . meow-sync-grab) ; TODO where should i put this
-     '("z" . meow-pop-selection)
-     '("'" . repeat)
-     '("<escape>" . ignore)))
-  (defun my/remove-current-mark ()
-    "Remove the current mark from the mark ring and the global mark ring."
-    (interactive)
-    (when (mark)
-      (let ((current-mark (mark-marker)))
-        ;; Deactivate the current mark
-        (deactivate-mark)
-        ;; Remove the current mark from the local mark ring
-        (setq mark-ring (delete current-mark mark-ring))
-        ;; Remove the current mark from the global mark ring
-        (setq global-mark-ring (delete current-mark global-mark-ring))
-        ;; Ensure the current mark is not set
-        (set-marker current-mark nil)))
-    (pop-global-mark))
-  :config
-  (setq meow-cheatsheet-physical-layout meow-cheatsheet-physical-layout-ansi)
-  (meow-setup)
-  (meow-global-mode 1)
-  (meow-setup-indicator)
-  ;; Auto exit insert mode after x seconds
-  ;; (add-hook
-  ;;  'meow-insert-enter-hook
-  ;;  (lambda ()
-  ;;    (setq meow-insert-timer
-  ;;          (run-with-idle-timer
-  ;;           3 nil
-  ;;           (lambda ()
-  ;;             (when (eq meow--current-state 'insert)
-  ;;       	(meow--switch-state 'normal)))))))
-
-  ;; (add-hook
-  ;;  'meow-insert-exit-hook
-  ;;  (lambda ()
-  ;;    (when (and (bound-and-true-p meow-insert-timer)
-  ;;       	(timerp meow-insert-timer))
-  ;;      (cancel-timer meow-insert-timer)
-  ;;      (setq meow-insert-timer nil))))
-  )
+  :bind (("M-g w" . avy-goto-word-1)))
 
 (use-package corfu
   :config
@@ -278,9 +123,11 @@
 (use-package consult-project-extra
   :straight (consult-project-extra :type git :host github :repo "Qkessler/consult-project-extra")
   :config
-  (meow-leader-define-key
-   '("j" . consult-project-extra-find)
-   '("J" . consult-project-extra-find-other-window)))
+  ;; TODO need new keys
+  ;; (meow-leader-define-key
+  ;;  '("j" . consult-project-extra-find)
+  ;;  '("J" . consult-project-extra-find-other-window))
+  )
 
 ;; Persist history over Emacs restarts. Vertico sorts by history position.
 (use-package savehist
@@ -296,8 +143,8 @@
   (marginalia-mode))
 
 (use-package project
+  :straight nil
   :config
-  (global-set-key (kbd "C-x C-p") project-prefix-map)
   (project-remember-projects-under "~/repos" t))
 
 (use-package chezmoi)
@@ -320,11 +167,6 @@
 (use-package envrc
   :hook (after-init . envrc-global-mode))
 
-(use-package stimmung-themes
-  :straight (stimmung-themes :host github :repo "motform/stimmung-themes")
-  :demand t
-  :config (stimmung-themes-load-light))
-
 (use-package tldr)
 (use-package gptel
   :preface
@@ -345,6 +187,7 @@
   (smartparens-global-mode t)) ; there is also smartparens-strict-mode
 
 (use-package cider)
+;; TODO need keybindings
 (use-package clay
   :straight (:host github :repo "scicloj/clay.el"))
 (use-package markdown-mode)
@@ -364,25 +207,17 @@
   :config
   (org-roam-complete-everywhere)
   (org-roam-db-autosync-enable)
-  (meow-leader-define-key
-   '("a" . org-agenda)
-   '("n" . org-capture)
-   '("e" . consult-flymake)
-   '("N" . org-roam-capture)
-   '("d" . org-roam-dailies-capture-today)
-   '("D" . org-roam-dailies-capture-tomorrow)))
+  ;; TODO need new keys
+  ;; (meow-leader-define-key
+  ;;  '("a" . org-agenda)
+  ;;  '("n" . org-capture)
+  ;;  '("e" . consult-flymake)
+  ;;  '("N" . org-roam-capture)
+  ;;  '("d" . org-roam-dailies-capture-today)
+  ;;  '("D" . org-roam-dailies-capture-tomorrow))
+  )
 
-;; Some issues since n p mean next/prev change in timemachine
-;; so conflict with my setup.
 (use-package git-timemachine)
-
-;; Dont care about this atm but is the recommnded way to use it
-;; (use-package treesit-auto
-;;   :custom
-;;   (treesit-auto-install 'prompt)
-;;   :config
-;;   (treesit-auto-add-to-auto-mode-alist 'all)
-;;   (global-treesit-auto-mode))
 
 (use-package ibuffer-vc
   :config
@@ -410,18 +245,85 @@
 
 ;; Smarter edit of embark-export for grep-buffers or x-ref buffers
 (use-package wgrep)
-(use-package consult
-  :config
-  (define-key minibuffer-local-map (kbd "M-s") 'consult-history)
-  (define-key minibuffer-local-map (kbd "M-r") 'consult-history)
-  (global-set-key (kbd "C-h C-i") 'consult-info)
-  (global-set-key (kbd "C-s") 'consult-line)
-  (global-set-key (kbd "C-r") 'consult-line-multi)
-  (global-set-key (kbd "C-x C-b") 'consult-buffer)
-  (global-set-key (kbd "C-x p g") 'consult-ripgrep))
+
 (use-package embark
   :bind
   (("C-;" . embark-act)))
+
 (use-package embark-consult
   :hook
   (embark-collect-mode . consult-preview-at-point-mode))
+
+(use-package popper
+  :bind (("C-`"   . popper-toggle)
+         ("M-`"   . popper-cycle)
+         ("C-M-`" . popper-toggle-type))
+  :init
+  (setq popper-reference-buffers
+        '("\\*Messages\\*"
+          "Output\\*$"
+          "\\*Async Shell Command\\*"
+          help-mode
+          compilation-mode))
+  (popper-mode +1)
+  (popper-echo-mode +1))                ; For echo area hints
+
+(use-package consult
+  ;; Replace bindings. Lazily loaded due by `use-package'.
+  :bind (;; C-c bindings in `mode-specific-map'
+         ("C-c M-x" . consult-mode-command)
+         ("C-c h" . consult-history)
+         ("C-c k" . consult-kmacro)
+         ("C-c m" . consult-man)
+         ("C-c i" . consult-info)
+         ([remap Info-search] . consult-info)
+         ;; C-x bindings in `ctl-x-map'
+         ("C-x M-:" . consult-complex-command)     ;; orig. repeat-complex-command
+         ("C-x b" . consult-buffer)                ;; orig. switch-to-buffer
+         ("C-x 4 b" . consult-buffer-other-window) ;; orig. switch-to-buffer-other-window
+         ("C-x 5 b" . consult-buffer-other-frame)  ;; orig. switch-to-buffer-other-frame
+         ("C-x t b" . consult-buffer-other-tab)    ;; orig. switch-to-buffer-other-tab
+         ("C-x r b" . consult-bookmark)            ;; orig. bookmark-jump
+         ("C-x p b" . consult-project-buffer)      ;; orig. project-switch-to-buffer
+         ;; Custom M-# bindings for fast register access
+         ("M-#" . consult-register-load)
+         ("M-'" . consult-register-store)          ;; orig. abbrev-prefix-mark (unrelated)
+         ("C-M-#" . consult-register)
+         ;; Other custom bindings
+         ("M-y" . consult-yank-pop)                ;; orig. yank-pop
+         ;; M-g bindings in `goto-map'
+         ("M-g e" . consult-compile-error)
+         ("M-g f" . consult-flymake)               ;; Alternative: consult-flycheck
+         ("M-g g" . consult-goto-line)             ;; orig. goto-line
+         ("M-g M-g" . consult-goto-line)           ;; orig. goto-line
+         ("M-g o" . consult-outline)               ;; Alternative: consult-org-heading
+         ("M-g m" . consult-mark)
+         ("M-g k" . consult-global-mark)
+         ("M-g i" . consult-imenu)
+         ("M-g I" . consult-imenu-multi)
+         ;; M-s bindings in `search-map'
+         ("M-s d" . consult-find)                  ;; Alternative: consult-fd
+         ("M-s c" . consult-locate)
+         ("M-s g" . consult-grep)
+         ("M-s G" . consult-git-grep)
+         ("M-s r" . consult-ripgrep)
+         ("M-s l" . consult-line)
+         ("M-s L" . consult-line-multi)
+         ("M-s k" . consult-keep-lines)
+         ("M-s u" . consult-focus-lines)
+         ;; Isearch integration
+         ("M-s e" . consult-isearch-history)
+         :map isearch-mode-map
+         ("M-e" . consult-isearch-history)         ;; orig. isearch-edit-string
+         ("M-s e" . consult-isearch-history)       ;; orig. isearch-edit-string
+         ("M-s l" . consult-line)                  ;; needed by consult-line to detect isearch
+         ("M-s L" . consult-line-multi)            ;; needed by consult-line to detect isearch
+         ;; Minibuffer history
+         :map minibuffer-local-map
+         ("M-s" . consult-history)                 ;; orig. next-matching-history-element
+         ("M-r" . consult-history))                ;; orig. previous-matching-history-element
+
+  ;; Enable automatic preview at point in the *Completions* buffer. This is
+  ;; relevant when you use the default completion UI.
+  :hook
+  (completion-list-mode . consult-preview-at-point-mode))
