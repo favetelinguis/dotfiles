@@ -315,7 +315,4 @@
   :ensure t
   :mode ("\\.epub\\'" . nov-mode))
 
-;; https://github.com/tonsky/sublime-scheme-alabaster?tab=readme-ov-file
-(use-package alabaster-theme
-  :straight (:host github :repo "uzhne/alabaster-emacs"))
-(load-theme 'alabaster)
+(load-theme 'modus-operandi)
