@@ -189,6 +189,7 @@
 (use-package markdown-mode)
 
 (use-package org
+  :straight nil
   :config
   (setq org-agenda-files '("todo.org"))
 
