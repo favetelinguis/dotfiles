@@ -106,9 +106,6 @@
   :config
   (global-set-key (kbd "C-x C-b") 'ibuffer))
 
-(use-package avy
-  :bind (("M-g w" . avy-goto-word-1)))
-
 (use-package corfu
   :config
   (global-corfu-mode)
@@ -184,9 +181,6 @@
                 gptel-api-key #'my/read-openai-key))
 
 (use-package clojure-mode)
-(use-package smartparens
-  :config
-  (smartparens-global-mode t)) ; there is also smartparens-strict-mode
 
 (use-package cider)
 ;; TODO need keybindings
