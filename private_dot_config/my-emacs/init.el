@@ -1,5 +1,5 @@
 ;;; -*- lexical-binding: t; -*-
-(load-theme 'modus-vivendi)
+
 ;; This needs to be set before use-package is loaded
 (setq use-package-enable-imenu-support t)
 (defvar bootstrap-version)
@@ -199,19 +199,6 @@
            (file+headline "~/org/todo.org" "Tasks")
            "* TODO %?\n  %i\n  %a"
            :prepen t))))
-(use-package org-roam
-  :config
-  (org-roam-complete-everywhere)
-  (org-roam-db-autosync-enable)
-  ;; TODO need new keys
-  ;; (meow-leader-define-key
-  ;;  '("a" . org-agenda)
-  ;;  '("n" . org-capture)
-  ;;  '("e" . consult-flymake)
-  ;;  '("N" . org-roam-capture)
-  ;;  '("d" . org-roam-dailies-capture-today)
-  ;;  '("D" . org-roam-dailies-capture-tomorrow))
-  )
 
 (use-package git-timemachine)
 
@@ -323,3 +310,12 @@
   ;; relevant when you use the default completion UI.
   :hook
   (completion-list-mode . consult-preview-at-point-mode))
+
+(use-package nov
+  :ensure t
+  :mode ("\\.epub\\'" . nov-mode))
+
+;; https://github.com/tonsky/sublime-scheme-alabaster?tab=readme-ov-file
+(use-package alabaster-theme
+  :straight (:host github :repo "uzhne/alabaster-emacs"))
+(load-theme 'alabaster)
