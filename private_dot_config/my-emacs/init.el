@@ -179,18 +179,7 @@
   :straight (:host github :repo "scicloj/clay.el"))
 (use-package markdown-mode)
 
-(use-package org
-  :straight nil
-  :config
-  (setq org-agenda-files '("todo.org"))
 
-  (setq org-agenda-start-with-log-mode 't)
-  (setq org-log-done 'note)
-  (setq org-capture-templates
-        '(("t" "Todo" entry
-           (file+headline "~/org/todo.org" "Tasks")
-           "* TODO %?\n  %i\n  %a"
-           :prepen t))))
 
 (use-package git-timemachine)
 
@@ -356,3 +345,30 @@
     '("{" . puni-wrap-curly)
     '("<" . puni-wrap-angle)
     '("u" . meow-undo)))
+(use-package org
+  :straight nil
+  :bind (("C-c C-n n" . org-capture)
+         ("C-c C-n a" . org-agenda))
+  :config
+  (setq org-agenda-files '("todo.org"))
+
+  (setq org-agenda-start-with-log-mode 't)
+  (setq org-log-done 'note)
+  (setq org-capture-templates
+        '(("t" "Todo" entry
+           (file+headline "~/org/todo.org" "Tasks")
+           "* TODO %?\n  %i\n  %a"
+           :prepen t))))
+(use-package denote
+  :after org
+  :config
+  (setq denote-directory (expand-file-name "~/repos/notes"))
+  (setq denote-known-keywords '("konowledge" "meeting"))
+  (add-to-list 'org-capture-templates
+               '("n" "New note (with Denote)" plain
+                 (file denote-last-path)
+                 #'denote-org-capture
+                 :no-save t
+                 :immediate-finish nil
+                 :kill-buffer t
+                 :jump-to-captured t)))
