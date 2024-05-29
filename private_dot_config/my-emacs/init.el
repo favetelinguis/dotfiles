@@ -53,6 +53,7 @@
   ;; Handle backupfile outside projects directory
   (setq backup-directory-alist (list (cons "." (concat user-emacs-directory "backup")))
 	backup-by-copying t    ; Don't delink hardlinks
+        create-lockfiles nil
 	version-control t      ; Use version numbers on backups
 	delete-old-versions t  ; Automatically delete excess backups
 	kept-new-versions 20   ; how many of the newest versions to keep
@@ -96,15 +97,6 @@
 (use-package which-key
   :config
   (which-key-mode))
-(use-package dired
-  :straight nil
-  :config
-  (setf dired-kill-when-opening-new-dired-buffer t))
-
-(use-package ibuffer
-  :straight nil
-  :config
-  (global-set-key (kbd "C-x C-b") 'ibuffer))
 
 (use-package corfu
   :config
@@ -302,8 +294,6 @@
   (meow-global-mode 1)
   (meow-setup-indicator))
 
-;; Integrate meow with puni requires me to match shortcuts with what meow expect
-;; https://github.com/meow-edit/meow/blob/99e08c92bb5d8a695062ce53e2cffeffd3a058a6/CUSTOMIZATIONS.org#L78
 (use-package puni
   :defer t
   ;; :bind (())
@@ -345,13 +335,13 @@
     '("{" . puni-wrap-curly)
     '("<" . puni-wrap-angle)
     '("u" . meow-undo)))
+
 (use-package org
   :straight nil
   :bind (("C-c C-n n" . org-capture)
          ("C-c C-n a" . org-agenda))
   :config
-  (setq org-agenda-files '("todo.org"))
-
+  (setq org-agenda-files '("~/org"))
   (setq org-agenda-start-with-log-mode 't)
   (setq org-log-done 'note)
   (setq org-capture-templates
@@ -359,10 +349,11 @@
            (file+headline "~/org/todo.org" "Tasks")
            "* TODO %?\n  %i\n  %a"
            :prepen t))))
+
 (use-package denote
   :after org
   :config
-  (setq denote-directory (expand-file-name "~/repos/notes"))
+  (setq denote-directory (expand-file-name "~/org"))
   (setq denote-known-keywords '("konowledge" "meeting"))
   (add-to-list 'org-capture-templates
                '("n" "New note (with Denote)" plain
@@ -372,3 +363,13 @@
                  :immediate-finish nil
                  :kill-buffer t
                  :jump-to-captured t)))
+(use-package dired-hide-dotfiles
+  :hook
+  (dired-mode . dired-hide-dotfiles-mode)
+  :bind
+  (:map dired-mode-map ("." . dired-hide-dotfiles-mode)))
+(use-package dired-hist
+  :config
+  (define-key dired-mode-map "l" #'dired-hist-go-back)
+  (define-key dired-mode-map "r" #'dired-hist-go-forward)
+  (dired-hist-mode 1))
