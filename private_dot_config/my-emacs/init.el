@@ -208,71 +208,6 @@
 
 (use-package avy)
 
-(use-package meow
-  :preface
-  (defun meow-setup ()
-    (setq meow-cheatsheet-layout meow-cheatsheet-layout-qwerty)
-    (meow-normal-define-key
-     '("-" . negative-argument)
-     '(";" . meow-reverse)
-     '("a" . meow-append)
-     '("A" . meow-open-below)
-     '("b" . meow-back-word)
-     '("B" . meow-back-symbol)
-     '("c" . meow-change)
-     '("d" . meow-delete)
-     '("C" . meow-comment)
-     '("D" . meow-backward-delete)
-     '("e" . meow-next-word)
-     '("E" . meow-next-symbol)
-     '("T" . meow-inner-of-thing)
-     '("t" . meow-bounds-of-thing)
-     '("g" . meow-cancel-selection)
-     '("G" . meow-grab)
-     '("h" . meow-left)
-     '("H" . meow-left-expand)
-     '("i" . meow-insert)
-     '("I" . meow-open-above)
-     '("n" . meow-next)
-     '("N" . meow-next-expand)
-     '("p" . meow-prev)
-     '("P" . meow-prev-expand)
-     '("l" . meow-right)
-     '("L" . meow-right-expand)
-     '("m" . meow-join)
-     '("j" . avy-goto-word-1)
-     '("J" . meow-search)
-     '("o" . meow-block)
-     '("O" . meow-to-block)
-     '("s" . meow-yank)
-     '("S" . meow-clipboard-yank)
-     '("q" . meow-quit)
-     '("Q" . meow-goto-line)
-     '("r" . meow-replace)
-     '("R" . meow-swap-grab)
-     '("F" . meow-beginning-of-thing)
-     '("f" . meow-end-of-thing)
-     '("k" . meow-kill)
-     '("u" . meow-undo)
-     '("U" . meow-undo-in-selection)
-     '("w" . meow-mark-word)
-     '("W" . meow-mark-symbol)
-     '("x" . meow-line)
-     '("X" . meow-goto-line)
-     '("y" . meow-save)
-     '("Y" . meow-clipboard-save)
-     ;; '("Y" . meow-sync-grab) ; TODO where should i put this
-     '("z" . meow-pop-selection)
-     '("'" . repeat)
-     '("SPC" . meow-paren-mode)
-     '("<escape>" . ignore)))
-  :config
-  (setq meow-expand-hint-remove-delay 0) ; dissable index hints
-  (setq meow-cheatsheet-physical-layout meow-cheatsheet-physical-layout-ansi)
-  (meow-setup)
-  (meow-global-mode 1)
-  (meow-setup-indicator))
-
 (use-package puni
   :defer t
   ;; :bind (())
@@ -281,39 +216,7 @@
   ;; `puni-global-mode` before `puni` is actually loaded. Only after you press
   ;; any key that calls Puni commands, it's loaded.
   (puni-global-mode)
-  (add-hook 'term-mode-hook #'puni-disable-puni-mode)
-
-  (setq meow-paren-keymap (make-keymap))
-  (meow-define-state paren
-    "meow state for interacting with smartparens"
-    :lighter " [P]"
-    :keymap meow-paren-keymap)
-
-  ;; meow-define-state creates the variable
-  (setq meow-cursor-type-paren 'hollow)
-
-  (meow-define-keys 'paren
-    '("<escape>" . meow-normal-mode)
-    '("SPC" . meow-insert)
-    '("n" . puni-syntactic-forward-punct)
-    '("p" . puni-syntactic-backward-punct)
-    '("l" . puni-forward-sexp)
-    '("h" . puni-backward-sexp)
-    '("a" . puni-beginning-of-sexp)
-    '("e" . puni-end-of-sexp)
-    '("r" . puni-raise)
-    '("s" . puni-slurp-forward)
-    '("S" . puni-slurp-backward)
-    '("b" . puni-barf-forward)
-    '("B" . puni-barf-backward)
-    '("d" . puni-splice)
-    '("t" . puni-transpose)
-    '("c" . puni-convolute)
-    '("(" . puni-wrap-round)
-    '("[" . puni-wrap-square)
-    '("{" . puni-wrap-curly)
-    '("<" . puni-wrap-angle)
-    '("u" . meow-undo)))
+  (add-hook 'term-mode-hook #'puni-disable-puni-mode))
 
 (use-package org
   :straight nil
