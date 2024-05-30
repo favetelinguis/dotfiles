@@ -262,3 +262,8 @@
   :after helpful
   :config
   (advice-add 'helpful-update :after #'elisp-demos-advice-helpful-update))
+
+(use-package ibuffer
+  :straight nil
+  :config
+  (define-key global-map [remap list-buffers] #'ibuffer))
