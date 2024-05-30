@@ -256,8 +256,8 @@
          ("C-h v" . #'helpful-variable)
          ("C-h k" . #'helpful-key)
          ("C-c C-d" . #'helpful-at-point) ; Maybe this should go in to elisp local map?
-         ("C-h F" . #'helpful-function)
-         ))
+         ("C-h F" . #'helpful-function)))
+
 (use-package elisp-demos
   :after helpful
   :config
