@@ -202,31 +202,11 @@
 ;; Smarter edit of for grep-buffers or x-ref buffers
 (use-package wgrep)
 
-(use-package popper
-  :bind (("C-`"   . popper-toggle)
-         ("M-`"   . popper-cycle)
-         ("C-M-`" . popper-toggle-type))
-  :init
-  (setq popper-reference-buffers
-        '("\\*Messages\\*"
-          "Output\\*$"
-          "\\*Async Shell Command\\*"
-          help-mode
-          compilation-mode))
-  (popper-mode +1)
-  (popper-echo-mode +1))                ; For echo area hints
-
 (use-package nov
   :ensure t
   :mode ("\\.epub\\'" . nov-mode))
 
-(use-package avy
-  :preface
-  (defun my/jumper (&optional arg)
-    (interactive "P")
-    (if (region-active-p)
-        (meow-search arg)
-      (call-interactively 'avy-goto-word-1 arg))))
+(use-package avy)
 
 (use-package meow
   :preface
@@ -275,7 +255,6 @@
      '("k" . meow-kill)
      '("u" . meow-undo)
      '("U" . meow-undo-in-selection)
-     '("v" . meow-visit)
      '("w" . meow-mark-word)
      '("W" . meow-mark-symbol)
      '("x" . meow-line)
@@ -368,8 +347,4 @@
   (dired-mode . dired-hide-dotfiles-mode)
   :bind
   (:map dired-mode-map ("." . dired-hide-dotfiles-mode)))
-(use-package dired-hist
-  :config
-  (define-key dired-mode-map "l" #'dired-hist-go-back)
-  (define-key dired-mode-map "r" #'dired-hist-go-forward)
-  (dired-hist-mode 1))
+
