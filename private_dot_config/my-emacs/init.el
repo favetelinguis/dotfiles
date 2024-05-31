@@ -46,10 +46,6 @@
   
   (setq auto-save-default nil)
 
-  ;; Turn on relative line numbers
-  ;;(global-display-line-numbers-mode 1)
-  ;;(setq display-line-numbers-type 'relative)
-
   ;; Handle backupfile outside projects directory
   (setq backup-directory-alist (list (cons "." (concat user-emacs-directory "backup")))
 	backup-by-copying t    ; Don't delink hardlinks
@@ -68,6 +64,11 @@
   (setq mark-ring-max 6)
   (setq global-mark-ring-max 8)
   (setq-default set-mark-command-repeat-pop t)
+
+  ;; Restore emacs sessions
+  (desktop-save-mode 1)
+  (desktop-load)
+
 
 
   ;; Cleanup Emacs user interface
@@ -208,16 +209,6 @@
 
 (use-package avy)
 
-(use-package puni
-  :defer t
-  ;; :bind (())
-  :init
-  ;; The autoloads of Puni are set up so you can enable `puni-mode` or
-  ;; `puni-global-mode` before `puni` is actually loaded. Only after you press
-  ;; any key that calls Puni commands, it's loaded.
-  (puni-global-mode)
-  (add-hook 'term-mode-hook #'puni-disable-puni-mode))
-
 (use-package org
   :straight nil
   :bind (("C-c C-n n" . org-capture)
@@ -267,3 +258,5 @@
   :straight nil
   :config
   (define-key global-map [remap list-buffers] #'ibuffer))
+
+
