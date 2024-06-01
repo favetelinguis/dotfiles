@@ -44,6 +44,8 @@
    (column-number-mode t)
    (electric-pair-mode t)
    (desktop-save-mode t))
+  :bind
+  (("M-i" . imenu))
   :config
   ;;; Prevent Extraneous Tabs
   (setq-default indent-tabs-mode nil)
