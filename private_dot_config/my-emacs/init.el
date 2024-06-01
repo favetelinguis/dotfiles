@@ -38,6 +38,12 @@
 (set-standard-font)
 
 (use-package emacs
+  :custom
+  ((global-subword-mode t)           ; aaBB will be treated as 2 words
+   ;;   (global-superword-mode t)         ; aa-bb aa_bb aaBB all will be treated as 1 word, can not be anabled with subword-mode
+   (column-number-mode t)
+   (electric-pair-mode t)
+   (desktop-save-mode t))
   :config
   ;;; Prevent Extraneous Tabs
   (setq-default indent-tabs-mode nil)
@@ -55,21 +61,15 @@
 	kept-new-versions 20   ; how many of the newest versions to keep
 	kept-old-versions 5    ; and how many of the old
 	)
-
+  (setq scroll-margin 0)
+  (setq hscroll-margin 1)
   ;; Allow all disabled comands as default, for example a in dired
   (setq disabled-command-function nil)
-  (electric-pair-mode 1)
   ;; Improve working with marks
   ;; https://github.com/VernonGrant/discovering-emacs/blob/main/show-notes/2-efficiency-with-the-mark-ring.md
   (setq mark-ring-max 6)
   (setq global-mark-ring-max 8)
   (setq-default set-mark-command-repeat-pop t)
-
-  ;; Restore emacs sessions
-  (desktop-save-mode 1)
-  (desktop-load)
-
-
 
   ;; Cleanup Emacs user interface
   (setq inhibit-startup-message t)
@@ -89,7 +89,7 @@
   ;; mode.  Vertico commands are hidden in normal buffers. This setting is
   ;; useful beyond Vertico.
   (setq read-extended-command-predicate #'command-completion-default-include-p)
-
+  (define-key global-map (kbd "M-o") 'other-window)
   ;; Allows me to start jetbrains ides from inside emacs
   (when (executable-find "jetbrains-toolbox")
     (let ((path (concat (getenv "HOME") "/.local/share/JetBrains/Toolbox/scripts")))
@@ -259,4 +259,48 @@
   :config
   (define-key global-map [remap list-buffers] #'ibuffer))
 
+
+;; Trying out workflow from
+;; https://karthinks.com/software/avy-can-do-anything/#remembering-to-avy
+(use-package embark
+  :bind
+  (("C-;" . embark-act)         ;; pick some comfortable binding
+   ))
+(use-package avy
+  :bind (:map isearch-mode-map
+              ("M-j" . 'avy-isearch))
+  :preface
+  (defun avy-action-embark (pt)
+    (unwind-protect
+        (save-excursion
+          (goto-char pt)
+          (embark-act))
+      (select-window
+       (cdr (ring-ref avy-ring 0))))
+    t)
+  :config
+  (setf (alist-get ?\; avy-dispatch-alist) 'avy-action-embark))
+
+(defun isearch-forward-other-window (prefix)
+  "Function to isearch-forward in other-window."
+  (interactive "P")
+  (unless (one-window-p)
+    (save-excursion
+      (let ((next (if prefix -1 1)))
+        (other-window next)
+        (isearch-forward)
+        (other-window (- next))))))
+
+(defun isearch-backward-other-window (prefix)
+  "Function to isearch-backward in other-window."
+  (interactive "P")
+  (unless (one-window-p)
+    (save-excursion
+      (let ((next (if prefix 1 -1)))
+        (other-window next)
+        (isearch-backward)
+        (other-window (- next))))))
+
+(define-key global-map (kbd "C-M-s") 'isearch-forward-other-window)
+(define-key global-map (kbd "C-M-r") 'isearch-backward-other-window)
 
