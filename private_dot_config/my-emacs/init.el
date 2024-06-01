@@ -266,6 +266,7 @@
   :init
   (setq popper-reference-buffers
         '("\\*Messages\\*"
+          "\\*Async Shell Command\\*"
           "^\\*eshell.*\\*$" eshell-mode ;eshell as a popup
           compilation-mode))
   (setq popper-group-function #'popper-group-by-project) ; project.el projects
