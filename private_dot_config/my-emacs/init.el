@@ -259,6 +259,18 @@
   :config
   (define-key global-map [remap list-buffers] #'ibuffer))
 
+(use-package popper
+  :bind (("C-`"   . popper-toggle)
+         ("M-`"   . popper-cycle)
+         ("C-M-`" . popper-toggle-type))
+  :init
+  (setq popper-reference-buffers
+        '("\\*Messages\\*"
+          "^\\*eshell.*\\*$" eshell-mode ;eshell as a popup
+          compilation-mode))
+  (setq popper-group-function #'popper-group-by-project) ; project.el projects
+  (popper-mode +1)
+  (popper-echo-mode +1))                ; For echo area hints
 
 ;; Trying out workflow from
 ;; https://karthinks.com/software/avy-can-do-anything/#remembering-to-avy
