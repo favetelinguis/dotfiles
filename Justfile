@@ -12,15 +12,16 @@ make-distrobox NAME='emacs':
    set -euxo pipefail
    if command -v docker &> /dev/null; then
        echo "Docker installation found"
-       docker build --progress plain --no-cache -f ./distroboxes/ArchL1{{NAME}} -t {{NAME}}devbox .
+       docker build --progress plain --no-cache -f ./distroboxes/TumbleweedL1{{NAME}} -t {{NAME}}devbox . && \
+       distrobox assemble create --file ./distroboxes/distrobox.ini -n {{NAME}}Devbox
    elif command -v podman &> /dev/null; then
        echo "Podman installation found"
-       podman build --no-cache -f ./distroboxes/ArchL1{{NAME}} -t {{NAME}}devbox .
+       podman build --no-cache -f ./distroboxes/TumbleweedL1{{NAME}} -t {{NAME}}devbox . && \
+      distrobox assemble create --file ./distroboxes/distrobox.ini -n {{NAME}}Devbox
    else
        echo "Docker or podman installation not found."
        exit 1
    fi
-   distrobox assemble create --file ./distroboxes/distrobox.ini -n {{NAME}}Devbox
 
 # Install Java
 java:

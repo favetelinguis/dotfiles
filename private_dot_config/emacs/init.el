@@ -273,7 +273,7 @@
   (setq popper-group-function #'popper-group-by-project) ; project.el projects
   (popper-mode +1)
   (popper-echo-mode +1))                ; For echo area hints
-
+(use-package pass)
 ;; Setup Scheme
 (use-package geiser)
 (use-package geiser-chez
@@ -302,4 +302,8 @@
 
 (define-key global-map (kbd "C-M-s") 'isearch-forward-other-window)
 (define-key global-map (kbd "C-M-r") 'isearch-backward-other-window)
+
+;; I think this should add support for color in compilation buffers need testing to confirm
+;; maybe i want https://codeberg.org/ideasman42/emacs-fancy-compilation
+(add-hook 'compilation-filter-hook 'ansi-color-compilation-filter)
 
