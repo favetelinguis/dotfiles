@@ -268,6 +268,7 @@
         '("\\*Messages\\*"
           "\\*Async Shell Command\\*"
           "^\\*eshell.*\\*$" eshell-mode ;eshell as a popup
+          "*vc-git*" ; need this and the mode for some buffers
           compilation-mode))
   (setq popper-group-function #'popper-group-by-project) ; project.el projects
   (popper-mode +1)
