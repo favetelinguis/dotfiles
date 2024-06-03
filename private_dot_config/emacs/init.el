@@ -209,8 +209,6 @@
   :ensure t
   :mode ("\\.epub\\'" . nov-mode))
 
-(use-package avy)
-
 (use-package org
   :straight nil
   :bind (("C-c C-n n" . org-capture)
@@ -275,27 +273,12 @@
   (popper-mode +1)
   (popper-echo-mode +1))                ; For echo area hints
 
-;; Trying out workflow from
-;; https://karthinks.com/software/avy-can-do-anything/#remembering-to-avy
-(use-package embark
-  :bind
-  (("C-;" . embark-act)         ;; pick some comfortable binding
-   ))
-(use-package avy
-  :bind (:map isearch-mode-map
-              ("M-j" . 'avy-isearch))
-  :preface
-  (defun avy-action-embark (pt)
-    (unwind-protect
-        (save-excursion
-          (goto-char pt)
-          (embark-act))
-      (select-window
-       (cdr (ring-ref avy-ring 0))))
-    t)
-  :config
-  (setf (alist-get ?\; avy-dispatch-alist) 'avy-action-embark))
+;; Setup Scheme
+(use-package geiser)
+(use-package geiser-chez
+  :after guile)
 
+;; Setup isearch other window
 (defun isearch-forward-other-window (prefix)
   "Function to isearch-forward in other-window."
   (interactive "P")

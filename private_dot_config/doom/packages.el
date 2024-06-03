@@ -56,7 +56,9 @@
 (package! x509-mode)
 (package! chezmoi)
 (package! just-mode)
-(package! justl)
+;; (package! justl)
 (package! asdf
   :recipe (:host nil :repo "https://github.com/tabfugnic/asdf.el"))
 (package! evil-snipe :disable t) ; i never use snipe and want to use the s key for other things
+(package! justl
+  :recipe (:host github :repo "favetelinguis/justl.el"))

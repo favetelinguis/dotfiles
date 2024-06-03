@@ -1,0 +1,10 @@
+FROM registry.opensuse.org/opensuse/distrobox
+
+RUN zypper --non-interactive install emacs     chezmoi     direnv     password-store     just     sbcl     chezscheme     clojure rlwrap
+
+
+# Share some commands with host
+RUN ln -fs /usr/bin/distrobox-host-exec /usr/bin/podman
+RUN ln -fs /usr/bin/distrobox-host-exec /usr/bin/distrobox
+RUN ln -fs /usr/bin/distrobox-host-exec /usr/bin/flatpak
+

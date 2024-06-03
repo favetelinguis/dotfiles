@@ -2,9 +2,9 @@
 FROM ghcr.io/greyltc-org/archlinux-aur:paru
 
 # update mirrorlist not always needed, base image will update mirrors when it rebuilds
-ADD https://raw.githubusercontent.com/greyltc/docker-archlinux/master/get-new-mirrors.sh /usr/bin/get-new-mirrors
-RUN chmod +x /usr/bin/get-new-mirrors
-RUN get-new-mirrors
+#ADD https://raw.githubusercontent.com/greyltc/docker-archlinux/master/get-new-mirrors.sh /usr/bin/get-new-mirrors
+#RUN chmod +x /usr/bin/get-new-mirrors
+#RUN get-new-mirrors
 
 # git is installed from base
 RUN aur-install \
@@ -15,6 +15,10 @@ RUN aur-install \
     direnv \
     just \
     pass \
+    # Scheme dialect used in sicp
+    mit-scheme \
+    # Common Lisp
+    sbcl \
     github-cli \
     babashka-bin \
     # For clojure-mode emacs
