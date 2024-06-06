@@ -1,17 +1,14 @@
 FROM registry.opensuse.org/opensuse/distrobox
 
 RUN zypper --non-interactive install \
-emacs \
-chezmoi \
-direnv \
-password-store \
-just \
-sbcl \
-chezscheme \
-# used for installing emacs info files
-info \
-ripgrep fd \
-clojure rlwrap
+    emacs \
+    chezmoi \
+    direnv \
+    password-store \
+    ripgrep fd \
+    just \
+    # used for installing emacs info files
+    info
 
 # Share some commands with host
 RUN ln -fs /usr/bin/distrobox-host-exec /usr/bin/podman
