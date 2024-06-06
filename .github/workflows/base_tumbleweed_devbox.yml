@@ -33,5 +33,5 @@ jobs:
         context: "{{defaultContext}}:distroboxes"
         file: TumbleweedL1emacs
         push: true
-        tags: ${{ github.repository_owner }}/${{ github.event.repository.name }}-tumbleweedemacs:latest
+        tags: ${{ github.repository_owner }}/${{ github.event.repository.name }}:latest
 
