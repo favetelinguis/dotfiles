@@ -24,7 +24,7 @@ jobs:
     - name: Build and push Docker image
       uses: docker/build-push-action@v5
       with:
-        context: {{defaultContext}}:distroboxes
+        context: "{{defaultContext}}:distroboxes"
         file: distroboxes/TumbleweedL1emacs
         push: true
         tags: ${{ github.repository_owner }}/${{ github.event.repository.name }}-tumbleweedemacs:latest
