@@ -1,6 +1,7 @@
 name: Build and Publish Container
 
 on:
+  workflow_dispatch:
   push:
     paths:
       - distroboxes/TumbleweedL1emacs
@@ -10,22 +11,15 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout repository
-      uses: actions/checkout@v2
-
     - name: Set up Docker Buildx
-      uses: docker/setup-buildx-action@v1
+      uses: docker/setup-buildx-action@v3
 
     - name: Log in to GitHub Container Registry
-      uses: docker/login-action@v1
+      uses: docker/login-action@v3
       with:
         registry: ghcr.io
         username: ${{ github.actor }}
         password: ${{ secrets.GITHUB_TOKEN }}
-
-    - name: Extract git commit SHA
-      id: extract-sha
-      run: echo "GIT_SHA=${GITHUB_SHA::8}" >> $GITHUB_ENV
 
     - name: Build and push Docker image
       uses: docker/build-push-action@v2
@@ -33,6 +27,5 @@ jobs:
         context: distroboxes/
         file: distroboxes/TumbleweedL1emacs
         push: true
-        tags: |
-          ghcr.io/${{ github.repository_owner }}/${{ github.event.repository.name }}/tumbleweedemacs:${{ env.GIT_SHA }}
-          ghcr.io/${{ github.repository_owner }}/${{ github.event.repository.name }}/tumbleweedemacs:latest
+        tags: ${{ github.repository_owner }}/${{ github.event.repository.name }}-tumbleweedemacs:latest
+
