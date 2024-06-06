@@ -47,5 +47,5 @@ jobs:
         context: "{{defaultContext}}:distroboxes"
         file: TumbleweedL1emacs
         push: true
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
+        tags: ${{ steps.meta.outputs.tags }}
+        labels: ${{ steps.meta.outputs.labels }}
