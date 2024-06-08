@@ -16,8 +16,7 @@ make-distrobox NAME='emacs':
        distrobox assemble create --file ./distroboxes/distrobox.ini -n {{NAME}}Devbox
    elif command -v podman &> /dev/null; then
        echo "Podman installation found"
-       podman build --no-cache -f ./distroboxes/TumbleweedL1{{NAME}} -t {{NAME}}devbox . && \
-      distrobox assemble create --file ./distroboxes/distrobox.ini -n {{NAME}}Devbox
+       podman build --no-cache -f ./distroboxes/TumbleweedL1{{NAME}} -t {{NAME}}devbox .
    else
        echo "Docker or podman installation not found."
        exit 1

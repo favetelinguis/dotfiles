@@ -15,3 +15,7 @@ RUN ln -fs /usr/bin/distrobox-host-exec /usr/bin/podman
 RUN ln -fs /usr/bin/distrobox-host-exec /usr/bin/distrobox
 RUN ln -fs /usr/bin/distrobox-host-exec /usr/bin/flatpak
 
+# My current setup never uses emacs client and when I export emacs both emacs and emacsclient get exported
+# from my distrobox. Since I export many emacs also exporting the client clutters up the launch pad.
+# So I just remove the client desktop file.
+RUN rm /usr/share/applications/emacsclient.desktop

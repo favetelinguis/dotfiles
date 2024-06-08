@@ -42,8 +42,7 @@
   ((global-subword-mode t)           ; aaBB will be treated as 2 words
    ;;   (global-superword-mode t)         ; aa-bb aa_bb aaBB all will be treated as 1 word, can not be anabled with subword-mode
    (column-number-mode t)
-   (electric-pair-mode t)
-   (desktop-save-mode t))
+   (electric-pair-mode t))
   :bind
   (("M-i" . imenu))
   :config
@@ -63,6 +62,7 @@
 	kept-new-versions 20   ; how many of the newest versions to keep
 	kept-old-versions 5    ; and how many of the old
 	)
+  (global-visual-line-mode)
   (setq scroll-margin 0)
   (setq hscroll-margin 1)
   ;; Allow all disabled comands as default, for example a in dired
@@ -72,7 +72,8 @@
   (setq mark-ring-max 6)
   (setq global-mark-ring-max 8)
   (setq-default set-mark-command-repeat-pop t)
-
+  (setq project-vc-extra-root-markers '(".project"))
+  (setq switch-to-buffer-obey-display-actions t)
   ;; Cleanup Emacs user interface
   (setq inhibit-startup-message t)
   (scroll-bar-mode -1) ; Disable visible scrollbar
@@ -100,7 +101,10 @@
 (use-package which-key
   :config
   (which-key-mode))
-
+(use-package autoinsert
+  :straight nil
+  :config
+  (add-hook 'find-file-hook 'auto-insert))
 (use-package corfu
   :config
   (global-corfu-mode)
@@ -142,13 +146,6 @@
   :config
   (apheleia-global-mode +1))
 
-(use-package asdf
-  :straight (:host github :repo "tabfugnic/asdf.el")
-  :init
-  (setq asdf-binary "/opt/asdf-vm/bin/asdf")
-  :config
-  (asdf-enable))
-
 (use-package envrc
   :hook (after-init . envrc-global-mode))
 
@@ -157,24 +154,29 @@
   :preface
   (defun my/read-openai-key ()
     (with-temp-buffer
-      (insert-file-contents "~/key.txt")
+      (insert-file-contents "~/.key.txt")
       (string-trim (buffer-string))))
 
+  :bind (("C-c C-j" . gptel-send))
   :config
-  (setq-default gptel-model "gpt-3.5-turbo"
-                gptel-playback t
-                gptel-default-mode 'markdown-mode
+  (setq-default gptel-model "gpt-4o"
+                gptel-default-mode 'org-mode
                 gptel-api-key #'my/read-openai-key))
 
-(use-package clojure-mode)
+;; Setup languages in separate modules
+(use-package myclojure
+  :straight nil
+  :init (require 'myclojure)
+  :load-path "myelisp/")
+;; (use-package mywindowconfigs
+;;   :straight nil
+;;   :init (require 'mywindowconfigs)
+;;   :bind (("C-`" . window-toggle-side-windows))
+;;   :load-path "myelisp/")
 
-(use-package cider)
-;; TODO need keybindings
-(use-package clay
-  :straight (:host github :repo "scicloj/clay.el"))
 (use-package markdown-mode)
 
-
+(use-package vterm)
 
 (use-package git-timemachine)
 
@@ -259,26 +261,13 @@
   :config
   (define-key global-map [remap list-buffers] #'ibuffer))
 
-(use-package popper
-  :bind (("C-`"   . popper-toggle)
-         ("M-`"   . popper-cycle)
-         ("C-M-`" . popper-toggle-type))
-  :init
-  (setq popper-reference-buffers
-        '("\\*Messages\\*"
-          "\\*Async Shell Command\\*"
-          "^\\*eshell.*\\*$" eshell-mode ;eshell as a popup
-          "*vc-git*" ; need this and the mode for some buffers
-          compilation-mode))
-  (setq popper-group-function #'popper-group-by-project) ; project.el projects
-  (popper-mode +1)
-  (popper-echo-mode +1))                ; For echo area hints
 (use-package pass)
 ;; Setup Scheme
 (use-package geiser)
-(use-package geiser-chez
-  :after guile)
-
+(use-package geiser-guile
+  :after geiser)
+(use-package just-mode)
+(use-package dockerfile-mode)
 ;; Setup isearch other window
 (defun isearch-forward-other-window (prefix)
   "Function to isearch-forward in other-window."
@@ -306,4 +295,11 @@
 ;; I think this should add support for color in compilation buffers need testing to confirm
 ;; maybe i want https://codeberg.org/ideasman42/emacs-fancy-compilation
 (add-hook 'compilation-filter-hook 'ansi-color-compilation-filter)
-
+(use-package prodigy
+  :bind
+  (:map project-prefix-map ("J" . prodigy)))
+(use-package justl
+  :config
+  (setq justl-per-recipe-buffer t)
+  :bind
+  (:map project-prefix-map ("j" . justl)))
