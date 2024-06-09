@@ -176,7 +176,9 @@
 
 (use-package markdown-mode)
 
-(use-package vterm)
+(use-package vterm
+  :bind
+  ((:map project-prefix-map ("s" . vterm))))
 
 (use-package git-timemachine)
 
@@ -295,11 +297,10 @@
 ;; I think this should add support for color in compilation buffers need testing to confirm
 ;; maybe i want https://codeberg.org/ideasman42/emacs-fancy-compilation
 (add-hook 'compilation-filter-hook 'ansi-color-compilation-filter)
-(use-package prodigy
-  :bind
-  (:map project-prefix-map ("J" . prodigy)))
+
 (use-package justl
   :config
   (setq justl-per-recipe-buffer t)
   :bind
   (:map project-prefix-map ("j" . justl)))
+

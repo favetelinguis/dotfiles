@@ -7,6 +7,7 @@ RUN zypper --non-interactive install \
     password-store \
     ripgrep fd \
     just \
+    zoxide \
     # used for installing emacs info files
     info
 
