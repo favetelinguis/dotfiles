@@ -159,10 +159,35 @@
 
   (make-directory (concat user-emacs-directory "backup/") t)
   )
+(use-package eglot
+  :ensure t
+  :custom
+  (eglot-autoshutdown t)
+  (eglot-confirm-server-initiated-edits nil)
+  :bind
+  (:map eglot-mode-map
+	("C-c l a" . eglot-code-actions)
+	("C-c l r" . eglot-rename)
+	("C-c l f" . eglot-format)
+	("C-c l d" . eglot-find-declaration)
+	("C-c l i" . eglot-find-implementation)
+	("C-c l t" . eglot-find-typeDefinition)
+	("C-c l h" . eldoc)
+	("C-c l s" . eglot-shutdown)
+	("C-c l R" . eglot-reconnect)))
 ;;;; Debugger
 (use-package gdb-mi
   :ensure nil  ; built-in package
+  :demand t
+  :init
+  ;; Create the keymap before package loads
+  (defvar debug-prefix-map (make-sparse-keymap)
+    "Keymap for debug commands.")
+  :bind-keymap
+  ("C-c d" . debug-prefix-map)    
   :config
+  (which-key-add-key-based-replacements
+    "C-c d"  "+debug")
   ;; Enable the enhanced multi-window debugging layout
   (setq gdb-many-windows t)
   (setq gdb-show-main t)
@@ -179,23 +204,23 @@
   (setq gdb-show-changed-values t)  ; Highlight changed variables
   (setq gdb-delete-out-of-scope t)  ; Clean up out-of-scope variables
   
-  :bind (;; Main debugging commands
-         ("C-c d g" . gdb)
-         ("C-c d r" . gud-run)
-         ("C-c d n" . gud-next)
-         ("C-c d s" . gud-step)
-         ("C-c d b" . gud-break)
-         ("C-c d k" . gud-remove)
-         ("C-c d c" . gud-cont)
-         ("C-c d f" . gud-finish)
-         ("C-c d u" . gud-until)
-         ("C-c d <up>" . gud-up)
-         ("C-c d <down>" . gud-down)
-         ;; GDB-specific enhancements
-	 ("C-c d W" . gdb-many-windows)
-         ("C-c d w" . gud-watch)
-         ("C-c d p" . gud-print)
-         ("C-c d q" . gdb-quit))
+  :bind (:map debug-prefix-map
+              ("g" . gdb)
+              ("r" . gud-run)
+              ("n" . gud-next)
+              ("s" . gud-step)
+              ("b" . gud-break)
+              ("k" . gud-remove)
+              ("c" . gud-cont)
+              ("f" . gud-finish)
+              ("u" . gud-until)
+              ("<up>" . gud-up)
+              ("<down>" . gud-down)
+              ;; GDB-specific enhancements
+	      ("W" . gdb-many-windows)
+              ("w" . gud-watch)
+              ("p" . gud-print)
+              ("q" . gdb-quit))
   
   ;; Repeat map for debugging navigation
   (:repeat-map gud-repeat-map
@@ -233,15 +258,18 @@
   :config
   ;; dont open external frame with ediff
   (setq ediff-window-setup-function 'ediff-setup-windows-plain))
+
 (use-package repeat
   :custom
   (repeat-mode +1))
+
 (use-package project
   :ensure nil
   :preface
   (defun my/project-refresh ()
     (interactive)
     (project-remember-projects-under "~/repos" t)))
+
 (use-package flymake
   :ensure nil
   :bind (("M-n" . flymake-goto-next-error)
@@ -351,6 +379,7 @@
     (add-to-list 'project-switch-commands '(magit-project-status "Magit") t)))
 (use-package git-timemachine
   :ensure t
+  :demand t
   :bind ("C-x v t" . git-timemachine)
   :config
   ;; Show abbreviated commit hash in header line
@@ -359,7 +388,8 @@
   (setq git-timemachine-quit-to-invoking-buffer t))
 (use-package git-gutter
   :ensure t
-  :bind-keymap ("C-x v j" . my/git-gutter-repeat-map)
+  :demand t
+  :bind-keymap ("C-c h" . my/git-gutter-repeat-map)
   :bind
   (:repeat-map my/git-gutter-repeat-map
 	       ("n" . git-gutter:next-hunk)
@@ -372,6 +402,8 @@
 	       ("d" . vc-dir)
 	       ("v" . vc-next-action))
   :config
+  (which-key-add-key-based-replacements
+    "C-c h"  "+git-hunk")
   (setq git-gutter:ask-p nil)
   (global-git-gutter-mode +1))
 (use-package consult-gh
@@ -407,18 +439,27 @@
 ;;; AI
 (use-package gptel
   :ensure t
+  :demand t
   ;;   :hook ((gptel-post-stream . gptel-auto-scroll)
   ;; (gptel-post-response-functions . gptel-end-of-response))
+  :init
+  ;; Create the keymap before package loads
+  (defvar gptel-prefix-map (make-sparse-keymap)
+    "Keymap for gptel commands.")
+  :bind-keymap
+  ("C-c f" . gptel-prefix-map)    
   :bind
-  ( :map global-map
-    ("C-c f r" . gptel-rewrite)
-    ("C-c f m" . gptel-menu)
-    ("C-c f a" . gptel-add)
-    ("C-c f c" . gptel-context-remove-all)
-    ("C-c f A" . gptel-add-file)
-    ("C-c f f" . gptel-send-with-options)
-    ("C-c f F" . gptel-send))
+  ( :map gptel-prefix-map
+    ("r" . gptel-rewrite)
+    ("m" . gptel-menu)
+    ("a" . gptel-add)
+    ("c" . gptel-context-remove-all)
+    ("A" . gptel-add-file)
+    ("f" . gptel-send-with-options)
+    ("F" . gptel-send))
   :config
+  (which-key-add-key-based-replacements
+    "C-c f"  "+gptel")
   (defun gptel-send-with-options (&optional arg)
     "Send query from minibuffer to aichat gptel buffer."
     (interactive "P")
@@ -503,7 +544,6 @@
   ;; Replace bindings. Lazily loaded by `use-package'.
   :bind (;; C-c bindings in `mode-specific-map'
          ("C-c M-x" . consult-mode-command)
-         ("C-c h" . consult-history)
          ("C-c k" . consult-kmacro)
          ("C-c m" . consult-man)
          ("C-c i" . consult-info)
@@ -695,8 +735,17 @@
 ;;; Note taking
 (use-package org
   :ensure t
+  :demand t
   :hook (org-mode . visual-line-mode)
+  :init
+  ;; Create the keymap before package loads
+  (defvar note-prefix-map (make-sparse-keymap)
+    "Keymap for note commands.")
+  :bind-keymap
+  ("C-c n" . note-prefix-map)    
   :config
+  (which-key-add-key-based-replacements
+    "C-c n"  "+note")
   (setq org-startup-indented t)
   ;; Set default directory for org files
   (setq org-directory "~/org-agenda")
@@ -718,22 +767,25 @@
            (file org-default-todo-file)
            "* TODO %?\n  %U"
            :empty-lines 1)))  
-  :bind
-  ("C-c n a" . consult-org-agenda)
-  ("C-c n t" . (lambda () (interactive) (org-capture nil "t")))
-  ("C-c n T" . (lambda () (interactive) (org-capture nil "T"))))
+  :bind (:map note-prefix-map
+	      ("a" . consult-org-agenda)
+	      ("t" . (lambda () (interactive) (org-capture nil "t")))
+	      ("T" . (lambda () (interactive) (org-capture nil "T")))))
 (use-package denote
   :ensure t
+  :demand t
+  :after org
   :hook (dired-mode . denote-dired-mode)
   :bind
-  (("C-c n n" . denote)
-   ("C-c n N" . denote-region)
-   ("C-c n r" . denote-rename-file)
-   ("C-c n l" . denote-link)
-   ("C-c n b" . denote-backlinks)
-   ("C-c n d" . (lambda () (interactive) (dired denote-directory)))
-   ("C-c n D" . denote-dired)
-   ("C-c n g" . denote-grep))
+  (:map note-prefix-map
+	("n" . denote)
+	("N" . denote-region)
+	("r" . denote-rename-file)
+	("l" . denote-link)
+	("b" . denote-backlinks)
+	("d" . (lambda () (interactive) (dired denote-directory)))
+	("D" . denote-dired)
+	("g" . denote-grep))
   :config
   (setq denote-directory (expand-file-name "~/notes/"))
 
@@ -786,30 +838,22 @@
 
 (use-package justl
   :ensure t
-  ;; :config
-  ;; (setq justl-per-recipe-buffer t)
-  ;; bind to r as in run
-  :bind (("C-c r m" . justl)
-	 ("C-c r d" . justl-exec-default-recipe)
-	 ("C-c r r" . justl-exec-recipe-in-dir)))
-
-;; each language will setup eglot config in its module
-(use-package eglot
-  :ensure t
-  :custom
-  (eglot-autoshutdown t)
-  (eglot-confirm-server-initiated-edits nil)
+  :demand t
+  :init
+  (defvar justl-prefix-map (make-sparse-keymap)
+    "Keymap for justl commands.")
+  :bind-keymap
+  ("C-c r" . justl-prefix-map)
   :bind
-  (:map eglot-mode-map
-	("C-c l a" . eglot-code-actions)
-	("C-c l r" . eglot-rename)
-	("C-c l f" . eglot-format)
-	("C-c l d" . eglot-find-declaration)
-	("C-c l i" . eglot-find-implementation)
-	("C-c l t" . eglot-find-typeDefinition)
-	("C-c l h" . eldoc)
-	("C-c l s" . eglot-shutdown)
-	("C-c l R" . eglot-reconnect)))
+  (:map justl-prefix-map
+	("m" . justl)
+	("d" . justl-exec-default-recipe)
+	("r" . justl-exec-recipe-in-dir))
+  :config
+  (which-key-add-key-based-replacements
+    "C-c r"  "+just"))
+
+
 
 ;; disable other language mode formatters and use apheleia for all formatting
 (use-package apheleia
@@ -1093,9 +1137,31 @@ specific project."
 ;;; Utils
 (use-package chezmoi
   :ensure t
+  :demand t
   :vc (:url "https://github.com/tuh8888/chezmoi.el"
-	    :rev :newest))
+            :rev :newest)
+  :init
+  ;; Create the keymap before package loads
+  (defvar chezmoi-prefix-map (make-sparse-keymap)
+    "Keymap for chezmoi commands.")
+  :bind-keymap
+  ("C-c ." . chezmoi-prefix-map)    
+  :bind
+  (:map chezmoi-prefix-map
+        ("f" . chezmoi-find)
+        ("a" . chezmoi-dired-add-marked-file)
+        ("o" . chezmoi-open-other)
+        ("d" . chezmoi-diff)
+        ("e" . chezmoi-ediff)
+        ("v" . chezmoi-magit-status))
+  :config
+  (which-key-add-key-based-replacements
+    "C-c ." "+chezmoi"))
 (use-package chezmoi-dired
+  :after chezmoi
+  :ensure nil
+  :load-path "elpa/chezmoi/extensions/")
+(use-package chezmoi-magit
   :after chezmoi
   :ensure nil
   :load-path "elpa/chezmoi/extensions/")
