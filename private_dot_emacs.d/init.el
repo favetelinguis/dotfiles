@@ -3,24 +3,6 @@
 ;; This file is organized by outlining using ;;; and ;;;; etc to represent levels,
 ;; then a command such as consult-outline bound to M-s M-s can be used to navigate.
 
-;; Run M-x customize-variable RET my-enabled-packages RET
-(defcustom my-enabled-packages '(clojure)
-  "List of additional packages to conditionally load."
-  :type '(set :tag "Enabled Packages"
-              (const :tag "Lang - Zig" zig)
-	      (const :tag "Lang - Clojure" clojure)
-              (const :tag "Lang - Odin" odin)
-	      (const :tag "Lang - Go" go)
-	      (const :tag "Lang - Roc" roc)
-              (const :tag "Lang - Janet" janet)
-	      (const :tag "Infrastructure - K8" k8)
-	      (const :tag "Infrastructure - Docker" docker)
-	      )
-  :group 'my-config)
-(defun my-package-enabled-p (package)
-  "Return non-nil if PACKAGE is in `my-enabled-packages'."
-  (memq package my-enabled-packages))
-
 ;;; Bootstrap
 (require 'package)
 (add-to-list 'package-archives '("melpa" . "https://melpa.org/packages/") t)
@@ -853,9 +835,6 @@
   (which-key-add-key-based-replacements
     "C-c r"  "+just"))
 
-
-
-;; disable other language mode formatters and use apheleia for all formatting
 (use-package apheleia
   :ensure t
   :demand t
@@ -864,18 +843,35 @@
   :hook
   (prog-mode . apheleia-mode))
 
-;; redundant use M-g n/p
-;; (use-package flymake
-;;   :bind (:map prog-mode-map
-;;               ("M-n" . flymake-goto-next-error)
-;;               ("M-p" . flymake-goto-prev-error)))
+(use-package nov
+  :ensure t
+  :mode ("\\.epub\\'" . nov-mode)
+  :config
+  (setq nov-text-width 80
+	nov-variable-pitch t)
+  :hook
+  (nov-mode . visual-line-mode))
 
+;;; Conditionally loaded modules
+;; Run M-x customize-variable RET my-enabled-packages RET
+(defcustom my-enabled-packages '(clojure dotfile)
+  "List of additional packages to conditionally load."
+  :type '(set :tag "Enabled Packages"
+              (const :tag "Lang - Zig" zig)
+	      (const :tag "Lang - Clojure" clojure)
+              (const :tag "Lang - Odin" odin)
+	      (const :tag "Lang - Go" go)
+	      (const :tag "Lang - Roc" roc)
+              (const :tag "Lang - Janet" janet)
+	      (const :tag "Infrastructure - K8" k8)
+	      (const :tag "Infrastructure - Docker" docker)
+	      (const :tag "System - Chezmoi" dotfile))
+  :group 'my-config)
+(defun my-package-enabled-p (package)
+  "Return non-nil if PACKAGE is in `my-enabled-packages'."
+  (memq package my-enabled-packages))
 
-
-
-
-
-;;; Containers
+;;;; Containers
 (use-package kele
   :ensure t
   :if (my-package-enabled-p 'k8)
@@ -889,7 +885,7 @@
   :if (my-package-enabled-p 'docker)
   :bind ("C-c d" . docker))
 
-;;; Zig
+;;;; Zig
 (use-package zig-mode
   :hook ((zig-mode) . eglot-ensure)
   :if (my-package-enabled-p 'zig)
@@ -954,7 +950,7 @@
   :vc (:url "https://github.com/ziglang/zig-mode" :branch "master")
   :mode "\\.zig\\'")
 
-;;; Clojure
+;;;; Clojure
 (use-package cider
   :ensure t
   :if (my-package-enabled-p 'clojure)
@@ -1008,7 +1004,7 @@ specific project."
       (my/cider-jack-in-babashka)))
   (setq cider-repl-pop-to-buffer-on-connect nil))
 
-;;; Odin
+;;;; Odin
 (use-package odin-ts-mode
   :vc (:url "https://github.com/Sampie159/odin-ts-mode" :rev :newest)
   :after apheleia
@@ -1064,7 +1060,7 @@ specific project."
   
   )
 
-;;; Janet
+;;;; Janet
 (use-package janet-ts-mode
   :vc (:url "https://github.com/sogaiu/janet-ts-mode"
 	    :rev :newest)
@@ -1117,13 +1113,13 @@ specific project."
   (add-hook 'janet-ts-mode-hook
             #'ajrepl-interaction-mode))
 
-;;; Go
+;;;; Go
 (use-package go-mode
   :ensure t
   :if (my-package-enabled-p 'go)
   :hook ((go-mode) . eglot-ensure))
 
-;;; Roc
+;;;; Roc
 ;; M-x treesit-install-language-grammar
 ;; there is a roc-ts-install-treesitter-grammar
 (use-package roc-ts-mode
@@ -1134,10 +1130,11 @@ specific project."
   :config
   (add-to-list 'eglot-server-programs '(roc-ts-mode . ("roc_language_server"))))
 
-;;; Utils
+;;;; Dotfile management
 (use-package chezmoi
   :ensure t
   :demand t
+  :if (my-package-enabled-p 'dotfile)
   :vc (:url "https://github.com/tuh8888/chezmoi.el"
             :rev :newest)
   :init
@@ -1160,16 +1157,11 @@ specific project."
 (use-package chezmoi-dired
   :after chezmoi
   :ensure nil
+  :if (my-package-enabled-p 'dotfile)
   :load-path "elpa/chezmoi/extensions/")
 (use-package chezmoi-magit
   :after chezmoi
+  :if (my-package-enabled-p 'dotfile)
   :ensure nil
   :load-path "elpa/chezmoi/extensions/")
-(use-package nov
-  :ensure t
-  :mode ("\\.epub\\'" . nov-mode)
-  :config
-  (setq nov-text-width 80
-	nov-variable-pitch t)
-  :hook
-  (nov-mode . visual-line-mode))
+
