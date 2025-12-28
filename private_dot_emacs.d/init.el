@@ -437,30 +437,19 @@
     ("a" . gptel-add)
     ("c" . gptel-context-remove-all)
     ("A" . gptel-add-file)
-    ("f" . gptel-send-with-options)
-    ("F" . gptel-send))
+    ("f" . gptel-send-with-options))
   :config
   (which-key-add-key-based-replacements
     "C-c f"  "+gptel")
+  ;; Use C-x C-s to save changes in the menu 
   (defun gptel-send-with-options (&optional arg)
-    "Send query from minibuffer to aichat gptel buffer."
+    "Send query.  With prefix ARG open gptel's menu instead."
     (interactive "P")
     (if arg
 	(call-interactively 'gptel-menu)
-      ;; Ensure we have a proper gptel buffer
-      (let ((buffer (get-buffer "aichat")))
-	(unless buffer
-          (setq buffer (get-buffer-create "aichat"))
-          (with-current-buffer buffer
-            (funcall gptel-default-mode)
-            (gptel-mode 1)
-            (setq gptel--backend-name gptel-backend
-                  gptel--model gptel-model)))
-	;; Send with minibuffer input to buffer
-	(let ((transient-current-command 'gptel-menu))
-          (gptel--suffix-send '("m" "baichat"))))))
-  (setq gptel-default-mode 'org-mode)
-  (setq gptel-model 'claude-sonnet-4-5-20250929
+      (gptel--suffix-send (transient-args 'gptel-menu))))
+  (setq gptel-default-mode 'org-mode
+	gptel-model 'claude-sonnet-4-5-20250929
 	gptel-backend (gptel-make-anthropic "AICHAT"
 			:stream t
 			:models '(claude-sonnet-4-5-20250929)
@@ -678,10 +667,10 @@
 (use-package exec-path-from-shell
   :ensure t
   :config
-  ;; set all variables that should be copied
-  (dolist (var '("ANTHROPIC_API_KEY"))
-    (add-to-list 'exec-path-from-shell-variables var))
-  (exec-path-from-shell-initialize))
+  (when (or (daemonp) (memq window-system '(mac ns x)))
+    (dolist (var '("ANTHROPIC_API_KEY" "NIRI_SOCKET"))
+      (add-to-list 'exec-path-from-shell-variables var))
+    (exec-path-from-shell-initialize)))
 
 ;;; Window management
 (use-package ace-window

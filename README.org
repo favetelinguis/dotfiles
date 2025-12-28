@@ -1,0 +1,20 @@
+* Niri
+** mako
+Used for notifications and started in niri config
+** swaylock
+Used as lock screen in niri config
+** fuzzel
+Used as launcher in niri config
+** wpctl
+Used for volume in niri config
+** playerctl
+Used for media playing in niri config
+** brightnessctl
+User for screen brighness in niri config
+** foot
+Awsome terminal, used for supporting TUIs
+* TUIs
+** netpala (NetworkManager based)
+network
+** bluetui
+bluethooth

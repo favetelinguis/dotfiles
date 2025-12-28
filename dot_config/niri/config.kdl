@@ -6,7 +6,7 @@
 //    disable-failed
 //}
 // Outputs from existing configuration
-/-output "eDP-1" {
+output "eDP-1" {
     // Uncomment this line to disable this output.
     // off
 
@@ -16,10 +16,10 @@
     // for the resolution.
     // If the mode is omitted altogether or is invalid, niri will pick one automatically.
     // Run `niri msg outputs` while inside a niri instance to list all outputs and their modes.
-    mode "1920x1080@120.030"
+    mode "1920x1200@60.026"
 
     // You can use integer or fractional scale, for example use 1.5 for 150% scale.
-    scale 2
+    scale 1
 
     // Transform allows to rotate the output counter-clockwise, valid values are:
     // normal, 90, 180, 270, flipped, flipped-90, flipped-180 and flipped-270.
@@ -34,7 +34,7 @@
     // so to put another output directly adjacent to it on the right, set its x to 1920.
     // If the position is unset or results in an overlap, the output is instead placed
     // automatically.
-    position x=1280 y=0
+    position x=0 y=1920
 }
 
 binds {
@@ -44,7 +44,8 @@ binds {
 
     // === Application Launchers ===
     //    Mod+T hotkey-overlay-title="Open Terminal" { spawn "foot"; }
-    Mod+T hotkey-overlay-title="Open Terminal" { spawn "emacsclient" "-cn" "--eval" "(eat)"; }
+    Mod+Shift+T hotkey-overlay-title="Open Foot" { spawn "foot"; }
+    Mod+T hotkey-overlay-title="Open Eat" { spawn "emacsclient" "-cn" "--eval" "(eat)"; }
     Mod+P hotkey-overlay-title="Open Projects" { spawn "emacsclient" "-cn" "--eval" "(dired \"~/repos/\")"; }
     Mod+D hotkey-overlay-title="Open Ibuffer" { spawn "emacsclient" "-cn" "--eval" "(ibuffer)"; }
     Mod+E hotkey-overlay-title="Open Emacs (client)" { spawn "emacsclient" "-cn"; }
@@ -59,10 +60,7 @@ binds {
     Mod+Shift+N hotkey-overlay-title="Bluethooth" {
                 spawn "foot" "bluetui";
     }
-    Mod+S hotkey-overlay-title="System Monitor" {
-                spawn "foot" "btop";
-                
-    }
+
     // === Security ===
     Mod+Alt+L hotkey-overlay-title="Lock Screen" {
                         spawn "swaylock";
@@ -94,9 +92,9 @@ binds {
     // === Window Management ===
     Mod+Q repeat=false { close-window; }
     Mod+F { maximize-column; }
-    Mod+Shift+F { fullscreen-window; }
-    Mod+Shift+T { toggle-window-floating; }
-    Mod+Shift+V { switch-focus-between-floating-and-tiling; }
+//    Mod+Shift+F { fullscreen-window; }
+//    Mod+Shift+T { toggle-window-floating; }
+//    Mod+Shift+V { switch-focus-between-floating-and-tiling; }
     Mod+W { toggle-column-tabbed-display; }
 
     // === Focus Navigation ===
