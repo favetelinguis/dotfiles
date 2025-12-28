@@ -50,7 +50,17 @@
 ;; OBS will need to run kdl-install-treesitter on first use
 (use-package kdl-mode
   :ensure t
-  :mode "\\.kdl\\'")
+  :mode "\\.kdl\\'"
+  :hook
+  (kdl-mode . (lambda ()
+                (setq-local indent-line-function #'indent-relative-first-indent-point)))
+  (kdl-mode . (lambda ()
+		(setq tab-width 4)))
+  :config
+  (add-to-list 'apheleia-formatters
+	       '(kdlfmt . ("kdlfmt" "format" "-")))
+  (add-to-list 'apheleia-mode-alist
+	       '(kdl-mode . kdlfmt)))
 
 ;;; Update builtins
 (use-package transient
@@ -179,6 +189,8 @@
   :custom
   (eglot-autoshutdown t)
   (eglot-confirm-server-initiated-edits nil)
+  :config
+  (add-to-list 'eglot-ignored-server-capabilities :inlayHintProvider)
   :bind
   (:map eglot-mode-map
 	("C-c l a" . eglot-code-actions)
@@ -708,7 +720,7 @@
   :config
   ;; should prob have some conditional here to only load when demonp or othercheck github repo for info
   ;; however this is the solution that works most often for me atm
-  (dolist (var '("ANTHROPIC_API_KEY"))
+  (dolist (var '("ANTHROPIC_API_KEY" "NIRI_SOCKET"))
     (add-to-list 'exec-path-from-shell-variables var))
   (exec-path-from-shell-initialize))
 
@@ -736,7 +748,7 @@
 				   "*eldoc*"
 				   "\\*AICHAT\\*"
 				   "\\*Async Shell Command\\*"
-				   "^\\*eshell.*\\*$" eshell-mode ;eshell as a popup
+				   "^\\*.*-eshell.*\\*$" "^\\*eshell.*\\*$" eshell-mode ;eshell as a popup
 				   Man-mode
 				   help-mode
 				   compilation-mode))
@@ -1028,7 +1040,8 @@ specific project."
 	      ("C-c C-c t" . odin-test-at-point)
 	      ("C-c C-c r" . odin-run-module)
 	      ("C-c C-c c" . odin-check-module))
-  :hook ((odin-ts-mode) . eglot-ensure)
+  :hook
+  ((odin-ts-mode) . eglot-ensure)
   ((odin-ts-mode) . (lambda ()
 		      (setq tab-width 4
 			    indent-tabs-mode t)))
