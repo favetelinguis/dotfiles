@@ -125,11 +125,6 @@
   (load custom-file 'noerror)
   ;; Use ripgrep for project search ripgrep
   (setq xref-search-program 'ripgrep)
-  (setq-default line-spacing 0.2)
-  (set-face-attribute 'default nil
-                      :font "JetBrains Mono-10"
-                      :weight 'normal
-                      :width 'normal)
   :custom
   (calendar-week-start-day 1)
   ;; Curfu
@@ -370,7 +365,13 @@
   ;; Enable flashing mode-line on errors
   (doom-themes-visual-bell-config)
   ;; Corrects (and improves) org-mode's native fontification.
-  (doom-themes-org-config))
+  (doom-themes-org-config)
+  (setq-default line-spacing 0.2)
+  (set-face-attribute 'default nil
+                      :family "JetBrains Mono"
+		      :height 105
+                      :weight 'normal
+                      :width 'normal))
 
 ;;; Modline
 (use-package doom-modeline
