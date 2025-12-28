@@ -3,29 +3,62 @@
 ;; This file is organized by outlining using ;;; and ;;;; etc to represent levels,
 ;; then a command such as consult-outline bound to M-s M-s can be used to navigate.
 
-;;; Bootstrap
-(require 'package)
-(add-to-list 'package-archives '("melpa" . "https://melpa.org/packages/") t)
-;; Comment/uncomment this line to enable MELPA Stable if desired.  See `package-archive-priorities`
-;; and `package-pinned-packages`. Most users will not need or want to do this.
-;;(add-to-list 'package-archives '("melpa-stable" . "https://stable.melpa.org/packages/") t)
-(package-initialize)
-;; for the compilation buffer to support colors
-(use-package ansi-color
-  :hook (compilation-filter . ansi-color-compilation-filter))
-
-;; for compilation will remove the osc stuff making odin test better
-(use-package ansi-osc
-  :ensure t
-  :hook (compilation-filter . ansi-osc-compilation-filter))
-
-
-
+;;; Elpaca
+(defvar elpaca-installer-version 0.11)
+(defvar elpaca-directory (expand-file-name "elpaca/" user-emacs-directory))
+(defvar elpaca-builds-directory (expand-file-name "builds/" elpaca-directory))
+(defvar elpaca-repos-directory (expand-file-name "repos/" elpaca-directory))
+(defvar elpaca-order '(elpaca :repo "https://github.com/progfolio/elpaca.git"
+                              :ref nil :depth 1 :inherit ignore
+                              :files (:defaults "elpaca-test.el" (:exclude "extensions"))
+                              :build (:not elpaca--activate-package)))
+(let* ((repo  (expand-file-name "elpaca/" elpaca-repos-directory))
+       (build (expand-file-name "elpaca/" elpaca-builds-directory))
+       (order (cdr elpaca-order))
+       (default-directory repo))
+  (add-to-list 'load-path (if (file-exists-p build) build repo))
+  (unless (file-exists-p repo)
+    (make-directory repo t)
+    (when (<= emacs-major-version 28) (require 'subr-x))
+    (condition-case-unless-debug err
+        (if-let* ((buffer (pop-to-buffer-same-window "*elpaca-bootstrap*"))
+                  ((zerop (apply #'call-process `("git" nil ,buffer t "clone"
+                                                  ,@(when-let* ((depth (plist-get order :depth)))
+                                                      (list (format "--depth=%d" depth) "--no-single-branch"))
+                                                  ,(plist-get order :repo) ,repo))))
+                  ((zerop (call-process "git" nil buffer t "checkout"
+                                        (or (plist-get order :ref) "--"))))
+                  (emacs (concat invocation-directory invocation-name))
+                  ((zerop (call-process emacs nil buffer nil "-Q" "-L" "." "--batch"
+                                        "--eval" "(byte-recompile-directory \".\" 0 'force)")))
+                  ((require 'elpaca))
+                  ((elpaca-generate-autoloads "elpaca" repo)))
+            (progn (message "%s" (buffer-string)) (kill-buffer buffer))
+          (error "%s" (with-current-buffer buffer (buffer-string))))
+      ((error) (warn "%s" err) (delete-directory repo 'recursive))))
+  (unless (require 'elpaca-autoloads nil t)
+    (require 'elpaca)
+    (elpaca-generate-autoloads "elpaca" repo)
+    (let ((load-source-file-function nil)) (load "./elpaca-autoloads"))))
+(add-hook 'after-init-hook #'elpaca-process-queues)
+(elpaca `(,@elpaca-order))
+(setq elpaca-lock-file (expand-file-name "elpaca-lock-file.el" user-emacs-directory))
+(elpaca elpaca-use-package
+  ;; Enable use-package :ensure support for Elpaca.
+  (elpaca-use-package-mode))
 
 ;; OBS will need to run kdl-install-treesitter on first use
 (use-package kdl-mode
   :ensure t
   :mode "\\.kdl\\'")
+
+;;; Update builtins
+(use-package transient
+  :ensure t)
+(use-package flymake
+  :ensure t)
+(use-package jsonrpc
+  :ensure t)
 
 ;;; Builtins
 (use-package emacs
@@ -88,7 +121,7 @@
                       :weight 'normal
                       :width 'normal)
   :custom
-  
+  (calendar-week-start-day 1)
   ;; Curfu
   ;; TAB cycle if there are only few candidates
   ;; (completion-cycle-threshold 3)
@@ -289,11 +322,6 @@
   ;; Enable optional extension modes:
   (corfu-history-mode)
   (corfu-popupinfo-mode))
-;; Enable Corfu completion UI
-;; See the Corfu README for more configuration tips.
-(use-package corfu
-  :init
-  (global-corfu-mode))
 
 ;; Add extensions
 (use-package cape
@@ -841,43 +869,27 @@
   :hook
   (nov-mode . visual-line-mode))
 
-;;; Conditionally loaded modules
-;; Run M-x customize-variable RET my-enabled-packages RET
-(defcustom my-enabled-packages '(clojure dotfile)
-  "List of additional packages to conditionally load."
-  :type '(set :tag "Enabled Packages"
-              (const :tag "Lang - Zig" zig)
-	      (const :tag "Lang - Clojure" clojure)
-              (const :tag "Lang - Odin" odin)
-	      (const :tag "Lang - Go" go)
-	      (const :tag "Lang - Roc" roc)
-              (const :tag "Lang - Janet" janet)
-	      (const :tag "Infrastructure - K8" k8)
-	      (const :tag "Infrastructure - Docker" docker)
-	      (const :tag "System - Chezmoi" dotfile))
-  :group 'my-config)
-(defun my-package-enabled-p (package)
-  "Return non-nil if PACKAGE is in `my-enabled-packages'."
-  (memq package my-enabled-packages))
-
 ;;;; Containers
 (use-package kele
   :ensure t
-  :if (my-package-enabled-p 'k8)
+  :if (executable-find "kubectl") 
   :config
   (kele-mode 1))
 (use-package dockerfile-mode
   :ensure t
-  :if (my-package-enabled-p 'docker))
+  :if (executable-find "docker"))
 (use-package docker
   :ensure t
-  :if (my-package-enabled-p 'docker)
+  :if (executable-find "docker")
   :bind ("C-c d" . docker))
 
 ;;;; Zig
 (use-package zig-mode
+  :ensure  (:host github
+		  :repo "https://github.com/ziglang/zig-mode"
+		  :files ("*.el"))
   :hook ((zig-mode) . eglot-ensure)
-  :if (my-package-enabled-p 'zig)
+  :if (executable-find "zig") 
   :bind (:map zig-mode-map
 	      ("C-c C-c t" . my/zig-build-test)
 	      ("C-c C-c l" . my/zig-test-file-local)
@@ -936,68 +948,70 @@
 	(compile compile-command))))
 
   (setq zig-format-on-save nil) ; rely on :editor format instead
-  :vc (:url "https://github.com/ziglang/zig-mode" :branch "master")
   :mode "\\.zig\\'")
 
 ;;;; Clojure
 (use-package cider
   :ensure t
-  :if (my-package-enabled-p 'clojure)
+  :if (or (executable-find "clj") (executable-find "bb"))
   :config
-  (defun my/cider-jack-in-babashka (&optional project-dir)
-    "Start a utility CIDER REPL backed by Babashka, not related to a
+  (when (executable-find "bb")
+    (defun my/cider-jack-in-babashka (&optional project-dir)
+      "Start a utility CIDER REPL backed by Babashka, not related to a
 specific project."
-    (interactive)
-    (when (get-buffer "*babashka-repl*")
-      (kill-buffer "*babashka-repl*"))
-    (when (get-buffer "*bb-playground*")
-      (kill-buffer "*bb-playground*"))
-    (let ((project-dir (or project-dir user-emacs-directory)))
-      (nrepl-start-server-process
-       project-dir
-       "bb --nrepl-server 0"
-       (lambda (server-buf)
-	 (set-process-query-on-exit-flag
-          (get-buffer-process server-buf) nil)
-	 (cider-nrepl-connect
-          (list :repl-buffer server-buf
-		:repl-type 'clj
-		:host (plist-get nrepl-endpoint :host)
-		:port (plist-get nrepl-endpoint :port)
-		:session-name "babashka"
-		:repl-init-function (lambda ()
-                                      (setq-local cljr-suppress-no-project-warning t
-                                                  cljr-suppress-middleware-warnings t
-                                                  process-query-on-exit-flag nil)
-                                      (set-process-query-on-exit-flag
-                                       (get-buffer-process (current-buffer)) nil)
-                                      (rename-buffer "*babashka-repl*")
-                                      ;; Create and link playground buffer
-                                      (let ((playground-buffer (get-buffer-create "*bb-playground*")))
-					(with-current-buffer playground-buffer
-                                          (clojure-mode)
-					  (insert ";; Babashka Playground\n\n")
-					  (insert "(ns bb-malli\n  (:require [babashka.deps :as deps]))\n")
-					  (insert"(deps/add-deps '{:deps {metosin/malli {:mvn/version \"0.9.0\"}}})\n")
-					  (insert"(require '[malli.core :as malli])\n\n")
-					  (insert ";; Your code here\n")
-					  (goto-char (point-max)) ; Move cursor to end
-                                          (sesman-link-with-buffer playground-buffer '("babashka")))
-					(switch-to-buffer playground-buffer)))))))))
+      (interactive)
+      (when (get-buffer "*babashka-repl*")
+	(kill-buffer "*babashka-repl*"))
+      (when (get-buffer "*bb-playground*")
+	(kill-buffer "*bb-playground*"))
+      (let ((project-dir (or project-dir user-emacs-directory)))
+	(nrepl-start-server-process
+	 project-dir
+	 "bb --nrepl-server 0"
+	 (lambda (server-buf)
+	   (set-process-query-on-exit-flag
+            (get-buffer-process server-buf) nil)
+	   (cider-nrepl-connect
+            (list :repl-buffer server-buf
+		  :repl-type 'clj
+		  :host (plist-get nrepl-endpoint :host)
+		  :port (plist-get nrepl-endpoint :port)
+		  :session-name "babashka"
+		  :repl-init-function (lambda ()
+					(setq-local cljr-suppress-no-project-warning t
+                                                    cljr-suppress-middleware-warnings t
+                                                    process-query-on-exit-flag nil)
+					(set-process-query-on-exit-flag
+					 (get-buffer-process (current-buffer)) nil)
+					(rename-buffer "*babashka-repl*")
+					;; Create and link playground buffer
+					(let ((playground-buffer (get-buffer-create "*bb-playground*")))
+					  (with-current-buffer playground-buffer
+                                            (clojure-mode)
+					    (insert ";; Babashka Playground\n\n")
+					    (insert "(ns bb-malli\n  (:require [babashka.deps :as deps]))\n")
+					    (insert"(deps/add-deps '{:deps {metosin/malli {:mvn/version \"0.9.0\"}}})\n")
+					    (insert"(require '[malli.core :as malli])\n\n")
+					    (insert ";; Your code here\n")
+					    (goto-char (point-max)) ; Move cursor to end
+                                            (sesman-link-with-buffer playground-buffer '("babashka")))
+					  (switch-to-buffer playground-buffer)))))))))
 
-  (defun my/switch-to-bb-playground ()
-    "Switch to *bb-playground* buffer if it exists, otherwise start babashka REPL and switch to playground."
-    (interactive)
-    (if (get-buffer "*bb-playground*")
-	(switch-to-buffer "*bb-playground*")
-      (my/cider-jack-in-babashka)))
+    (defun my/switch-to-bb-playground ()
+      "Switch to *bb-playground* buffer if it exists, otherwise start babashka REPL and switch to playground."
+      (interactive)
+      (if (get-buffer "*bb-playground*")
+	  (switch-to-buffer "*bb-playground*")
+	(my/cider-jack-in-babashka))))
   (setq cider-repl-pop-to-buffer-on-connect nil))
 
 ;;;; Odin
 (use-package odin-ts-mode
-  :vc (:url "https://github.com/Sampie159/odin-ts-mode" :rev :newest)
+  :ensure  (:host github
+		  :repo"https://github.com/Sampie159/odin-ts-mode"
+		  :files ("*.el"))
   :after apheleia
-  :if (my-package-enabled-p 'odin)
+  :if (executable-find "odin")
   :bind (:map odin-ts-mode-map
 	      ("C-c C-c t" . odin-test-at-point)
 	      ("C-c C-c r" . odin-run-module)
@@ -1051,9 +1065,10 @@ specific project."
 
 ;;;; Janet
 (use-package janet-ts-mode
-  :vc (:url "https://github.com/sogaiu/janet-ts-mode"
-	    :rev :newest)
-  :if (my-package-enabled-p 'janet)
+  :ensure (:host github
+		 :repo"https://github.com/sogaiu/janet-ts-mode" 
+		 :files ("*.el"))
+  :if (executable-find "janet")
   :bind (:map janet-ts-mode-map
 	      ("C-c C-c" . run-judge-at-point))
   :hook
@@ -1093,19 +1108,18 @@ specific project."
   (when (not (treesit-language-available-p 'janet-simple))
     (treesit-install-language-grammar 'janet-simple)))
 (use-package ajrepl
-  :vc (:url "https://github.com/sogaiu/ajrepl"
-	    :rev :newest)
-  :if (my-package-enabled-p 'janet)
+  :ensure (:host github
+		 :repo "sogaiu/ajrepl"
+		 :files ("*.el" "ajrepl"))
+  :if (executable-find "janet")
   :config
-  (add-hook 'janet-ts-mode-hook
-	    #'my-janet-setup-completion)
   (add-hook 'janet-ts-mode-hook
             #'ajrepl-interaction-mode))
 
 ;;;; Go
 (use-package go-mode
   :ensure t
-  :if (my-package-enabled-p 'go)
+  :if (executable-find "go")
   :hook ((go-mode) . eglot-ensure))
 
 ;;;; Roc
@@ -1113,7 +1127,7 @@ specific project."
 ;; there is a roc-ts-install-treesitter-grammar
 (use-package roc-ts-mode
   :ensure t
-  :if (my-package-enabled-p 'roc)
+  :if (executable-find "roc")
   :mode ("\\.roc\\'" . roc-ts-mode)
   :hook ((roc-ts-mode . eglot-ensure))
   :config
@@ -1121,12 +1135,18 @@ specific project."
 
 ;;;; Dotfile management
 (use-package chezmoi
-  :ensure t
+  :ensure  (:host github
+		  :repo "https://github.com/tuh8888/chezmoi.el"
+		  :files ("*.el"
+			  "extensions/chezmoi-dired.el"
+			  "extensions/chezmoi-magit.el"
+			  "extensions/chezmoi-ediff.el"))
   :demand t
-  :if (my-package-enabled-p 'dotfile)
-  :vc (:url "https://github.com/tuh8888/chezmoi.el"
-            :rev :newest)
+  :if (executable-find "chezmoi")
   :init
+  (require 'chezmoi-dired)
+  (require 'chezmoi-magit)
+  (require 'chezmoi-ediff)
   ;; Create the keymap before package loads
   (defvar chezmoi-prefix-map (make-sparse-keymap)
     "Keymap for chezmoi commands.")
@@ -1135,22 +1155,11 @@ specific project."
   :bind
   (:map chezmoi-prefix-map
         ("f" . chezmoi-find)
-        ("a" . chezmoi-dired-add-marked-file)
         ("o" . chezmoi-open-other)
-        ("d" . chezmoi-diff)
-        ("e" . chezmoi-ediff)
-        ("v" . chezmoi-magit-status))
+	("v" . chezmoi-magit-status)
+	("e" . chezmoi-ediff)
+	("a" . chezmoi-dired-add-marked-files)
+        ("d" . chezmoi-diff))
   :config
   (which-key-add-key-based-replacements
     "C-c ." "+chezmoi"))
-(use-package chezmoi-dired
-  :after chezmoi
-  :ensure nil
-  :if (my-package-enabled-p 'dotfile)
-  :load-path "elpa/chezmoi/extensions/")
-(use-package chezmoi-magit
-  :after chezmoi
-  :if (my-package-enabled-p 'dotfile)
-  :ensure nil
-  :load-path "elpa/chezmoi/extensions/")
-
