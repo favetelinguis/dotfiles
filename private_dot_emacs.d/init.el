@@ -180,6 +180,7 @@
   (make-directory (concat user-emacs-directory "backup/") t))
 (use-package eglot
   :ensure t
+  :demand t
   :custom
   (eglot-autoshutdown t)
   (eglot-confirm-server-initiated-edits nil)
@@ -392,25 +393,37 @@
   :demand t
   :bind (("C-x g" . magit-status)
          ("C-x M-g" . magit-dispatch)
-         ("C-c M-g" . magit-file-dispatch))
+         ("C-c M-g" . magit-file-dispatch)
+	 :map vc-prefix-map
+	 ("v" . magit-status)
+	 ("d" . magit-diff)
+	 ("l" . magit-log)
+	 ("b" . magit-blame)
+	 ("f" . magit-file-dispatch))
   :config
+  (setcdr vc-prefix-map nil) ;; clear the original vc-prefix-map so i can use it for magit etc
   ;; Make project.el use magit
   (with-eval-after-load 'project
+    (setq project-switch-commands
+	  (assoc-delete-all 'project-vc-dir project-switch-commands))
     (define-key project-prefix-map "v" 'magit-project-status)
     (add-to-list 'project-switch-commands '(magit-project-status "Magit") t)))
+
 (use-package git-timemachine
   :ensure t
   :demand t
-  :bind ("C-x v t" . git-timemachine)
+  :bind (:map vc-prefix-map
+	      ("t" . git-timemachine))
   :config
   ;; Show abbreviated commit hash in header line
   (setq git-timemachine-show-minibuffer-details t)
   ;; Automatically kill timemachine buffer when quitting
   (setq git-timemachine-quit-to-invoking-buffer t))
+
 (use-package git-gutter
   :ensure t
   :demand t
-  :bind-keymap ("C-c h" . my/git-gutter-repeat-map)
+  :bind-keymap ("C-x v h" . my/git-gutter-repeat-map)
   :bind
   (:repeat-map my/git-gutter-repeat-map
 	       ("n" . git-gutter:next-hunk)
@@ -420,11 +433,11 @@
 	       ("m" . git-gutter:mark-hunk)
 	       ("s" . git-gutter:stage-hunk)
 	       :exit
-	       ("d" . vc-dir)
-	       ("v" . vc-next-action))
+	       ("v" . magit-status)
+	       ("f" . magit-file-dispatch))
   :config
   (which-key-add-key-based-replacements
-    "C-c h"  "+git-hunk")
+    "C-x v h"  "git-hunk")
   (setq git-gutter:ask-p nil)
   (global-git-gutter-mode +1))
 (use-package consult-gh
@@ -717,19 +730,12 @@
            (file org-default-todo-file)
            "* TODO %?\n  %U"
            :empty-lines 1))))
+
 (use-package denote
   :ensure t
   :demand t
   :after org
   :hook (dired-mode . denote-dired-mode)
-  :bind
-  (:map note-prefix-map
-	("n" . denote)
-	("N" . denote-region)
-	("r" . denote-rename-file)
-	("l" . denote-link)
-	("b" . denote-backlinks)
-	("d" . denote-dired))
   :config
   (setq denote-directory (expand-file-name "~/notes/"))
 
@@ -738,12 +744,10 @@
   ;; "[D]" followed by the file's title.  Read the doc string of
   ;; `denote-rename-buffer-format' for how to modify this.
   (denote-rename-buffer-mode 1))
+
 (use-package consult-denote
   :ensure t
   :demand t
-  :bind
-  (("C-c n f" . consult-denote-find)
-   ("C-c n g" . consult-denote-grep))
   :config
   (setq consult-denote-grep-command 'consult-ripgrep)
   (consult-denote-mode 1))
@@ -1089,12 +1093,12 @@ specific project."
   (require 'chezmoi-magit)
   (require 'chezmoi-ediff))
 
-;;;C-z global keymap
+;;; Keymap C-z
 (defvar-keymap my-prefix-note-map
   :doc "My prefix key map for notes."
   "a" #'consult-org-agenda
-  "t"(lambda () (interactive) (org-capture nil "t"))
-  "T"(lambda () (interactive) (org-capture nil "T"))
+  "t" (lambda () (interactive) (org-capture nil "t"))
+  "T" (lambda () (interactive) (org-capture nil "T"))
   "n" #'denote
   "N" #'denote-region
   "r" #'denote-rename-file
@@ -1110,6 +1114,7 @@ specific project."
   "o" #'chezmoi-open-other
   "v" #'chezmoi-magit-status
   "e" #'chezmoi-ediff
+  "w" #'chezmoi-write
   "a" #'chezmoi-dired-add-marked-files
   "d" #'chezmoi-diff)
 
