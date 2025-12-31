@@ -452,11 +452,6 @@
   (add-to-list 'savehist-additional-variables 'consult-gh--known-repos-list)
   ;; Enable default keybindings (e.g. for commenting on issues, prs, ...)
   (consult-gh-enable-default-keybindings))
-(use-package consult-gh-embark
-  :ensure t
-  :after consult-gh
-  :config
-  (consult-gh-embark-mode +1))
 
 ;;; AI
 (use-package gptel
@@ -663,49 +658,6 @@
   ;; You may want to use `embark-prefix-help-command' or which-key instead.
   ;; (keymap-set consult-narrow-map (concat consult-narrow-key " ?") #'consult-narrow-help)
   )
-
-(use-package embark-consult
-  :ensure t
-  :after consult)
-
-
-(use-package embark
-  :ensure t
-
-  :bind
-  (("C-;" . embark-act)         ;; pick some comfortable binding
-   ("M-." . embark-dwim)        ;; good alternative: M-.
-   ("C-h B" . embark-bindings)) ;; alternative for `describe-bindings'
-
-  :init
-
-  ;; Optionally replace the key help with a completing-read interface
-  (setq prefix-help-command #'embark-prefix-help-command)
-
-  ;; Show the Embark target at point via Eldoc. You may adjust the
-  ;; Eldoc strategy, if you want to see the documentation from
-  ;; multiple providers. Beware that using this can be a little
-  ;; jarring since the message shown in the minibuffer can be more
-  ;; than one line, causing the modeline to move up and down:
-
-  ;; (add-hook 'eldoc-documentation-functions #'embark-eldoc-first-target)
-  ;; (setq eldoc-documentation-strategy #'eldoc-documentation-compose-eagerly)
-
-  ;; Add Embark to the mouse context menu. Also enable `context-menu-mode'.
-  ;; (context-menu-mode 1)
-  ;; (add-hook 'context-menu-functions #'embark-context-menu 100)
-
-  :config
-  ;; Integrate Avy and Embark
-
-  ;; Hide the mode line of the Embark live/completions buffers
-  (add-to-list 'display-buffer-alist
-	       '("\\`\\*Embark Collect \\(Live\\|Completions\\)\\*"
-                 nil
-                 (window-parameters (mode-line-format . none)))))
-
-;;---NOTE TAKING---start
-
 
 ;;; Terminal
 (use-package eat
