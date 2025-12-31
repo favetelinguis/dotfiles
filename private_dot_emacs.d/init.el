@@ -87,6 +87,11 @@
 	;; ("C-c o" . find-file-at-point) ;; redundant use embark
 	("C-x k" . kill-current-buffer))
   :config
+  ;; Display date and time
+  (setq display-time-format "%d, Week %U | %H:%M")
+  (display-time-mode 1)
+  ;; Display battery
+  (display-battery-mode 1)
   (winner-mode 1) ; use C-c left/right to go over layouts
   (global-auto-revert-mode 1)
   (setq auto-revert-use-notify t) ;; instatnt autorevert
@@ -187,16 +192,9 @@
   :config
   (add-to-list 'eglot-ignored-server-capabilities :inlayHintProvider)
   :bind
-  (:map eglot-mode-map
-	("C-c l a" . eglot-code-actions)
-	("C-c l r" . eglot-rename)
-	("C-c l f" . eglot-format)
-	("C-c l d" . eglot-find-declaration)
-	("C-c l i" . eglot-find-implementation)
-	("C-c l t" . eglot-find-typeDefinition)
-	("C-c l h" . eldoc)
-	("C-c l s" . eglot-shutdown)
-	("C-c l R" . eglot-reconnect)))
+  (:map eglot-mode-map ; C-h . for eldoc M-.,? for xref
+	("C-c a" . eglot-code-actions)
+	("C-c r" . eglot-rename)))
 
 ;;; Debugger
 (use-package gdb-mi
@@ -371,17 +369,6 @@
 		      :height 105
                       :weight 'normal
                       :width 'normal))
-
-;;; Modline
-(use-package doom-modeline
-  :ensure t
-  :init (doom-modeline-mode 1)
-  :config
-  ;; Display date and time
-  (setq display-time-format "%d, Week %U | %H:%M")
-  (display-time-mode 1)
-  ;; Display battery
-  (display-battery-mode 1))
 
 ;; Config file modes
 (use-package markdown-mode
