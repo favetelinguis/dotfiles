@@ -81,12 +81,10 @@
   (lisp-mode . (lambda () (electric-pair-local-mode -1)))
   :bind
   (:map global-map
-	("C-c j" . project-recompile)
 	("M-g o" . ff-find-other-file)
 	("M-g O" . ff-find-other-file-other-window)
 	;; ("M-o" . other-window)
 	;; ("C-c o" . find-file-at-point) ;; redundant use embark
-	("C-c p" . my/switch-to-bb-playground)
 	("C-x k" . kill-current-buffer))
   :config
   (winner-mode 1) ; use C-c left/right to go over layouts
@@ -198,7 +196,8 @@
 	("C-c l h" . eldoc)
 	("C-c l s" . eglot-shutdown)
 	("C-c l R" . eglot-reconnect)))
-;;;; Debugger
+
+;;; Debugger
 (use-package gdb-mi
   :ensure nil  ; built-in package
   :demand t
@@ -461,23 +460,7 @@
   :demand t
   ;;   :hook ((gptel-post-stream . gptel-auto-scroll)
   ;; (gptel-post-response-functions . gptel-end-of-response))
-  :init
-  ;; Create the keymap before package loads
-  (defvar gptel-prefix-map (make-sparse-keymap)
-    "Keymap for gptel commands.")
-  :bind-keymap
-  ("C-c f" . gptel-prefix-map)    
-  :bind
-  ( :map gptel-prefix-map
-    ("r" . gptel-rewrite)
-    ("m" . gptel-menu)
-    ("a" . gptel-add)
-    ("c" . gptel-context-remove-all)
-    ("A" . gptel-add-file)
-    ("f" . gptel-send-with-options))
   :config
-  (which-key-add-key-based-replacements
-    "C-c f"  "+gptel")
   (defun gptel-api-key-from-environment (&optional var)
     (lambda ()
       (getenv (or var                     ;provided key
@@ -712,15 +695,7 @@
   :ensure t
   :demand t
   :hook (org-mode . visual-line-mode)
-  :init
-  ;; Create the keymap before package loads
-  (defvar note-prefix-map (make-sparse-keymap)
-    "Keymap for note commands.")
-  :bind-keymap
-  ("C-c n" . note-prefix-map)    
   :config
-  (which-key-add-key-based-replacements
-    "C-c n"  "+note")
   (setq org-startup-indented t)
   ;; Set default directory for org files
   (setq org-directory "~/org-agenda")
@@ -741,11 +716,7 @@
           ("t" "Todo without link" entry
            (file org-default-todo-file)
            "* TODO %?\n  %U"
-           :empty-lines 1)))  
-  :bind (:map note-prefix-map
-	      ("a" . consult-org-agenda)
-	      ("t" . (lambda () (interactive) (org-capture nil "t")))
-	      ("T" . (lambda () (interactive) (org-capture nil "T")))))
+           :empty-lines 1))))
 (use-package denote
   :ensure t
   :demand t
@@ -815,26 +786,11 @@
    ;; TODO this do not wok just he to show how to add to map
    ("R" . isearch-query-replace-regexp)))
 
+;;; Simple modes
 (use-package just-mode
   :ensure t)
 
-(use-package justl
-  :ensure t
-  :demand t
-  :init
-  (defvar justl-prefix-map (make-sparse-keymap)
-    "Keymap for justl commands.")
-  :bind-keymap
-  ("C-c r" . justl-prefix-map)
-  :bind
-  (:map justl-prefix-map
-	("m" . justl)
-	("d" . justl-exec-default-recipe)
-	("r" . justl-exec-recipe-in-dir))
-  :config
-  (which-key-add-key-based-replacements
-    "C-c r"  "+just"))
-
+;;; Formatting
 (use-package apheleia
   :ensure t
   :demand t
@@ -843,6 +799,7 @@
   :hook
   (prog-mode . apheleia-mode))
 
+;;; Readers
 (use-package nov
   :ensure t
   :mode ("\\.epub\\'" . nov-mode)
@@ -852,7 +809,7 @@
   :hook
   (nov-mode . visual-line-mode))
 
-;;;; Containers
+;;; Containers
 (use-package kele
   :ensure t
   :if (executable-find "kubectl") 
@@ -866,7 +823,7 @@
   :if (executable-find "docker")
   :bind ("C-c d" . docker))
 
-;;;; Zig
+;;; Zig
 (use-package zig-mode
   :ensure  (:host github
 		  :repo "https://github.com/ziglang/zig-mode"
@@ -1130,20 +1087,51 @@ specific project."
   :init
   (require 'chezmoi-dired)
   (require 'chezmoi-magit)
-  (require 'chezmoi-ediff)
-  ;; Create the keymap before package loads
-  (defvar chezmoi-prefix-map (make-sparse-keymap)
-    "Keymap for chezmoi commands.")
-  :bind-keymap
-  ("C-c ." . chezmoi-prefix-map)    
-  :bind
-  (:map chezmoi-prefix-map
-        ("f" . chezmoi-find)
-        ("o" . chezmoi-open-other)
-	("v" . chezmoi-magit-status)
-	("e" . chezmoi-ediff)
-	("a" . chezmoi-dired-add-marked-files)
-        ("d" . chezmoi-diff))
-  :config
-  (which-key-add-key-based-replacements
-    "C-c ." "+chezmoi"))
+  (require 'chezmoi-ediff))
+
+;;;C-z global keymap
+(defvar-keymap my-prefix-note-map
+  :doc "My prefix key map for notes."
+  "a" #'consult-org-agenda
+  "t"(lambda () (interactive) (org-capture nil "t"))
+  "T"(lambda () (interactive) (org-capture nil "T"))
+  "n" #'denote
+  "N" #'denote-region
+  "r" #'denote-rename-file
+  "l" #'denote-link
+  "b" #'denote-backlinks
+  "d" #'denote-dired
+  "f" #'consult-denote-find
+  "g" #'consult-denote-grep)
+
+(defvar-keymap my-prefix-dotfile-map
+  :doc "My prefix key map for dotfiles."
+  "f" #'chezmoi-find
+  "o" #'chezmoi-open-other
+  "v" #'chezmoi-magit-status
+  "e" #'chezmoi-ediff
+  "a" #'chezmoi-dired-add-marked-files
+  "d" #'chezmoi-diff)
+
+(defvar-keymap my-prefix-llm-map
+  :doc "My prefix key map for llm."
+  "r" #'gptel-rewrite
+  "m"  #'gptel-menu
+  "a"  #'gptel-add
+  "c"  #'gptel-context-remove-all
+  "A"  #'gptel-add-file
+  "f"  #'gptel-send-with-options)
+
+(defvar-keymap my-prefix-map
+  :doc "My prefix key map."
+  "n" my-prefix-note-map
+  "l" my-prefix-llm-map
+  "." my-prefix-dotfile-map
+  "j" #'project-recompile)
+
+(which-key-add-keymap-based-replacements my-prefix-map
+  "n" `("note" . ,my-prefix-note-map)
+  "l" `("llm" . ,my-prefix-llm-map)
+  "." `("dotfiles" . ,my-prefix-dotfile-map))
+
+(keymap-set global-map "C-z" my-prefix-map)
