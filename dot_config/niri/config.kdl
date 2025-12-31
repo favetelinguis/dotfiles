@@ -57,8 +57,8 @@ binds {
     Mod+E hotkey-overlay-title="Open Emacs (client)" {
         spawn "emacsclient" "-cn"
     }
-    Mod+B hotkey-overlay-title="Open Firefox" {
-        spawn "firefox"
+    Mod+B hotkey-overlay-title="Open Browser" {
+        spawn "zen-browser"
     }
     Mod+Space hotkey-overlay-title="Application Launcher" {
         spawn "fuzzel"

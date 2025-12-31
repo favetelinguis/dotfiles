@@ -82,6 +82,8 @@
   :bind
   (:map global-map
 	("C-c j" . project-recompile)
+	("M-g o" . ff-find-other-file)
+	("M-g O" . ff-find-other-file-other-window)
 	;; ("M-o" . other-window)
 	;; ("C-c o" . find-file-at-point) ;; redundant use embark
 	("C-c p" . my/switch-to-bb-playground)
@@ -177,8 +179,7 @@
   (setq backup-directory-alist
 	`((".*" . ,(concat user-emacs-directory "backup/"))))
 
-  (make-directory (concat user-emacs-directory "backup/") t)
-  )
+  (make-directory (concat user-emacs-directory "backup/") t))
 (use-package eglot
   :ensure t
   :custom
@@ -354,18 +355,16 @@
   )
 
 ;;; Theme
-(use-package doom-themes
+(use-package zenburn-theme
   :ensure t
-  :custom
-  ;; Global settings (defaults)
-  (doom-themes-enable-bold nil)   ; if nil, bold is universally disabled
-  (doom-themes-enable-italic nil) ; if nil, italics is universally disabled
   :config
-  (load-theme 'doom-zenburn t)
-  ;; Enable flashing mode-line on errors
-  (doom-themes-visual-bell-config)
-  ;; Corrects (and improves) org-mode's native fontification.
-  (doom-themes-org-config)
+  (load-theme 'zenburn t) ;; this needs to come before any overrides
+  (zenburn-with-color-variables
+    (custom-theme-set-faces
+     'zenburn
+     `(git-gutter:added ((t (:foreground ,zenburn-green :background unspecified))))
+     `(git-gutter:deleted ((t (:foreground ,zenburn-red :background unspecified))))
+     `(git-gutter:modified ((t (:foreground ,zenburn-cyan :background unspecified))))))
   (setq-default line-spacing 0.2)
   (set-face-attribute 'default nil
                       :family "JetBrains Mono"
@@ -807,9 +806,7 @@
 	("r" . denote-rename-file)
 	("l" . denote-link)
 	("b" . denote-backlinks)
-	("d" . (lambda () (interactive) (dired denote-directory)))
-	("D" . denote-dired)
-	("g" . denote-grep))
+	("d" . denote-dired))
   :config
   (setq denote-directory (expand-file-name "~/notes/"))
 
@@ -818,6 +815,15 @@
   ;; "[D]" followed by the file's title.  Read the doc string of
   ;; `denote-rename-buffer-format' for how to modify this.
   (denote-rename-buffer-mode 1))
+(use-package consult-denote
+  :ensure t
+  :demand t
+  :bind
+  (("C-c n f" . consult-denote-find)
+   ("C-c n g" . consult-denote-grep))
+  :config
+  (setq consult-denote-grep-command 'consult-ripgrep)
+  (consult-denote-mode 1))
 ;;---NOTE TAKING---end
 
 
