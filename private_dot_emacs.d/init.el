@@ -65,8 +65,6 @@
 ;;; Update builtins
 (use-package transient
   :ensure t)
-(use-package flymake
-  :ensure t)
 (use-package jsonrpc
   :ensure t)
 
@@ -292,12 +290,13 @@
     (project-remember-projects-under "~/repos" t)))
 
 (use-package flymake
-  :ensure nil
+  :ensure t
   :bind (("M-n" . flymake-goto-next-error)
          ("M-p" . flymake-goto-prev-error)
-         ("C-c f l" . flymake-show-buffer-diagnostics)
+         ("C-c f b" . flymake-show-buffer-diagnostics)
          ("C-c f p" . flymake-show-project-diagnostics)))
 
+;;; In-Buffer Completion 
 (use-package corfu
   :ensure t
   :after orderless
@@ -1089,7 +1088,7 @@ specific project."
   "n" #'denote
   "N" #'denote-region
   "r" #'denote-rename-file
-  "l" #'denote-link
+  "l" #'denote-link-or-create
   "b" #'denote-backlinks
   "d" #'denote-dired
   "f" #'consult-denote-find
@@ -1112,7 +1111,8 @@ specific project."
   "a"  #'gptel-add
   "c"  #'gptel-context-remove-all
   "A"  #'gptel-add-file
-  "f"  #'gptel-send-with-options)
+  "l"  #'gptel-send-with-options
+  "s"  #'gptel-send)
 
 (defvar-keymap my-prefix-map
   :doc "My prefix key map."
