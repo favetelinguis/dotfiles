@@ -758,8 +758,7 @@
 
 (use-package docker
   :ensure t
-  :if (executable-find "docker")
-  :bind ("C-z d" . docker))
+  :if (executable-find "docker"))
 
 ;;;; Dotfile management
 
@@ -817,7 +816,8 @@
   "n" my-prefix-note-map
   "l" my-prefix-llm-map
   "." my-prefix-dotfile-map
-  "j" #'project-recompile)
+  "c" #'compile
+  "j" #'recompile)
 
 (which-key-add-keymap-based-replacements my-prefix-map
   "n" `("note" . ,my-prefix-note-map)
