@@ -47,28 +47,23 @@
   ;; Enable use-package :ensure support for Elpaca.
   (elpaca-use-package-mode))
 
-;; OBS will need to run kdl-install-treesitter on first use
-(use-package kdl-mode
-  :ensure t
-  :mode "\\.kdl\\'"
-  :hook
-  (kdl-mode . (lambda ()
-                (setq-local indent-line-function #'indent-relative-first-indent-point)))
-  (kdl-mode . (lambda ()
-		(setq tab-width 4)))
-  :config
-  (add-to-list 'apheleia-formatters
-	       '(kdlfmt . ("kdlfmt" "format" "-")))
-  (add-to-list 'apheleia-mode-alist
-	       '(kdl-mode . kdlfmt)))
 
 ;;; Update builtins
+
 (use-package transient
   :ensure t)
+
 (use-package jsonrpc
   :ensure t)
 
 ;;; Builtins
+
+(use-package savehist
+  :init
+  ;; instead of enabling full desktop mode i just want to save register and kill-ring between restarts
+  (setq savehist-additional-variables '(register-alist kill-ring))
+  (savehist-mode 1))
+
 (use-package emacs
   :ensure nil
   :hook
@@ -181,6 +176,33 @@
 	`((".*" . ,(concat user-emacs-directory "backup/"))))
 
   (make-directory (concat user-emacs-directory "backup/") t))
+
+(use-package isearch
+  :ensure nil
+  :bind
+  ("C-M-s" . isearch-forward-other-window)
+  ("C-M-r" . isearch-backward-other-window)
+  :config
+  (defun isearch-forward-other-window (prefix)
+    "Function to isearch-forward in other-window."
+    (interactive "P")
+    (unless (one-window-p)
+      (save-excursion
+        (let ((next (if prefix -1 1)))
+          (other-window next)
+          (isearch-forward)
+          (other-window (- next))))))
+
+  (defun isearch-backward-other-window (prefix)
+    "Function to isearch-backward in other-window."
+    (interactive "P")
+    (unless (one-window-p)
+      (save-excursion
+        (let ((next (if prefix 1 -1)))
+          (other-window next)
+          (isearch-backward)
+          (other-window (- next))))))            )
+
 (use-package eglot
   :ensure t
   :demand t
@@ -198,15 +220,9 @@
 (use-package gdb-mi
   :ensure nil  ; built-in package
   :demand t
-  :init
-  ;; Create the keymap before package loads
-  (defvar debug-prefix-map (make-sparse-keymap)
-    "Keymap for debug commands.")
-  :bind-keymap
-  ("C-c d" . debug-prefix-map)    
   :config
-  (which-key-add-key-based-replacements
-    "C-c d"  "+debug")
+  ;; Stop asking when staring gdb might need to use if using remote debugging
+  (setq gdb-debuginfod-enable-setting nil)
   ;; Enable the enhanced multi-window debugging layout
   (setq gdb-many-windows t)
   (setq gdb-show-main t)
@@ -223,47 +239,9 @@
   (setq gdb-show-changed-values t)  ; Highlight changed variables
   (setq gdb-delete-out-of-scope t)  ; Clean up out-of-scope variables
   
-  :bind (:map debug-prefix-map
-              ("g" . gdb)
-              ("r" . gud-run)
-              ("n" . gud-next)
-              ("s" . gud-step)
-              ("b" . gud-break)
-              ("k" . gud-remove)
-              ("c" . gud-cont)
-              ("f" . gud-finish)
-              ("u" . gud-until)
-              ("<up>" . gud-up)
-              ("<down>" . gud-down)
-              ;; GDB-specific enhancements
-	      ("W" . gdb-many-windows)
-              ("w" . gud-watch)
-              ("p" . gud-print)
-              ("q" . gdb-quit))
-  
-  ;; Repeat map for debugging navigation
-  (:repeat-map gud-repeat-map
-	       ;; Step commands (most commonly repeated)
-	       ("n" . gud-next)
-	       ("s" . gud-step)
-	       ("c" . gud-cont)
-	       ("f" . gud-finish)
-	       ("u" . gud-until)
-	       ;; Stack navigation
-	       ("<up>" . gud-up)
-	       ("<down>" . gud-down)
-	       ;; Quick inspection
-	       ("p" . gud-print)
-	       ("w" . gud-watch)
-	       ("b" . gud-break)
-	       ("k" . gud-remove)
-	       ("r" . gud-run)
-	       :exit
-	       ;; Exit repeat mode for setup commands
-	       ("q" . gdb-quit))
-  
   ;; Auto-enable many-windows mode when starting GDB
   :hook (gdb-mode . gdb-many-windows-mode))
+
 (use-package ibuffer
   :bind ("C-x C-b" . ibuffer)
   :config (setq ibuffer-expert t))
@@ -328,7 +306,6 @@
   (corfu-history-mode)
   (corfu-popupinfo-mode))
 
-;; Add extensions
 (use-package cape
   :ensure t
   ;; Bind prefix keymap providing all Cape commands under a mnemonic key.
@@ -364,10 +341,10 @@
      `(git-gutter:modified ((t (:foreground ,zenburn-cyan :background unspecified))))))
   (setq-default line-spacing 0.2)
   (set-face-attribute 'default nil
-                      :family "JetBrains Mono"
+		      :family "JetBrains Mono"
 		      :height 105
-                      :weight 'normal
-                      :width 'normal))
+		      :weight 'normal
+		      :width 'normal))
 
 ;; Config file modes
 (use-package markdown-mode
@@ -426,6 +403,7 @@
     "C-x v h"  "git-hunk")
   (setq git-gutter:ask-p nil)
   (global-git-gutter-mode +1))
+
 (use-package consult-gh
   :ensure t
   :after consult
@@ -483,17 +461,7 @@
 			:models '(claude-sonnet-4-5-20250929)
 			:key (gptel-api-key-from-environment "ANTHROPIC_API_KEY"))))
 
-(use-package x509-mode
-  :ensure t)
-
-(use-package jwt
-  :ensure t
-  :commands (jwt-decode jwt-encode))
-
-;; Used to get direnv working when launching in sway
-
-
-;;---COMPLETION---start
+;;; Completions stack vertico - orderless - marginalia - consult
 (use-package vertico
   :ensure t
   :custom
@@ -503,13 +471,6 @@
   (vertico-cycle t) ;; Enable cycling for `vertico-next/previous'
   :init
   (vertico-mode))
-
-;; Persist history over Emacs restarts. Vertico sorts by history position.
-(use-package savehist
-  :init
-  ;; instead of enabling full desktop mode i just want to save register and kill-ring between restarts
-  (setq savehist-additional-variables '(register-alist kill-ring))
-  (savehist-mode 1))
 
 (use-package orderless
   :ensure t
@@ -521,14 +482,13 @@
   (completion-category-defaults nil)
   (completion-category-overrides '((file (styles partial-completion)))))
 
-;; Enable rich annotations using the Marginalia package
 (use-package marginalia
   :ensure t
   ;; Bind `marginalia-cycle' locally in the minibuffer.  To make the binding
   ;; available in the *Completions* buffer, add it to the
   ;; `completion-list-mode-map'.
   :bind (:map minibuffer-local-map
-              ("M-A" . marginalia-cycle))
+	      ("M-A" . marginalia-cycle))
 
   ;; The :init section is always executed.
   :init
@@ -537,7 +497,7 @@
   ;; the mode gets enabled right away. Note that this forces loading the
   ;; package.
   (marginalia-mode))
-;;---COMPLETION---end
+
 (use-package consult
   :ensure t
   ;; Replace bindings. Lazily loaded by `use-package'.
@@ -642,13 +602,16 @@
   )
 
 ;;; Terminal
+
 (use-package eat
   :ensure t
   :hook ((eshell-load . eat-eshell-mode)
          (eshell-load . eat-eshell-visual-command-mode)))
+
 (use-package envrc
   :ensure t
   :hook (after-init . envrc-global-mode))
+
 (use-package exec-path-from-shell
   :ensure t
   :config
@@ -737,59 +700,9 @@
   :config
   (setq consult-denote-grep-command 'consult-ripgrep)
   (consult-denote-mode 1))
-;;---NOTE TAKING---end
 
+;;; Misc modes
 
-;;---PROGRAMMING---end
-(use-package isearch
-  :ensure nil
-  :bind
-  ("C-M-s" . isearch-forward-other-window)
-  ("C-M-r" . isearch-backward-other-window)
-  :config
-  (defun isearch-forward-other-window (prefix)
-    "Function to isearch-forward in other-window."
-    (interactive "P")
-    (unless (one-window-p)
-      (save-excursion
-        (let ((next (if prefix -1 1)))
-          (other-window next)
-          (isearch-forward)
-          (other-window (- next))))))
-
-  (defun isearch-backward-other-window (prefix)
-    "Function to isearch-backward in other-window."
-    (interactive "P")
-    (unless (one-window-p)
-      (save-excursion
-        (let ((next (if prefix 1 -1)))
-          (other-window next)
-          (isearch-backward)
-          (other-window (- next))))))            )
-
-(use-package isearch
-  :ensure nil
-  :defer t
-  :bind
-  (("M-s r" . query-replace-regexp)
-   :map isearch-mode-map
-   ;; TODO this do not wok just he to show how to add to map
-   ("R" . isearch-query-replace-regexp)))
-
-;;; Simple modes
-(use-package just-mode
-  :ensure t)
-
-;;; Formatting
-(use-package apheleia
-  :ensure t
-  :demand t
-  :config
-  (apheleia-global-mode +1)
-  :hook
-  (prog-mode . apheleia-mode))
-
-;;; Readers
 (use-package nov
   :ensure t
   :mode ("\\.epub\\'" . nov-mode)
@@ -799,272 +712,57 @@
   :hook
   (nov-mode . visual-line-mode))
 
+(use-package x509-mode
+  :ensure t)
+
+(use-package jwt
+  :ensure t
+  :commands (jwt-decode jwt-encode))
+
+;; OBS will need to run kdl-install-treesitter on first use
+(use-package kdl-mode
+  :ensure t
+  :mode "\\.kdl\\'"
+  :hook
+  (kdl-mode . (lambda ()
+                (setq-local indent-line-function #'indent-relative-first-indent-point)))
+  (kdl-mode . (lambda ()
+		(setq tab-width 4)))
+  :config
+  (add-to-list 'apheleia-formatters
+	       '(kdlfmt . ("kdlfmt" "format" "-")))
+  (add-to-list 'apheleia-mode-alist
+	       '(kdl-mode . kdlfmt)))
+
+(use-package just-mode
+  :ensure t)
+
+(use-package apheleia
+  :ensure t
+  :demand t
+  :config
+  (apheleia-global-mode +1)
+  :hook
+  (prog-mode . apheleia-mode))
+
+(use-package dockerfile-mode
+  :ensure t)
+
 ;;; Containers
+
 (use-package kele
   :ensure t
-  :if (executable-find "kubectl") 
+  :if (executable-find "kubectl")
   :config
   (kele-mode 1))
-(use-package dockerfile-mode
-  :ensure t
-  :if (executable-find "docker"))
+
 (use-package docker
   :ensure t
   :if (executable-find "docker")
-  :bind ("C-c d" . docker))
-
-;;; Zig
-(use-package zig-mode
-  :ensure  (:host github
-		  :repo "https://github.com/ziglang/zig-mode"
-		  :files ("*.el"))
-  :hook ((zig-mode) . eglot-ensure)
-  :if (executable-find "zig") 
-  :bind (:map zig-mode-map
-	      ("C-c C-c t" . my/zig-build-test)
-	      ("C-c C-c l" . my/zig-test-file-local)
-	      ("C-c C-c r" . my/zig-build-test-filter-at-point)
-	      ("C-c C-c f" . my/zig-test-filter-at-point))
-  :config
-  (defun my/zig-test-file-local ()
-    "Set compile command for zig test on current file and trigger compilation."
-    (interactive)
-    (let* ((project-root (or (project-root (project-current))
-                             default-directory))
-           (relative-path (file-relative-name (buffer-file-name) project-root)))
-      (setq compile-command (format "zig test %s" relative-path))
-      (let ((default-directory project-root))
-	(compile compile-command))))
-
-  (defun my/zig-test-filter-at-point ()
-    "Run zig test with filter using quoted string at point."
-    (interactive)
-    (let* ((project-root (or (project-root (project-current))
-                             default-directory))
-           (relative-path (file-relative-name (buffer-file-name) project-root))
-           (quoted-string (thing-at-point 'string t)))
-      (if quoted-string
-	  (progn
-            (setq compile-command 
-                  (format "zig test %s --test-filter %s" relative-path quoted-string))
-	    (let  ((default-directory project-root))
-	      (compile compile-command)))
-	(message "No quoted string found at point"))))
-
-  ;; I can pass in multiple test-filter might want to extend this to that?
-  ;; zig build test -Dtest-filter="parse ls output" -Dtest-filter="next test"
-  (defun my/zig-build-test-filter-at-point ()
-    "Run zig build test with filter using quoted string at point."
-    (interactive)
-    (let* ((project-root (or (project-root (project-current))
-                             default-directory))
-           (relative-path (file-relative-name (buffer-file-name) project-root))
-           (quoted-string (thing-at-point 'string t)))
-      (if quoted-string
-	  (progn
-            (setq compile-command 
-                  (format "zig build test --summary new -Dtest-filter=%s" quoted-string))
-	    (let  ((default-directory project-root))
-	      (compile compile-command)))
-	(message "No quoted string found at point"))))
-
-  (defun my/zig-build-test ()
-    "Set compile command to 'zig build test' and run compilation."
-    (interactive)
-    (let ((project-root (or (project-root (project-current))
-			    default-directory)))
-      (setq compile-command "zig build test")
-      (let  ((default-directory project-root))
-	(compile compile-command))))
-
-  (setq zig-format-on-save nil) ; rely on :editor format instead
-  :mode "\\.zig\\'")
-
-;;;; Clojure
-(use-package cider
-  :ensure t
-  :if (or (executable-find "clj") (executable-find "bb"))
-  :config
-  (when (executable-find "bb")
-    (defun my/cider-jack-in-babashka (&optional project-dir)
-      "Start a utility CIDER REPL backed by Babashka, not related to a
-specific project."
-      (interactive)
-      (when (get-buffer "*babashka-repl*")
-	(kill-buffer "*babashka-repl*"))
-      (when (get-buffer "*bb-playground*")
-	(kill-buffer "*bb-playground*"))
-      (let ((project-dir (or project-dir user-emacs-directory)))
-	(nrepl-start-server-process
-	 project-dir
-	 "bb --nrepl-server 0"
-	 (lambda (server-buf)
-	   (set-process-query-on-exit-flag
-            (get-buffer-process server-buf) nil)
-	   (cider-nrepl-connect
-            (list :repl-buffer server-buf
-		  :repl-type 'clj
-		  :host (plist-get nrepl-endpoint :host)
-		  :port (plist-get nrepl-endpoint :port)
-		  :session-name "babashka"
-		  :repl-init-function (lambda ()
-					(setq-local cljr-suppress-no-project-warning t
-                                                    cljr-suppress-middleware-warnings t
-                                                    process-query-on-exit-flag nil)
-					(set-process-query-on-exit-flag
-					 (get-buffer-process (current-buffer)) nil)
-					(rename-buffer "*babashka-repl*")
-					;; Create and link playground buffer
-					(let ((playground-buffer (get-buffer-create "*bb-playground*")))
-					  (with-current-buffer playground-buffer
-                                            (clojure-mode)
-					    (insert ";; Babashka Playground\n\n")
-					    (insert "(ns bb-malli\n  (:require [babashka.deps :as deps]))\n")
-					    (insert"(deps/add-deps '{:deps {metosin/malli {:mvn/version \"0.9.0\"}}})\n")
-					    (insert"(require '[malli.core :as malli])\n\n")
-					    (insert ";; Your code here\n")
-					    (goto-char (point-max)) ; Move cursor to end
-                                            (sesman-link-with-buffer playground-buffer '("babashka")))
-					  (switch-to-buffer playground-buffer)))))))))
-
-    (defun my/switch-to-bb-playground ()
-      "Switch to *bb-playground* buffer if it exists, otherwise start babashka REPL and switch to playground."
-      (interactive)
-      (if (get-buffer "*bb-playground*")
-	  (switch-to-buffer "*bb-playground*")
-	(my/cider-jack-in-babashka))))
-  (setq cider-repl-pop-to-buffer-on-connect nil))
-
-;;;; Odin
-(use-package odin-ts-mode
-  :ensure  (:host github
-		  :repo"https://github.com/Sampie159/odin-ts-mode"
-		  :files ("*.el"))
-  :after apheleia
-  :if (executable-find "odin")
-  :bind (:map odin-ts-mode-map
-	      ("C-c C-c t" . odin-test-at-point)
-	      ("C-c C-c r" . odin-run-module)
-	      ("C-c C-c c" . odin-check-module))
-  :hook
-  ((odin-ts-mode) . eglot-ensure)
-  ((odin-ts-mode) . (lambda ()
-		      (setq tab-width 4
-			    indent-tabs-mode t)))
-  :mode ("\\.odin\\'" . odin-ts-mode)
-  :config
-  (defun odin-run-module ()
-    "Run odin run command with current buffer's folder."
-    (interactive)
-    (let ((folder (file-name-directory (buffer-file-name))))
-      (if folder
-          (let ((command (format "odin run %s" folder)))
-            (compile command))
-	(message "Buffer is not associated with a file"))))
-  (defun odin-check-module ()
-    "Run odin check command with current buffer's folder."
-    (interactive)
-    (let ((folder (file-name-directory (buffer-file-name))))
-      (if folder
-          (let ((command (format "odin check %s" folder)))
-            (compile command))
-	(message "Buffer is not associated with a file"))))
-  (defun odin-test-at-point ()
-    "Run odin test command with current buffer's folder. If word under cursor exists, add it as test name."
-    (interactive)
-    (let ((word (thing-at-point 'word t))
-          (folder (file-name-directory (buffer-file-name))))
-      (if folder
-          (let ((command (if word
-                             (format "odin test %s -define:ODIN_TEST_NAMES=%s" folder word)
-                           (format "odin test %s" folder))))
-            (compile command))
-	(message "Buffer is not associated with a file"))))
-  (add-to-list 'treesit-language-source-alist
-               '(odin "https://github.com/tree-sitter-grammars/tree-sitter-odin"))
-  (add-to-list 'apheleia-formatters
-	       '(odinfmt . ("odinfmt" "-stdin")))
-  (add-to-list 'apheleia-mode-alist
-	       '(odin-ts-mode . odinfmt))
-  ;; (add-to-list 'compilation-error-regexp-alist-alist
-  ;;              '(odin-test
-  ;; 		 "^\\[ERROR\\].*\\[\\([^:]+\\):\\([0-9]+\\):"
-  ;; 		 1 2 nil 2 1))
-  ;; (add-to-list 'compilation-error-regexp-alist 'odin-test)
-  
-  )
-
-;;;; Janet
-(use-package janet-ts-mode
-  :ensure (:host github
-		 :repo"https://github.com/sogaiu/janet-ts-mode" 
-		 :files ("*.el"))
-  :if (executable-find "janet")
-  :bind (:map janet-ts-mode-map
-	      ("C-c C-c" . run-judge-at-point))
-  :hook
-  (janet-ts-mode . (lambda () (electric-pair-local-mode -1)))
-  :config
-  (defun my-janet-setup-completion ()
-    "Setup buffer-based completion for janet-ts-mode."
-    (setq-local completion-at-point-functions
-		(list #'cape-dabbrev)))
-
-  (defun run-judge-at-point ()
-    "Run judge with current buffer's file path and cursor position."
-    (interactive)
-    (let* ((file (buffer-file-name))
-           (line (line-number-at-pos))
-           (col (current-column))
-           (target (format "%s:%d:%d" file line col)))
-      (if file
-          (progn
-            (when (buffer-modified-p)
-              (save-buffer))
-            (compile (format "judge -a %s" target)))
-	(error "Buffer is not visiting a file"))))
-
-  (add-to-list 'apheleia-formatters
-               '(janet-fmt . ("janet" "-e" "(import spork/fmt) (fmt/format-print (file/read stdin :all))")))
-  (add-to-list 'apheleia-mode-alist
-               '(janet-ts-mode . janet-fmt))
-  (setq treesit-language-source-alist
-	(if (eq 'windows-nt system-type)
-            '((janet-simple
-               . ("https://github.com/sogaiu/tree-sitter-janet-simple"
-                  nil nil "gcc.exe")))
-          '((janet-simple
-             . ("https://github.com/sogaiu/tree-sitter-janet-simple")))))
-
-  (when (not (treesit-language-available-p 'janet-simple))
-    (treesit-install-language-grammar 'janet-simple)))
-(use-package ajrepl
-  :ensure (:host github
-		 :repo "sogaiu/ajrepl"
-		 :files ("*.el" "ajrepl"))
-  :if (executable-find "janet")
-  :config
-  (add-hook 'janet-ts-mode-hook
-            #'ajrepl-interaction-mode))
-
-;;;; Go
-(use-package go-mode
-  :ensure t
-  :if (executable-find "go")
-  :hook ((go-mode) . eglot-ensure))
-
-;;;; Roc
-;; M-x treesit-install-language-grammar
-;; there is a roc-ts-install-treesitter-grammar
-(use-package roc-ts-mode
-  :ensure t
-  :if (executable-find "roc")
-  :mode ("\\.roc\\'" . roc-ts-mode)
-  :hook ((roc-ts-mode . eglot-ensure))
-  :config
-  (add-to-list 'eglot-server-programs '(roc-ts-mode . ("roc_language_server"))))
+  :bind ("C-z d" . docker))
 
 ;;;; Dotfile management
+
 (use-package chezmoi
   :ensure  (:host github
 		  :repo "https://github.com/tuh8888/chezmoi.el"
