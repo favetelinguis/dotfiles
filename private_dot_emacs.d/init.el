@@ -58,6 +58,16 @@
 
 ;;; Builtins
 
+(use-package man
+  :ensure nil
+  :config
+  (setq Man-notify-method 'thrifty)
+  (add-to-list 'display-buffer-alist
+               '(Man-mode
+                 (display-buffer-reuse-mode-window display-buffer-same-window)
+                 (inhibit-same-window . nil)
+                 (mode . Man-mode))))
+
 (use-package savehist
   :init
   ;; instead of enabling full desktop mode i just want to save register and kill-ring between restarts
@@ -76,6 +86,7 @@
   (:map global-map
 	("M-g o" . ff-find-other-file)
 	("M-g O" . ff-find-other-file-other-window)
+	("C-c m" . (lambda () (interactive) (man (format "3 %s" (thing-at-point 'word t)))))
 	;; ("M-o" . other-window)
 	;; ("C-c o" . find-file-at-point) ;; redundant use embark
 	("C-x k" . kill-current-buffer))
@@ -110,10 +121,10 @@
     (select-window window))
   (setq display-buffer-alist ; used to give occur focus when it opens by default focus is not switched
 	'(((or . ((derived-mode . occur-mode)))
-           (display-buffer-reuse-window display-buffer-pop-up-window)
-           (body-function . my-select-window)
-           (dedicated . t)
-           (preserve-size . (t . t)))))
+	   (display-buffer-reuse-window display-buffer-pop-up-window)
+	   (body-function . my-select-window)
+	   (dedicated . t)
+	   (preserve-size . (t . t)))))
 
   (setq ring-bell-function 'ignore)
   ;; allow all disabled commands without prompting
@@ -217,6 +228,20 @@
 	("C-c r" . eglot-rename)))
 
 ;;; Debugger
+
+(use-package gud
+  :ensure nil
+  :config
+  (defun my-gud-display-line-advice (orig-fun &rest args)
+    "Make gud-display-line reuse existing windows."
+    (let ((display-buffer-overriding-action
+           '((display-buffer-reuse-window 
+	      display-buffer-use-some-window)
+             (inhibit-same-window . t))))
+      (apply orig-fun args)))
+
+  (advice-add 'gud-display-line :around #'my-gud-display-line-advice))
+
 (use-package gdb-mi
   :ensure nil  ; built-in package
   :demand t
@@ -226,21 +251,16 @@
   ;; Enable the enhanced multi-window debugging layout
   (setq gdb-many-windows t)
   (setq gdb-show-main t)
-  
   ;; Better variable display and IO handling
   (setq gdb-use-separate-io-buffer t)
   (setq gdb-display-io-nopopup t)
-  
   ;; Enable mouse support and tooltips
   (setq gdb-mouse-select-breakpoint t)
   (setq gud-tooltip-mode t)
-  
   ;; Source buffer settings
   (setq gdb-show-changed-values t)  ; Highlight changed variables
   (setq gdb-delete-out-of-scope t)  ; Clean up out-of-scope variables
-  
-  ;; Auto-enable many-windows mode when starting GDB
-  :hook (gdb-mode . gdb-many-windows-mode))
+  )
 
 (use-package ibuffer
   :bind ("C-x C-b" . ibuffer)
@@ -503,9 +523,9 @@
   ;; Replace bindings. Lazily loaded by `use-package'.
   :bind (;; C-c bindings in `mode-specific-map'
          ("C-c M-x" . consult-mode-command)
-         ("C-c k" . consult-kmacro)
-         ("C-c m" . consult-man)
-         ("C-c i" . consult-info)
+	 ;;         ("C-c k" . consult-kmacro)
+	 ;;         ("C-c m" . consult-man)
+	 ;;         ("C-c i" . consult-info)
          ([remap Info-search] . consult-info)
          ;; C-x bindings in `ctl-x-map'
          ("C-x M-:" . consult-complex-command)     ;; orig. repeat-complex-command
@@ -622,6 +642,7 @@
   (exec-path-from-shell-initialize))
 
 ;;; Window management
+
 (use-package ace-window
   :ensure t
   :bind (("M-o" . ace-window))
@@ -631,6 +652,7 @@
    aw-ignore-current t
    aw-ignore-on t
    aw-keys '(?a ?s ?d ?f ?g ?h ?j ?k ?l)))
+
 (use-package popper
   :ensure t ; or :straight t
   :bind (("C-`"   . popper-toggle)
@@ -645,6 +667,7 @@
 				   "*eldoc*"
 				   "\\*AICHAT\\*"
 				   "\\*Async Shell Command\\*"
+				   "\\*gud-.*\\*"  ; Main GUD interaction buffer
 				   "^\\*.*-eshell.*\\*$" "^\\*eshell.*\\*$" eshell-mode ;eshell as a popup
 				   Man-mode
 				   help-mode
