@@ -87,7 +87,9 @@
 	("M-g o" . ff-find-other-file)
 	("M-g O" . ff-find-other-file-other-window)
 	("C-c m" . (lambda () (interactive) (man (format "3 %s" (thing-at-point 'word t)))))
-	;; ("M-o" . other-window)
+	("M-j" .  my/pop-to-special-buffer)
+	("M-`" . window-toggle-side-windows)
+	("M-o" . other-window)
 	;; ("C-c o" . find-file-at-point) ;; redundant use embark
 	("C-x k" . kill-current-buffer))
   :config
@@ -536,9 +538,9 @@
          ("C-x r b" . consult-bookmark)            ;; orig. bookmark-jump
          ("C-x p b" . consult-project-buffer)      ;; orig. project-switch-to-buffer
          ;; Custom M-# bindings for fast register access
-         ("M-j" . consult-register-load)
-         ("M-i" . consult-register-store)          ;; orig. abbrev-prefix-mark (unrelated)
-         ("C-M-j" . consult-register)
+         ;; ("M-j" . consult-register-load)
+         ;; ("M-i" . consult-register-store)          ;; orig. abbrev-prefix-mark (unrelated)
+         ;; ("C-M-j" . consult-register)
          ;; Other custom bindings
          ("M-y" . consult-yank-pop)                ;; orig. yank-pop
          ;; M-g bindings in `goto-map'
@@ -640,40 +642,6 @@
   (dolist (var '("ANTHROPIC_API_KEY" "NIRI_SOCKET"))
     (add-to-list 'exec-path-from-shell-variables var))
   (exec-path-from-shell-initialize))
-
-;;; Window management
-
-(use-package ace-window
-  :ensure t
-  :bind (("M-o" . ace-window))
-  :config
-  (setq
-   aw-scope 'frame
-   aw-ignore-current t
-   aw-ignore-on t
-   aw-keys '(?a ?s ?d ?f ?g ?h ?j ?k ?l)))
-
-(use-package popper
-  :ensure t ; or :straight t
-  :bind (("C-`"   . popper-toggle)
-         ("M-`"   . popper-cycle)
-         ("C-M-`" . popper-toggle-type))
-  :init
-  (setq popper-window-height 25
-	popper-display-function #'popper-display-popup-at-bottom
-	popper-reference-buffers '("\\*Messages\\*"
-				   "Output\\*$"
-				   "*just.*\\*$"
-				   "*eldoc*"
-				   "\\*AICHAT\\*"
-				   "\\*Async Shell Command\\*"
-				   "\\*gud-.*\\*"  ; Main GUD interaction buffer
-				   "^\\*.*-eshell.*\\*$" "^\\*eshell.*\\*$" eshell-mode ;eshell as a popup
-				   Man-mode
-				   help-mode
-				   compilation-mode))
-  (popper-mode +1)
-  (popper-echo-mode +1))
 
 ;;; Note taking
 (use-package org
@@ -800,6 +768,7 @@
   (require 'chezmoi-ediff))
 
 ;;; Keymap C-z
+;; TODO move all keybindings here and remove from use-package
 (defvar-keymap my-prefix-note-map
   :doc "My prefix key map for notes."
   "a" #'consult-org-agenda
@@ -848,3 +817,55 @@
   "." `("dotfiles" . ,my-prefix-dotfile-map))
 
 (keymap-set global-map "C-z" my-prefix-map)
+
+;;; Custom functions
+
+(defun my/pop-to-special-buffer (arg)
+  "Pop to special buffer based on prefix argument.
+1 = *compilation*
+2 = *eshell*
+3 = *Man*
+4 = *aichat*
+5 = *gud*"
+  (interactive "p")
+  (let* ((buffer-pattern
+          (pcase arg
+            (1 "\\*compilation\\*")
+            (2 "\\*.*eshell\\*")
+            (3 "\\*Man.*\\*")
+            (4 "\\*AICHAT\\*")
+            (5 "\\*gud-.*\\*")
+            (_ (user-error "Invalid prefix: use 1-5"))))
+         (matching-buffers
+          (seq-filter (lambda (buf)
+                        (string-match-p buffer-pattern (buffer-name buf)))
+                      (buffer-list))))
+    (cond
+     ((null matching-buffers)
+      (message "No buffers matching %s" buffer-pattern))
+     ((= 1 (length matching-buffers))
+      (pop-to-buffer (car matching-buffers)))
+     (t
+      (pop-to-buffer
+       (get-buffer
+        (completing-read "Select buffer: "
+                         (mapcar #'buffer-name matching-buffers)
+                         nil t)))))))
+;;; Window layout
+
+(dolist (pattern '("\\*compilation\\*"
+                   "\\*.*eshell\\*"
+                   "\\*Man.*\\*"
+                   "\\*AICHAT\\*"
+                   "\\*gud-.*\\*"))
+  (add-to-list 'display-buffer-alist
+               `(,pattern
+                 (display-buffer-in-side-window)
+                 (side . bottom)
+                 (slot . 0)
+                 (window-height . 0.4)
+                 (preserve-size . (nil . t))
+                 (window-parameters . ((no-delete-other-windows . t))))))
+
+
+
