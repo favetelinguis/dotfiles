@@ -88,11 +88,14 @@
 	("M-g O" . ff-find-other-file-other-window)
 	("C-c m" . (lambda () (interactive) (man (format "3 %s" (thing-at-point 'word t)))))
 	("M-j" .  my/pop-to-special-buffer)
+	("M-J" .  next-buffer)
+	("C-M-j" .  consult-recent-file)
 	("M-`" . window-toggle-side-windows)
 	("M-o" . other-window)
 	;; ("C-c o" . find-file-at-point) ;; redundant use embark
 	("C-x k" . kill-current-buffer))
   :config
+  (recentf-mode 1)
   ;; Display date and time
   (setq display-time-format "%d, Week %U | %H:%M")
   (display-time-mode 1)
@@ -217,8 +220,7 @@
           (other-window (- next))))))            )
 
 (use-package eglot
-  :ensure t
-  :demand t
+  :ensure nil
   :custom
   (eglot-autoshutdown t)
   (eglot-confirm-server-initiated-edits nil)
@@ -312,7 +314,6 @@
   (corfu-cycle t)
   (corfu-preselect-first t)
   :config
-  ;; TODO move to :bind
   (define-key corfu-map (kbd "M-p") #'corfu-popupinfo-scroll-down) ;; corfu-next
   (define-key corfu-map (kbd "M-n") #'corfu-popupinfo-scroll-up)  ;; corfu-previous
   (setq corfu-auto t
@@ -425,31 +426,6 @@
     "C-x v h"  "git-hunk")
   (setq git-gutter:ask-p nil)
   (global-git-gutter-mode +1))
-
-(use-package consult-gh
-  :ensure t
-  :after consult
-  :custom
-  (consult-gh-default-clone-directory "~/repos")
-  (consult-gh-show-preview t)
-  (consult-gh-preview-key "C-o")
-  (consult-gh-repo-action #'consult-gh--repo-browse-files-action)
-  (consult-gh-large-file-warning-threshold 2500000)
-  (consult-gh-confirm-name-before-fork nil)
-  (consult-gh-confirm-before-clone t)
-  (consult-gh-notifications-show-unread-only nil)
-  (consult-gh-default-interactive-command #'consult-gh-transient)
-  (consult-gh-prioritize-local-folder nil)
-  (consult-gh-group-dashboard-by :reason)
-  ;;;; Optional
-  (consult-gh-repo-preview-major-mode nil) ; show readmes in their original format
-  (consult-gh-preview-major-mode 'org-mode) ; use 'org-mode for editing comments, commit messages, ...
-  :config
-  ;; Remember visited orgs and repos across sessions
-  (add-to-list 'savehist-additional-variables 'consult-gh--known-orgs-list)
-  (add-to-list 'savehist-additional-variables 'consult-gh--known-repos-list)
-  ;; Enable default keybindings (e.g. for commenting on issues, prs, ...)
-  (consult-gh-enable-default-keybindings))
 
 ;;; AI
 (use-package gptel
@@ -627,8 +603,9 @@
 
 (use-package eat
   :ensure t
-  :hook ((eshell-load . eat-eshell-mode)
-         (eshell-load . eat-eshell-visual-command-mode)))
+  ;; :hook ((eshell-load . eat-eshell-mode)
+  ;;        (eshell-load . eat-eshell-visual-command-mode))
+  )
 
 (use-package envrc
   :ensure t
@@ -744,12 +721,15 @@
 (use-package kele
   :ensure t
   :if (executable-find "kubectl")
+  :bind-keymap
+  ("C-z k" . kele-command-map)
   :config
   (kele-mode 1))
 
 (use-package docker
   :ensure t
-  :if (executable-find "docker"))
+  :if (executable-find "docker")
+  :bind ("C-z d" . docker)))
 
 ;;;; Dotfile management
 
@@ -768,7 +748,6 @@
   (require 'chezmoi-ediff))
 
 ;;; Keymap C-z
-;; TODO move all keybindings here and remove from use-package
 (defvar-keymap my-prefix-note-map
   :doc "My prefix key map for notes."
   "a" #'consult-org-agenda
@@ -800,20 +779,20 @@
   "a"  #'gptel-add
   "c"  #'gptel-context-remove-all
   "A"  #'gptel-add-file
-  "l"  #'gptel-send-with-options
+  "f"  #'gptel-send-with-options
   "s"  #'gptel-send)
 
 (defvar-keymap my-prefix-map
   :doc "My prefix key map."
   "n" my-prefix-note-map
-  "l" my-prefix-llm-map
+  "f" my-prefix-llm-map
   "." my-prefix-dotfile-map
   "c" #'compile
-  "j" #'recompile)
+  "a" #'recompile)
 
 (which-key-add-keymap-based-replacements my-prefix-map
   "n" `("note" . ,my-prefix-note-map)
-  "l" `("llm" . ,my-prefix-llm-map)
+  "f" `("llm" . ,my-prefix-llm-map)
   "." `("dotfiles" . ,my-prefix-dotfile-map))
 
 (keymap-set global-map "C-z" my-prefix-map)
@@ -822,35 +801,38 @@
 
 (defun my/pop-to-special-buffer (arg)
   "Pop to special buffer based on prefix argument.
-1 = *compilation*
+1 = *Man*
 2 = *eshell*
-3 = *Man*
-4 = *aichat*
-5 = *gud*"
-  (interactive "p")
-  (let* ((buffer-pattern
-          (pcase arg
-            (1 "\\*compilation\\*")
-            (2 "\\*.*eshell\\*")
-            (3 "\\*Man.*\\*")
-            (4 "\\*AICHAT\\*")
-            (5 "\\*gud-.*\\*")
-            (_ (user-error "Invalid prefix: use 1-5"))))
-         (matching-buffers
-          (seq-filter (lambda (buf)
-                        (string-match-p buffer-pattern (buffer-name buf)))
-                      (buffer-list))))
-    (cond
-     ((null matching-buffers)
-      (message "No buffers matching %s" buffer-pattern))
-     ((= 1 (length matching-buffers))
-      (pop-to-buffer (car matching-buffers)))
-     (t
-      (pop-to-buffer
-       (get-buffer
-        (completing-read "Select buffer: "
-                         (mapcar #'buffer-name matching-buffers)
-                         nil t)))))))
+3 = *gud*
+4 = *AICHAT*
+5 = *compilation*"
+  (interactive "P")
+  (if (null arg)
+      (previous-buffer)
+    (let* ((arg (prefix-numeric-value arg))
+	   (buffer-pattern
+            (pcase arg
+	      (1 "\\*Man.*\\*")
+              (2 "\\*.*eshell\\*")
+              (3 "\\*gud-.*\\*")    
+              (4 "\\*AICHAT\\*")
+              (5 "\\*compilation\\*")
+              (_ (user-error "Invalid prefix: use 1-5"))))
+           (matching-buffers
+            (seq-filter (lambda (buf)
+                          (string-match-p buffer-pattern (buffer-name buf)))
+			(buffer-list))))
+      (cond
+       ((null matching-buffers)
+	(message "No buffers matching %s" buffer-pattern))
+       ((= 1 (length matching-buffers))
+	(pop-to-buffer (car matching-buffers)))
+       (t
+	(pop-to-buffer
+	 (get-buffer
+          (completing-read "Select buffer: "
+                           (mapcar #'buffer-name matching-buffers)
+                           nil t))))))))
 ;;; Window layout
 
 (dolist (pattern '("\\*compilation\\*"
