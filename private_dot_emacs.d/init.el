@@ -88,12 +88,12 @@
 	("M-g O" . ff-find-other-file-other-window)
 	("C-c m" . (lambda () (interactive) (man (format "3 %s" (thing-at-point 'word t)))))
 	("M-j" .  my/pop-to-special-buffer)
-	("M-J" .  iflipb-next-buffer)
+	("M-J" .  next-buffer)
 	("C-M-j" .  consult-recent-file)
 	("M-`" . window-toggle-side-windows)
 	("M-o" . other-window)
 	;; ("C-c o" . find-file-at-point) ;; redundant use embark
-	("C-x k" . iflipb-kill-buffer))
+	("C-x k" . kill-buffer))
   :config
   (recentf-mode 1)
   ;; Display date and time
@@ -669,10 +669,6 @@
   (setq consult-denote-grep-command 'consult-ripgrep)
   (consult-denote-mode 1))
 
-;;; Buffer management
-(use-package iflipb
-  :ensure t)
-
 ;;; C++
 (use-package cmake-mode
   :ensure t
@@ -819,7 +815,7 @@
 5 = *compilation*"
   (interactive "P")
   (if (null arg)
-      (iflipb-previous-buffer)
+      (previous-buffer)
     (let* ((arg (prefix-numeric-value arg))
 	   (buffer-pattern
             (pcase arg
