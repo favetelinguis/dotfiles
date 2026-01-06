@@ -1,4 +1,4 @@
-;;; -*- lexical-binding: t; -*-
+
 
 ;; This file is organized by outlining using ;;; and ;;;; etc to represent levels,
 ;; then a command such as consult-outline bound to M-s M-s can be used to navigate.
@@ -88,7 +88,7 @@
 	("M-g O" . ff-find-other-file-other-window)
 	("C-c m" . (lambda () (interactive) (man (format "3 %s" (thing-at-point 'word t)))))
 	("M-j" .  my/pop-to-special-buffer)
-	("M-J" .  iflipb-next-buffer)
+	("M-J" . iflipb-previous-buffer)
 	("C-M-j" .  consult-recent-file)
 	("M-`" . window-toggle-side-windows)
 	("M-o" . other-window)
@@ -819,7 +819,9 @@
 5 = *compilation*"
   (interactive "P")
   (if (null arg)
-      (iflipb-previous-buffer)
+      (progn ;; this extra stuff is only needed for iflipb to call in elisp, if i change cmd can only use cmd then
+	(iflipb-next-buffer nil)
+	(setq this-command 'iflipb-next-buffer))
     (let* ((arg (prefix-numeric-value arg))
 	   (buffer-pattern
             (pcase arg
