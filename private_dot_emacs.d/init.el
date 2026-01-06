@@ -794,8 +794,8 @@
   "f" my-prefix-llm-map
   "." my-prefix-dotfile-map
   "l" #'eglot
-  "c" #'compile
-  "a" #'recompile)
+  "c" #'project-compile ; use project scoped for M-n/p history
+  "a" #'project-recompile)
 
 (which-key-add-keymap-based-replacements my-prefix-map
   "n" `("note" . ,my-prefix-note-map)
