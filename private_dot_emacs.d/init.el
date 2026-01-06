@@ -729,7 +729,7 @@
 (use-package docker
   :ensure t
   :if (executable-find "docker")
-  :bind ("C-z d" . docker)))
+  :bind ("C-z d" . docker))
 
 ;;;; Dotfile management
 
