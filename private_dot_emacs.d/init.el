@@ -669,6 +669,12 @@
   (setq consult-denote-grep-command 'consult-ripgrep)
   (consult-denote-mode 1))
 
+;;; C++
+(use-package cmake-mode
+  :ensure t
+  :mode (("CMakeLists\\.txt\\'" . cmake-mode)
+         ("\\.cmake\\'" . cmake-mode)))
+
 ;;; Misc modes
 
 (use-package nov
@@ -787,6 +793,7 @@
   "n" my-prefix-note-map
   "f" my-prefix-llm-map
   "." my-prefix-dotfile-map
+  "l" #'eglot
   "c" #'compile
   "a" #'recompile)
 
