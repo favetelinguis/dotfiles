@@ -58,19 +58,9 @@
 
 ;;; Builtins
 
-(use-package man
-  :ensure nil
-  :config
-  (setq Man-notify-method 'thrifty)
-  (add-to-list 'display-buffer-alist
-               '(Man-mode
-                 (display-buffer-reuse-mode-window display-buffer-same-window)
-                 (inhibit-same-window . nil)
-                 (mode . Man-mode))))
-
 (use-package savehist
   :init
-  ;; instead of enabling full desktop mode i just want to save register and kill-ring between restarts
+  ;; save lots of good things between restarts
   (setq savehist-additional-variables '(register-alist kill-ring))
   (savehist-mode 1))
 
@@ -98,8 +88,14 @@
 	)
   :config
   (recentf-mode 1)
+  (setq-default line-spacing 0.2)
+  (set-face-attribute 'default nil
+		      :family "JetBrains Mono"
+		      :height 105
+		      :weight 'normal
+		      :width 'normal)
   ;; Display date and time
-  (setq display-time-format "%d, Week %U | %H:%M")
+  (setq display-time-format "%d, Week %V | %H:%M")
   (display-time-mode 1)
   ;; Display battery
   (display-battery-mode 1)
@@ -132,7 +128,6 @@
 	   (body-function . my-select-window)
 	   (dedicated . t)
 	   (preserve-size . (t . t)))))
-
   (setq ring-bell-function 'ignore)
   ;; allow all disabled commands without prompting
   (setq disabled-command-function nil)
@@ -141,20 +136,34 @@
   (load custom-file 'noerror)
   ;; Use ripgrep for project search ripgrep
   (setq xref-search-program 'ripgrep)
+  (tool-bar-mode -1)      ;; Disable toolbar
+  (menu-bar-mode -1)      ;; Disable menu bar
+  (scroll-bar-mode -1)    ;; Disable scroll bar
+  (tooltip-mode -1)      ;; Disable tooltips
+  ;; Disable initial scratch message
+  (setq initial-scratch-message nil)
+  ;; No blinking cursor
+  (blink-cursor-mode -1)
+  (setq inhibit-startup-message t)
+  ;; Put auto-save files in a dedicated directory
+  (setq auto-save-file-name-transforms
+	`((".*" ,(concat user-emacs-directory "auto-save/") t)))
+  ;; Create the directory if it doesn't exist
+  (make-directory (concat user-emacs-directory "auto-save/") t)
+  ;; Put backup files in a dedicated directory
+  (setq backup-directory-alist
+	`((".*" . ,(concat user-emacs-directory "backup/"))))
+  (make-directory (concat user-emacs-directory "backup/") t)
   :custom
-  (calendar-week-start-day 1)
   ;; Curfu
   ;; TAB cycle if there are only few candidates
   ;; (completion-cycle-threshold 3)
-
   ;; Enable indentation+completion using the TAB key.
   ;; `completion-at-point' is often bound to M-TAB.
   ;; (tab-always-indent 'complete)
-
   ;; Emacs 30 and newer: Disable Ispell completion function.
   ;; Try `cape-dict' as an alternative.
   (text-mode-ispell-word-completion nil)
-
   ;; Hide commands in M-x which do not apply to the current mode.  Corfu
   ;; commands are hidden, since they are not used via M-x. This setting is
   ;; useful beyond Corfu.
@@ -171,29 +180,7 @@
   (read-extended-command-predicate #'command-completion-default-include-p)
   ;; Do not allow the cursor in the minibuffer prompt
   (minibuffer-prompt-properties
-   '(read-only t cursor-intangible t face minibuffer-prompt))
-  :config
-  (tool-bar-mode -1)      ;; Disable toolbar
-  (menu-bar-mode -1)      ;; Disable menu bar
-  (scroll-bar-mode -1)    ;; Disable scroll bar
-  (tooltip-mode -1)      ;; Disable tooltips
-  ;; Disable initial scratch message
-  (setq initial-scratch-message nil)
-  ;; No blinking cursor
-  (blink-cursor-mode -1)
-  (setq inhibit-startup-message t)
-  ;; Put auto-save files in a dedicated directory
-  (setq auto-save-file-name-transforms
-	`((".*" ,(concat user-emacs-directory "auto-save/") t)))
-
-  ;; Create the directory if it doesn't exist
-  (make-directory (concat user-emacs-directory "auto-save/") t)
-
-  ;; Put backup files in a dedicated directory
-  (setq backup-directory-alist
-	`((".*" . ,(concat user-emacs-directory "backup/"))))
-
-  (make-directory (concat user-emacs-directory "backup/") t))
+   '(read-only t cursor-intangible t face minibuffer-prompt)))
 
 (use-package isearch
   :ensure nil
@@ -363,13 +350,7 @@
      'zenburn
      `(git-gutter:added ((t (:foreground ,zenburn-green :background unspecified))))
      `(git-gutter:deleted ((t (:foreground ,zenburn-red :background unspecified))))
-     `(git-gutter:modified ((t (:foreground ,zenburn-cyan :background unspecified))))))
-  (setq-default line-spacing 0.2)
-  (set-face-attribute 'default nil
-		      :family "JetBrains Mono"
-		      :height 105
-		      :weight 'normal
-		      :width 'normal))
+     `(git-gutter:modified ((t (:foreground ,zenburn-cyan :background unspecified)))))))
 
 ;; Config file modes
 (use-package markdown-mode
@@ -388,6 +369,8 @@
 	 ("l" . magit-log)
 	 ("b" . magit-blame)
 	 ("f" . magit-file-dispatch))
+  :custom
+  (magit-display-buffer-function #'magit-display-buffer-fullframe-status-v1)
   :config
   (setcdr vc-prefix-map nil) ;; clear the original vc-prefix-map so i can use it for magit etc
   ;; Make project.el use magit
