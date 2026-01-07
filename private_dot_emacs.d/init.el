@@ -90,10 +90,12 @@
 	("M-j" .  my/pop-to-special-buffer)
 	("M-J" . iflipb-previous-buffer)
 	("C-M-j" .  consult-recent-file)
+	("M-k" . my-iflipb-kill-current-buffer)
 	("M-`" . window-toggle-side-windows)
 	("M-o" . other-window)
 	;; ("C-c o" . find-file-at-point) ;; redundant use embark
-	("C-x k" . iflipb-kill-buffer))
+	;; ("C-x k" . kill-current-buffer)
+	)
   :config
   (recentf-mode 1)
   ;; Display date and time
@@ -671,7 +673,25 @@
 
 ;;; Buffer management
 (use-package iflipb
-  :ensure t)
+  :ensure t
+  :custom (iflipb-buffer-list-function #'buffers-associated-with-frame)
+  :config
+  (defun buffers-associated-with-frame (&optional frame)
+    "Return buffers associated with FRAME (shown or buried there)."
+    (let ((frame (or frame (selected-frame))))
+      (delete-dups
+       (append (frame-parameter frame 'buffer-list)
+               (frame-parameter frame 'buried-buffer-list)))))
+  (defun my-iflipb-kill-current-buffer ()
+    "Kill the current buffer without prompting and maintain iflipb state."
+    (interactive)
+    (kill-buffer (current-buffer))
+    (if (iflipb-first-iflipb-buffer-switch-command)
+	(setq last-command 'kill-buffer)
+      (if (< iflipb-current-buffer-index (length (iflipb-interesting-buffers)))
+          (iflipb-select-buffer iflipb-current-buffer-index)
+	(iflipb-select-buffer (1- iflipb-current-buffer-index)))
+      (setq last-command 'iflipb-kill-buffer))))
 
 ;;; C++
 (use-package cmake-mode
@@ -712,9 +732,6 @@
   (add-to-list 'apheleia-mode-alist
 	       '(kdl-mode . kdlfmt)))
 
-(use-package just-mode
-  :ensure t)
-
 (use-package apheleia
   :ensure t
   :demand t
@@ -724,17 +741,24 @@
   (prog-mode . apheleia-mode))
 
 (use-package dockerfile-mode
-  :ensure t)
+  :ensure t
+  :mode ("Dockerfile\\'" . dockerfile-mode))
+
+(use-package just-mode
+  :ensure t
+  :mode ("/[Jj]ustfile\\'" . just-mode))
+
+(use-package yaml-mode
+  :ensure t
+  :mode ("\\.ya?ml\\'" . yaml-mode))
 
 ;;; Containers
 
-(use-package kele
+(use-package kubed
   :ensure t
   :if (executable-find "kubectl")
   :bind-keymap
-  ("C-z k" . kele-command-map)
-  :config
-  (kele-mode 1))
+  ("C-z k" . kubed-prefix-map))
 
 (use-package docker
   :ensure t
@@ -861,6 +885,8 @@
                  (window-height . 0.4)
                  (preserve-size . (nil . t))
                  (window-parameters . ((no-delete-other-windows . t))))))
+
+
 
 
 
