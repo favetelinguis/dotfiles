@@ -78,13 +78,12 @@
 	("M-g O" . ff-find-other-file-other-window)
 	("C-c m" . (lambda () (interactive) (man (format "3 %s" (thing-at-point 'word t)))))
 	("M-j" .  my/pop-to-special-buffer)
-	("M-J" . iflipb-previous-buffer)
+	("M-k" . iflipb-previous-buffer)
 	("C-M-j" .  consult-recent-file)
-	("M-k" . my-iflipb-kill-current-buffer)
 	("M-`" . window-toggle-side-windows)
 	("M-o" . other-window)
 	;; ("C-c o" . find-file-at-point) ;; redundant use embark
-	;; ("C-x k" . kill-current-buffer)
+	("C-x k" . my-iflipb-kill-current-buffer)
 	)
   :config
   (recentf-mode 1)
