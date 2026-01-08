@@ -284,8 +284,7 @@
   :ensure t
   :bind (("M-n" . flymake-goto-next-error)
          ("M-p" . flymake-goto-prev-error)
-         ("C-c f b" . flymake-show-buffer-diagnostics)
-         ("C-c f p" . flymake-show-project-diagnostics)))
+         ("C-x p d" . flymake-show-project-diagnostics)))
 
 ;;; In-Buffer Completion 
 (use-package corfu
@@ -741,12 +740,11 @@
   :ensure t
   :if (executable-find "kubectl")
   :bind-keymap
-  ("C-z k" . kubed-prefix-map))
+  ("C-c k" . kubed-prefix-map))
 
 (use-package docker
   :ensure t
-  :if (executable-find "docker")
-  :bind ("C-z d" . docker))
+  :if (executable-find "docker"))
 
 ;;;; Dotfile management
 
@@ -803,17 +801,16 @@
   :doc "My prefix key map."
   "n" my-prefix-note-map
   "f" my-prefix-llm-map
-  "." my-prefix-dotfile-map
+  "d" my-prefix-dotfile-map
   "l" #'eglot
-  "c" #'project-compile ; use project scoped for M-n/p history
-  "a" #'project-recompile)
+  "r" #'project-recompile)
 
 (which-key-add-keymap-based-replacements my-prefix-map
   "n" `("note" . ,my-prefix-note-map)
   "f" `("llm" . ,my-prefix-llm-map)
-  "." `("dotfiles" . ,my-prefix-dotfile-map))
+  "d" `("dotfiles" . ,my-prefix-dotfile-map))
 
-(keymap-set global-map "C-z" my-prefix-map)
+(keymap-set global-map "C-c" my-prefix-map)
 
 ;;; Custom functions
 
