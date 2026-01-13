@@ -410,6 +410,7 @@ input {
 // Find more information on the wiki:
 // https://github.com/YaLTeR/niri/wiki/Configuration:-Layout
 layout {
+    always-center-single-column
     gaps 10
     // Set gaps around windows in logical pixels.
     //        background-color "transparent"
@@ -599,5 +600,6 @@ recent-windows {
     }
 }
 spawn-at-startup "mako"
+spawn-at-startup "nirinotify"
 spawn-at-startup "emacs" "--daemon"
 

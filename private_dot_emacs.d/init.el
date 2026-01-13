@@ -76,13 +76,11 @@
   (:map global-map
 	("M-g o" . ff-find-other-file)
 	("M-g O" . ff-find-other-file-other-window)
-	("C-c m" . (lambda () (interactive) (man (format "3 %s" (thing-at-point 'word t)))))
 	("M-j" .  my/pop-to-special-buffer)
 	("M-k" . iflipb-previous-buffer)
 	("C-M-j" .  consult-recent-file)
 	("M-`" . window-toggle-side-windows)
 	("M-o" . other-window)
-	;; ("C-c o" . find-file-at-point) ;; redundant use embark
 	("C-x k" . my-iflipb-kill-current-buffer)
 	)
   :config
@@ -303,7 +301,7 @@
   :config
   (define-key corfu-map (kbd "M-p") #'corfu-popupinfo-scroll-down) ;; corfu-next
   (define-key corfu-map (kbd "M-n") #'corfu-popupinfo-scroll-up)  ;; corfu-previous
-  (setq corfu-auto t
+  (setq corfu-auto nil ; set to t to autoshow
 	corfu-quit-no-match 'separator) 
   :init
 
@@ -496,10 +494,9 @@
          ("C-x t b" . consult-buffer-other-tab)    ;; orig. switch-to-buffer-other-tab
          ("C-x r b" . consult-bookmark)            ;; orig. bookmark-jump
          ("C-x p b" . consult-project-buffer)      ;; orig. project-switch-to-buffer
-         ;; Custom M-# bindings for fast register access
-         ;; ("M-j" . consult-register-load)
-         ;; ("M-i" . consult-register-store)          ;; orig. abbrev-prefix-mark (unrelated)
-         ;; ("C-M-j" . consult-register)
+         ("C-x r j" . consult-register-load)
+         ("C-x r SPC" . consult-register-store)          ;; orig. abbrev-prefix-mark (unrelated)
+         ("C-x r r" . consult-register)
          ;; Other custom bindings
          ("M-y" . consult-yank-pop)                ;; orig. yank-pop
          ;; M-g bindings in `goto-map'
@@ -624,12 +621,14 @@
 	'(("T" "Todo with link" entry
            (file org-default-todo-file)
            "* TODO %?\n %U\n Created from: %a\n  %i"
-           :empty-lines 1)
+           :empty-lines 1
+	   :prepend t)
           
           ("t" "Todo without link" entry
            (file org-default-todo-file)
            "* TODO %?\n  %U"
-           :empty-lines 1))))
+           :empty-lines 1
+	   :prepend t))))
 
 (use-package denote
   :ensure t
@@ -745,6 +744,13 @@
   :ensure t
   :if (executable-find "docker"))
 
+;;; Linux
+
+(use-package journalctl-mode
+  :ensure t
+  :if (executable-find "journalctl")
+  :bind (("C-c t" . journalctl)))
+
 ;;;; Dotfile management
 
 (use-package chezmoi
@@ -772,7 +778,7 @@
   "r" #'denote-rename-file
   "l" #'denote-link-or-create
   "b" #'denote-backlinks
-  "d" #'denote-dired
+  "d" (lambda () (interactive) (dired (car(denote-directories))))
   "f" #'consult-denote-find
   "g" #'consult-denote-grep)
 
@@ -801,8 +807,10 @@
   "n" my-prefix-note-map
   "f" my-prefix-llm-map
   "d" my-prefix-dotfile-map
+  "m" (lambda () (interactive) (man (format "3 %s" (thing-at-point 'word t))))
+  "o" #'find-file-at-point
   "l" #'eglot
-  "r" #'project-recompile)
+  "v" #'project-recompile)
 
 (which-key-add-keymap-based-replacements my-prefix-map
   "n" `("note" . ,my-prefix-note-map)
