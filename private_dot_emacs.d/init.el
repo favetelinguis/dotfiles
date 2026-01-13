@@ -644,13 +644,6 @@
   ;; `denote-rename-buffer-format' for how to modify this.
   (denote-rename-buffer-mode 1))
 
-(use-package consult-denote
-  :ensure t
-  :demand t
-  :config
-  (setq consult-denote-grep-command 'consult-ripgrep)
-  (consult-denote-mode 1))
-
 ;;; Buffer management
 (use-package iflipb
   :ensure t
@@ -779,8 +772,8 @@
   "l" #'denote-link-or-create
   "b" #'denote-backlinks
   "d" (lambda () (interactive) (dired (car(denote-directories))))
-  "f" #'consult-denote-find
-  "g" #'consult-denote-grep)
+  "f" (lambda () (interactive) (consult-fd (car(denote-directories))))
+  "g" (lambda () (interactive) (consult-ripgrep (car(denote-directories)))))
 
 (defvar-keymap my-prefix-dotfile-map
   :doc "My prefix key map for dotfiles."
