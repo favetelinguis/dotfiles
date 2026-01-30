@@ -1,4 +1,4 @@
-
+;;; -*- lexical-binding: t; -*-
 
 ;; This file is organized by outlining using ;;; and ;;;; etc to represent levels,
 ;; then a command such as consult-outline bound to M-s M-s can be used to navigate.
@@ -47,6 +47,11 @@
   ;; Enable use-package :ensure support for Elpaca.
   (elpaca-use-package-mode))
 
+;; Auto-save only Claude Code temp files (adjust pattern as needed)
+(add-hook 'server-visit-hook
+          (lambda ()
+            (when (string-match-p "/tmp/.*claude" (or buffer-file-name ""))
+              (setq buffer-save-without-query t))))
 
 ;;; Update builtins
 
@@ -64,6 +69,34 @@
   (setq savehist-additional-variables '(register-alist kill-ring))
   (savehist-mode 1))
 
+;; This is added only for keybindings that should override all other keybindings
+(use-package emacs
+  :ensure nil
+  :init
+  ;; Create the override keymap and mode BEFORE :bind
+  (defvar my-override-mode-map (make-sparse-keymap)
+    "Keymap for overriding all other keymaps.")
+  
+  (define-minor-mode my-override-mode
+    "Minor mode to override all keybindings."
+    :init-value t
+    :global t
+    :keymap my-override-mode-map)
+  
+  :bind (:map my-override-mode-map
+              ("M-q" . my-iflipb-kill-current-buffer)
+              ("M-j" . my/pop-to-special-buffer)
+              ("M-k" . iflipb-previous-buffer)
+              ("C-M-j" . consult-recent-file))
+  
+  :config
+  ;; This is KEY - it gives your keymap highest priority
+  (add-to-list 'emulation-mode-map-alists 
+               `((my-override-mode . ,my-override-mode-map)))
+  
+  ;; Enable the mode
+  (my-override-mode 1))
+
 (use-package emacs
   :ensure nil
   :hook
@@ -76,12 +109,8 @@
   (:map global-map
 	("M-g o" . ff-find-other-file)
 	("M-g O" . ff-find-other-file-other-window)
-	("M-j" .  my/pop-to-special-buffer)
-	("M-k" . iflipb-previous-buffer)
-	("C-M-j" .  consult-recent-file)
 	("M-`" . window-toggle-side-windows)
 	("M-o" . other-window)
-	("C-x k" . my-iflipb-kill-current-buffer)
 	)
   :config
   (recentf-mode 1)
@@ -98,6 +127,9 @@
   (display-battery-mode 1)
   (winner-mode 1) ; use C-c left/right to go over layouts
   (global-auto-revert-mode 1)
+  (setq mode-line-position
+	'("%l:%c/" 
+          (:eval (format "%d" (count-lines (point-min) (point-max))))))
   (setq auto-revert-use-notify t) ;; instatnt autorevert
   (setq global-auto-revert-non-file-buffers t)
   (setq auto-revert-verbose nil)
@@ -414,19 +446,11 @@
 		 :repo "https://github.com/karthink/gptel"
 		 :files ("*.el"))
   :demand t
+  :if (getenv "GPTEL_API_KEY")
   ;;   :hook ((gptel-post-stream . gptel-auto-scroll)
   ;; (gptel-post-response-functions . gptel-end-of-response))
   :config
-  (defun gptel-api-key-from-environment (&optional var)
-    (lambda ()
-      (getenv (or var                     ;provided key
-                  (thread-first           ;or fall back to <TYPE>_API_KEY
-                    (type-of gptel-backend)
-                    (symbol-name)
-                    (substring 6)
-                    (upcase)
-                    (concat "_API_KEY"))))))
-  ;; Use C-x C-s to save changes in the menu 
+  ;; Use C-x C-s to save changes in the trasient menu 
   (defun gptel-send-with-options (&optional arg)
     "Send query.  With prefix ARG open gptel's menu instead."
     (interactive "P")
@@ -438,7 +462,7 @@
 	gptel-backend (gptel-make-anthropic "AICHAT"
 			:stream t
 			:models '(claude-sonnet-4-5-20250929)
-			:key (gptel-api-key-from-environment "ANTHROPIC_API_KEY"))))
+			:key (getenv "GPTEL_API_KEY"))))
 
 ;;; Completions stack vertico - orderless - marginalia - consult
 (use-package vertico
@@ -581,12 +605,6 @@
 
 ;;; Terminal
 
-(use-package eat
-  :ensure t
-  ;; :hook ((eshell-load . eat-eshell-mode)
-  ;;        (eshell-load . eat-eshell-visual-command-mode))
-  )
-
 (use-package envrc
   :ensure t
   :hook (after-init . envrc-global-mode))
@@ -596,7 +614,7 @@
   :config
   ;; should prob have some conditional here to only load when demonp or othercheck github repo for info
   ;; however this is the solution that works most often for me atm
-  (dolist (var '("ANTHROPIC_API_KEY" "NIRI_SOCKET"))
+  (dolist (var '("GPTEL_API_KEY" "NIRI_SOCKET"))
     (add-to-list 'exec-path-from-shell-variables var))
   (exec-path-from-shell-initialize))
 
@@ -667,21 +685,24 @@
       (setq last-command 'iflipb-kill-buffer))))
 
 ;;; C++
+(use-package cc-mode ;; use suckless style for c code
+  :hook (c-mode . (lambda ()
+                    (setq tab-width 8)
+                    (setq c-basic-offset 8)
+                    (setq indent-tabs-mode t))))
+
 (use-package cmake-mode
   :ensure t
   :mode (("CMakeLists\\.txt\\'" . cmake-mode)
          ("\\.cmake\\'" . cmake-mode)))
 
 ;;; Misc modes
-
-(use-package nov
-  :ensure t
-  :mode ("\\.epub\\'" . nov-mode)
-  :config
-  (setq nov-text-width 80
-	nov-variable-pitch t)
-  :hook
-  (nov-mode . visual-line-mode))
+(use-package reader
+  :if (executable-find "mupdf")
+  :ensure (:host codeberg
+		 :repo "divyaranjan/emacs-reader"
+  		 :files ("*.el" "render-core.so")
+  		 :pre-build ("make" "all")))
 
 (use-package x509-mode
   :ensure t)
