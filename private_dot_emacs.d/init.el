@@ -47,6 +47,17 @@
   ;; Enable use-package :ensure support for Elpaca.
   (elpaca-use-package-mode))
 
+;; Make sure this is early in init so env vars are avaliable for gptel and others needing them
+(use-package exec-path-from-shell
+  :ensure t
+  :config
+  ;; should prob have some conditional here to only load when demonp or othercheck github repo for info
+  ;; however this is the solution that works most often for me atm
+  (dolist (var '("GPTEL_API_KEY" "NIRI_SOCKET"))
+    (add-to-list 'exec-path-from-shell-variables var))
+  (exec-path-from-shell-initialize))
+
+
 ;; Auto-save only Claude Code temp files (adjust pattern as needed)
 (add-hook 'server-visit-hook
           (lambda ()
@@ -445,8 +456,6 @@
   :ensure (:host github
 		 :repo "https://github.com/karthink/gptel"
 		 :files ("*.el"))
-  :demand t
-  :if (getenv "GPTEL_API_KEY")
   ;;   :hook ((gptel-post-stream . gptel-auto-scroll)
   ;; (gptel-post-response-functions . gptel-end-of-response))
   :config
@@ -458,11 +467,12 @@
 	(call-interactively 'gptel-menu)
       (gptel--suffix-send (transient-args 'gptel-menu))))
   (setq gptel-default-mode 'org-mode
-	gptel-model 'claude-sonnet-4-5-20250929
-	gptel-backend (gptel-make-anthropic "AICHAT"
+	gptel-model 'gpt-5.2
+	gptel-backend (gptel-make-openai "AICHAT"
 			:stream t
-			:models '(claude-sonnet-4-5-20250929)
-			:key (getenv "GPTEL_API_KEY"))))
+			:models '(gpt-5.2)
+			:key (getenv "GPTEL_API_KEY")))
+  )
 
 ;;; Completions stack vertico - orderless - marginalia - consult
 (use-package vertico
@@ -609,15 +619,6 @@
   :ensure t
   :hook (after-init . envrc-global-mode))
 
-(use-package exec-path-from-shell
-  :ensure t
-  :config
-  ;; should prob have some conditional here to only load when demonp or othercheck github repo for info
-  ;; however this is the solution that works most often for me atm
-  (dolist (var '("GPTEL_API_KEY" "NIRI_SOCKET"))
-    (add-to-list 'exec-path-from-shell-variables var))
-  (exec-path-from-shell-initialize))
-
 ;;; Note taking
 (use-package org
   :ensure t
@@ -697,13 +698,6 @@
          ("\\.cmake\\'" . cmake-mode)))
 
 ;;; Misc modes
-(use-package reader
-  :if (executable-find "mupdf")
-  :ensure (:host codeberg
-		 :repo "divyaranjan/emacs-reader"
-  		 :files ("*.el" "render-core.so")
-  		 :pre-build ("make" "all")))
-
 (use-package x509-mode
   :ensure t)
 
@@ -887,7 +881,115 @@
                  (preserve-size . (nil . t))
                  (window-parameters . ((no-delete-other-windows . t))))))
 
+;;; Odin
+(use-package odin-ts-mode
+  :ensure (:host github
+		 :repo"https://github.com/Sampie159/odin-ts-mode" 
+		 :files ("*.el"))
+  :after apheleia
+  :if (executable-find "odin")
+  :bind (:map odin-ts-mode-map
+	      ("C-c C-c t" . odin-test-at-point)
+	      ("C-c C-c r" . odin-run-module)
+	      ("C-c C-c c" . odin-check-module))
+  :hook ((odin-ts-mode) . eglot-ensure)
+  ((odin-ts-mode) . (lambda ()
+		      (setq tab-width 4
+			    indent-tabs-mode t)))
+  :mode ("\\.odin\\'" . odin-ts-mode)
+  :config
+  (defun odin-run-module ()
+    "Run odin run command with current buffer's folder."
+    (interactive)
+    (let ((folder (file-name-directory (buffer-file-name))))
+      (if folder
+          (let ((command (format "odin run %s" folder)))
+            (compile command))
+	(message "Buffer is not associated with a file"))))
+  (defun odin-check-module ()
+    "Run odin check command with current buffer's folder."
+    (interactive)
+    (let ((folder (file-name-directory (buffer-file-name))))
+      (if folder
+          (let ((command (format "odin check %s" folder)))
+            (compile command))
+	(message "Buffer is not associated with a file"))))
+  (defun odin-test-at-point ()
+    "Run odin test command with current buffer's folder. If word under cursor exists, add it as test name."
+    (interactive)
+    (let ((word (thing-at-point 'word t))
+          (folder (file-name-directory (buffer-file-name))))
+      (if folder
+          (let ((command (if word
+                             (format "odin test %s -define:ODIN_TEST_NAMES=%s" folder word)
+                           (format "odin test %s" folder))))
+            (compile command))
+	(message "Buffer is not associated with a file"))))
+  (add-to-list 'treesit-language-source-alist
+               '(odin "https://github.com/tree-sitter-grammars/tree-sitter-odin"))
+  (add-to-list 'apheleia-formatters
+	       '(odinfmt . ("odinfmt" "-stdin")))
+  (add-to-list 'apheleia-mode-alist
+	       '(odin-ts-mode . odinfmt))
+  ;; (add-to-list 'compilation-error-regexp-alist-alist
+  ;;              '(odin-test
+  ;; 		 "^\\[ERROR\\].*\\[\\([^:]+\\):\\([0-9]+\\):"
+  ;; 		 1 2 nil 2 1))
+  ;; (add-to-list 'compilation-error-regexp-alist 'odin-test)
+  
+  )
 
+;;; Clojure
+(use-package cider
+  :ensure t
+  :if (or (executable-find "clj") (executable-find "bb"))
+  :config
+  (when (executable-find "bb")
+    (defun my/cider-jack-in-babashka (&optional project-dir)
+      "Start a utility CIDER REPL backed by Babashka, not related to a
+specific project."
+      (interactive)
+      (when (get-buffer "*babashka-repl*")
+	(kill-buffer "*babashka-repl*"))
+      (when (get-buffer "*bb-playground*")
+	(kill-buffer "*bb-playground*"))
+      (let ((project-dir (or project-dir user-emacs-directory)))
+	(nrepl-start-server-process
+	 project-dir
+	 "bb --nrepl-server 0"
+	 (lambda (server-buf)
+	   (set-process-query-on-exit-flag
+            (get-buffer-process server-buf) nil)
+	   (cider-nrepl-connect
+            (list :repl-buffer server-buf
+		  :repl-type 'clj
+		  :host (plist-get nrepl-endpoint :host)
+		  :port (plist-get nrepl-endpoint :port)
+		  :session-name "babashka"
+		  :repl-init-function (lambda ()
+					(setq-local cljr-suppress-no-project-warning t
+                                                    cljr-suppress-middleware-warnings t
+                                                    process-query-on-exit-flag nil)
+					(set-process-query-on-exit-flag
+					 (get-buffer-process (current-buffer)) nil)
+					(rename-buffer "*babashka-repl*")
+					;; Create and link playground buffer
+					(let ((playground-buffer (get-buffer-create "*bb-playground*")))
+					  (with-current-buffer playground-buffer
+                                            (clojure-mode)
+					    (insert ";; Babashka Playground\n\n")
+					    (insert "(ns bb-malli\n  (:require [babashka.deps :as deps]))\n")
+					    (insert"(deps/add-deps '{:deps {metosin/malli {:mvn/version \"0.9.0\"}}})\n")
+					    (insert"(require '[malli.core :as malli])\n\n")
+					    (insert ";; Your code here\n")
+					    (goto-char (point-max)) ; Move cursor to end
+                                            (sesman-link-with-buffer playground-buffer '("babashka")))
+					  (switch-to-buffer playground-buffer)))))))))
 
-
-
+    (defun my/switch-to-bb-playground ()
+      "Switch to *bb-playground* buffer if it exists, otherwise start babashka REPL and switch to playground."
+      (interactive)
+      (if (get-buffer "*bb-playground*")
+	  (switch-to-buffer "*bb-playground*")
+	(my/cider-jack-in-babashka))))
+  (setq cider-repl-pop-to-buffer-on-connect nil))
