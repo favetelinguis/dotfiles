@@ -393,7 +393,16 @@
 
 ;; Config file modes
 (use-package markdown-mode
-  :ensure t)
+  :ensure t
+  :hook (markdown-mode . visual-line-mode)
+  :after apheleia
+  :config
+  ;; Apheleia formatter (Prettier)
+  (add-to-list 'apheleia-formatters
+               '(prettier-md . ("prettier" "--parser" "markdown")))
+  (add-to-list 'apheleia-mode-alist '(gfm-mode . prettier-md))
+  (add-to-list 'apheleia-mode-alist
+               '(markdown-mode . prettier-md)))
 
 ;;; Version control
 (use-package magit
@@ -870,6 +879,7 @@
 (dolist (pattern '("\\*compilation\\*"
                    "\\*.*eshell\\*"
                    "\\*Man.*\\*"
+		   "\\*eldoc.*\\*"		   
                    "\\*AICHAT\\*"
                    "\\*gud-.*\\*"))
   (add-to-list 'display-buffer-alist
