@@ -128,7 +128,7 @@
   (setq-default line-spacing 0.2)
   (set-face-attribute 'default nil
 		      :family "JetBrains Mono"
-		      :height 105
+		      :height 115
 		      :weight 'normal
 		      :width 'normal)
   ;; Display date and time
@@ -1003,3 +1003,19 @@ specific project."
 	  (switch-to-buffer "*bb-playground*")
 	(my/cider-jack-in-babashka))))
   (setq cider-repl-pop-to-buffer-on-connect nil))
+
+;;; Rust
+(use-package rust-ts-mode
+  :ensure nil
+  :mode ("\\.rs\\'" . rust-ts-mode)
+  :hook
+  (rust-ts-mode . eglot-ensure)
+  :config
+  (add-hook 'rust-ts-mode-hook
+            (lambda ()
+              ;; Only enable eglot formatting if there is a Cargo.toml found in the project
+              (when (locate-dominating-file default-directory "Cargo.toml")
+		(apheleia-mode -1)  ; disable Apheleia did not get rustfmt to work
+		(add-hook 'before-save-hook #'eglot-format-buffer nil t))))
+  (add-to-list 'treesit-language-source-alist
+               '(rust "https://github.com/tree-sitter/tree-sitter-rust")))
