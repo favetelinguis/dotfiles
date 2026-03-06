@@ -465,6 +465,20 @@
   (global-git-gutter-mode +1))
 
 ;;; AI
+;; override 
+;; ~/.emacs.d/local_only/init-local.el
+;;(with-eval-after-load 'agent-shell
+;; choose Claude Code globally
+;;(setopt agent-shell-preferred-agent-config 'claude-code)
+
+;; auth style examples (pick one)
+;; (setopt agent-shell-anthropic-authentication
+;;         (agent-shell-anthropic-make-authentication :login t))
+;; or:
+;; (setopt agent-shell-anthropic-authentication
+;;         (agent-shell-anthropic-make-authentication
+;;          :api-key (getenv "ANTHROPIC_API_KEY")))
+;;)
 (use-package agent-shell
   :ensure t
   :defer nil
@@ -920,8 +934,23 @@
       (user-error "Buffer is not visiting a file"))))
 
 ;;; Clojure
+;; override from local_only using
+;; (setq my/bb-playground-initial-content
+;;       (concat
+;;        ";; Local Babashka Playground\n\n"
+;;        "(ns my.scratch)\n"
+;;        "(println :hello)\n"))
+(defvar my/bb-playground-initial-content
+  (concat
+   ";; Babashka Playground\n\n"
+   "(ns bb-malli\n  (:require [babashka.deps :as deps]))\n"
+   "(deps/add-deps '{:deps {metosin/malli {:mvn/version \"0.9.0\"}}})\n"
+   "(require '[malli.core :as malli])\n\n"
+   ";; Your code here\n")
+  "Default content inserted into *bb-playground*.")
 (use-package cider
   :ensure t
+  :defer nil
   :if (or (executable-find "clj") (executable-find "bb"))
   :config
   (when (executable-find "bb")
@@ -957,15 +986,10 @@ specific project."
 					(let ((playground-buffer (get-buffer-create "*bb-playground*")))
 					  (with-current-buffer playground-buffer
                                             (clojure-mode)
-					    (insert ";; Babashka Playground\n\n")
-					    (insert "(ns bb-malli\n  (:require [babashka.deps :as deps]))\n")
-					    (insert"(deps/add-deps '{:deps {metosin/malli {:mvn/version \"0.9.0\"}}})\n")
-					    (insert"(require '[malli.core :as malli])\n\n")
-					    (insert ";; Your code here\n")
+					    (insert my/bb-playground-initial-content)
 					    (goto-char (point-max)) ; Move cursor to end
                                             (sesman-link-with-buffer playground-buffer '("babashka")))
 					  (switch-to-buffer playground-buffer)))))))))
-
     (defun my/switch-to-bb-playground ()
       "Switch to *bb-playground* buffer if it exists, otherwise start babashka REPL and switch to playground."
       (interactive)
@@ -990,7 +1014,7 @@ specific project."
   (add-to-list 'treesit-language-source-alist
 	       '(rust "https://github.com/tree-sitter/tree-sitter-rust")))
 
-;; Load local_only config if present
+;; Load local_only config if present important this comes last so i can override
 (let ((local-dir (expand-file-name "local_only" user-emacs-directory)))
   (when (file-directory-p local-dir)
     (add-to-list 'load-path local-dir)
