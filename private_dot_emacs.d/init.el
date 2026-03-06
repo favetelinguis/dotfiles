@@ -903,13 +903,20 @@
   :hook (java-mode . (lambda ()
 		       (add-hook 'xref-backend-functions #'dumb-jump-xref-activate nil t))))
 (defun my/open-in-intellij ()
-  "Open the current file in IntelliJ IDEA at the current cursor position."
+  "Open current file at point in an IDE selected from project root markers."
   (interactive)
-  (let ((file (buffer-file-name))
-	(line (number-to-string (line-number-at-pos)))
-	(col (number-to-string (current-column))))
+  (let* ((file (buffer-file-name))
+	 (line (number-to-string (line-number-at-pos)))
+	 (col (number-to-string (current-column)))
+	 (project (project-current nil))
+	 (root (and project (project-root project)))
+	 (has-pom (and root (file-exists-p (expand-file-name "pom.xml" root))))
+	 (has-cargo (and root (file-exists-p (expand-file-name "Cargo.toml" root))))
+	 (ide (cond (has-pom "idea")
+		    (has-cargo "rustrover")
+		    (t "idea"))))
     (if file
-	(start-process "intellij" nil "idea" "--line" line "--column" col file)
+	(start-process "open-in-ide" nil ide "--line" line "--column" col file)
       (user-error "Buffer is not visiting a file"))))
 
 ;;; Clojure
