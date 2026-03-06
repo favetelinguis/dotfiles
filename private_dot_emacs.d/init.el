@@ -815,7 +815,8 @@
   "l" #'eglot
   "v" #'project-recompile
   "i" #'my/open-in-intellij
-  "b" #'my/switch-to-bb-playground)
+  "b" #'my/switch-to-bb-playground
+  "SPC" #'agent-shell)
 
 (which-key-add-keymap-based-replacements my-prefix-map
   "n" `("note" . ,my-prefix-note-map)
