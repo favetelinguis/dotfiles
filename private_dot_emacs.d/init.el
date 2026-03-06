@@ -471,6 +471,7 @@
   (setq agent-shell-openai-authentication
 	(agent-shell-openai-make-authentication :login t))
   (setq agent-shell-show-usage-at-turn-end t
+	agent-shell-header-style 'text
 	agent-shell-show-context-usage-indicator t
 	agent-shell-session-strategy 'prompt
 	agent-shell-preferred-agent-config (agent-shell-openai-make-codex-config) 
@@ -674,11 +675,16 @@
   :custom (iflipb-buffer-list-function #'buffers-associated-with-frame)
   :config
   (defun buffers-associated-with-frame (&optional frame)
-    "Return buffers associated with FRAME (shown or buried there)."
-    (let ((frame (or frame (selected-frame))))
-      (delete-dups
-       (append (frame-parameter frame 'buffer-list)
-               (frame-parameter frame 'buried-buffer-list)))))
+    "Return non-agent-shell buffers associated with FRAME (shown or buried there)."
+    (let* ((frame (or frame (selected-frame)))
+           (buffers (delete-dups
+                     (append (frame-parameter frame 'buffer-list)
+                             (frame-parameter frame 'buried-buffer-list)))))
+      (seq-filter
+       (lambda (buf)
+	 (not (with-current-buffer buf
+		(derived-mode-p 'agent-shell-mode))))
+       buffers)))
   (defun my-iflipb-kill-current-buffer ()
     "Kill the current buffer without prompting and maintain iflipb state."
     (interactive)
