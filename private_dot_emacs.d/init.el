@@ -1015,6 +1015,11 @@ specific project."
 	       '(rust "https://github.com/tree-sitter/tree-sitter-rust")))
 
 ;; Load local_only config if present important this comes last so i can override
+;; Patterns to use in extensions
+;; build modes extending tabulated-list-mode with trasient menues for each mode kubed is a good example module
+;; for quick access to devops command use a alist of command populating completing-read
+;; then execute command with (compilation-start <cmd> t) this will support sudo and ansi output via comint mode
+;; extend the compilation buffer in all good ways
 (let ((local-dir (expand-file-name "local_only" user-emacs-directory)))
   (when (file-directory-p local-dir)
     (add-to-list 'load-path local-dir)
