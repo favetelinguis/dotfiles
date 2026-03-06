@@ -47,13 +47,13 @@
   ;; Enable use-package :ensure support for Elpaca.
   (elpaca-use-package-mode))
 
-;; Make sure this is early in init so env vars are avaliable for gptel and others needing them
+;; Make sure this is early in init so env vars are avaliable for others needing them
 (use-package exec-path-from-shell
   :ensure t
   :config
   ;; should prob have some conditional here to only load when demonp or othercheck github repo for info
   ;; however this is the solution that works most often for me atm
-  (dolist (var '("GPTEL_API_KEY" "NIRI_SOCKET"))
+  (dolist (var '("NIRI_SOCKET"))
     (add-to-list 'exec-path-from-shell-variables var))
   (exec-path-from-shell-initialize))
 
@@ -148,6 +148,10 @@
   (setq auto-revert-interval 0.25)         ; Add this (check every 1 second)
   (setq scroll-margin 5)
   (setq compilation-always-kill t) ;; make rerunning compilation buffer better, i dont get asked each time to quit process between runs
+  (setq compilation-scroll-output t)
+  (add-hook 'compilation-filter-hook ; get rid of all ansi controlls in compilation buffer
+	    (lambda ()
+	      (ansi-color-filter-region (point-min) (point))))
   (setq set-mark-command-repeat-pop t)
   ;; start window management
   (setq switch-to-buffer-obey-display-actions t
@@ -324,7 +328,7 @@
   :ensure t
   :bind (("M-n" . flymake-goto-next-error)
          ("M-p" . flymake-goto-prev-error)
-         ("C-x p d" . flymake-show-project-diagnostics)))
+         ("C-x p D" . flymake-show-project-diagnostics)))
 
 ;;; In-Buffer Completion 
 (use-package corfu
@@ -461,27 +465,19 @@
   (global-git-gutter-mode +1))
 
 ;;; AI
-(use-package gptel
-  :ensure (:host github
-		 :repo "https://github.com/karthink/gptel"
-		 :files ("*.el"))
-  ;;   :hook ((gptel-post-stream . gptel-auto-scroll)
-  ;; (gptel-post-response-functions . gptel-end-of-response))
+(use-package agent-shell
+  :ensure t
   :config
-  ;; Use C-x C-s to save changes in the trasient menu 
-  (defun gptel-send-with-options (&optional arg)
-    "Send query.  With prefix ARG open gptel's menu instead."
-    (interactive "P")
-    (if arg
-	(call-interactively 'gptel-menu)
-      (gptel--suffix-send (transient-args 'gptel-menu))))
-  (setq gptel-default-mode 'org-mode
-	gptel-model 'gpt-5.2
-	gptel-backend (gptel-make-openai "AICHAT"
-			:stream t
-			:models '(gpt-5.2)
-			:key (getenv "GPTEL_API_KEY")))
-  )
+  (setq agent-shell-openai-authentication
+	(agent-shell-openai-make-authentication :login t))
+  (setq agent-shell-show-usage-at-turn-end t
+	agent-shell-show-context-usage-indicator t
+	agent-shell-session-strategy 'prompt
+	agent-shell-preferred-agent-config (agent-shell-openai-make-codex-config) 
+	;;	agent-shell-prefer-viewport-interaction t
+	agent-shell-show-welcome-message nil)
+  (define-key project-prefix-map "a" 'agent-shell)
+  (add-to-list 'project-switch-commands '(agent-shell "Agent Shell" ?a) t))
 
 ;;; Completions stack vertico - orderless - marginalia - consult
 (use-package vertico
@@ -809,29 +805,20 @@
   "a" #'chezmoi-dired-add-marked-files
   "d" #'chezmoi-diff)
 
-(defvar-keymap my-prefix-llm-map
-  :doc "My prefix key map for llm."
-  "r" #'gptel-rewrite
-  "m"  #'gptel-menu
-  "a"  #'gptel-add
-  "c"  #'gptel-context-remove-all
-  "A"  #'gptel-add-file
-  "f"  #'gptel-send-with-options
-  "s"  #'gptel-send)
 
 (defvar-keymap my-prefix-map
   :doc "My prefix key map."
   "n" my-prefix-note-map
-  "f" my-prefix-llm-map
   "d" my-prefix-dotfile-map
   "m" (lambda () (interactive) (man (format "3 %s" (thing-at-point 'word t))))
   "o" #'find-file-at-point
   "l" #'eglot
-  "v" #'project-recompile)
+  "v" #'project-recompile
+  "i" #'my/open-in-intellij
+  "b" #'my/switch-to-bb-playground)
 
 (which-key-add-keymap-based-replacements my-prefix-map
   "n" `("note" . ,my-prefix-note-map)
-  "f" `("llm" . ,my-prefix-llm-map)
   "d" `("dotfiles" . ,my-prefix-dotfile-map))
 
 (keymap-set global-map "C-c" my-prefix-map)
@@ -839,51 +826,47 @@
 ;;; Custom functions
 
 (defun my/pop-to-special-buffer (arg)
-  "Pop to special buffer based on prefix argument.
-1 = *Man*
-2 = *eshell*
-3 = *gud*
-4 = *AICHAT*
-5 = *compilation*"
+  "Pop to special buffer based on prefix argument."
   (interactive "P")
   (if (null arg)
       (progn ;; this extra stuff is only needed for iflipb to call in elisp, if i change cmd can only use cmd then
 	(iflipb-next-buffer nil)
 	(setq this-command 'iflipb-next-buffer))
     (let* ((arg (prefix-numeric-value arg))
-	   (buffer-pattern
+	   (selector
             (pcase arg
 	      (1 "\\*Man.*\\*")
-              (2 "\\*.*eshell\\*")
-              (3 "\\*gud-.*\\*")    
-              (4 "\\*AICHAT\\*")
-              (5 "\\*compilation\\*")
+	      (2 'agent-shell-mode)
+              (3 "\\*.*eshell\\*")
+              (4 "\\*compilation\\*")
+              (5 "\\*gud-.*\\*")    
               (_ (user-error "Invalid prefix: use 1-5"))))
            (matching-buffers
             (seq-filter (lambda (buf)
-                          (string-match-p buffer-pattern (buffer-name buf)))
+			  (if (symbolp selector)
+			      (eq (buffer-local-value 'major-mode buf) selector)
+			    (string-match-p buffer-pattern (buffer-name buf))))
 			(buffer-list))))
       (cond
        ((null matching-buffers)
-	(message "No buffers matching %s" buffer-pattern))
+	(message "No buffers matching %s" selector))
        ((= 1 (length matching-buffers))
 	(pop-to-buffer (car matching-buffers)))
        (t
 	(pop-to-buffer
 	 (get-buffer
           (completing-read "Select buffer: "
-                           (mapcar #'buffer-name matching-buffers)
-                           nil t))))))))
+			   (mapcar #'buffer-name matching-buffers)
+			   nil t))))))))
 ;;; Window layout
 
 (dolist (pattern '("\\*compilation\\*"
                    "\\*.*eshell\\*"
                    "\\*Man.*\\*"
 		   "\\*eldoc.*\\*"		   
-                   "\\*AICHAT\\*"
                    "\\*gud-.*\\*"))
   (add-to-list 'display-buffer-alist
-               `(,pattern
+	       `(,pattern
                  (display-buffer-in-side-window)
                  (side . bottom)
                  (slot . 0)
@@ -891,63 +874,30 @@
                  (preserve-size . (nil . t))
                  (window-parameters . ((no-delete-other-windows . t))))))
 
-;;; Odin
-(use-package odin-ts-mode
-  :ensure (:host github
-		 :repo"https://github.com/Sampie159/odin-ts-mode" 
-		 :files ("*.el"))
-  :after apheleia
-  :if (executable-find "odin")
-  :bind (:map odin-ts-mode-map
-	      ("C-c C-c t" . odin-test-at-point)
-	      ("C-c C-c r" . odin-run-module)
-	      ("C-c C-c c" . odin-check-module))
-  :hook ((odin-ts-mode) . eglot-ensure)
-  ((odin-ts-mode) . (lambda ()
-		      (setq tab-width 4
-			    indent-tabs-mode t)))
-  :mode ("\\.odin\\'" . odin-ts-mode)
-  :config
-  (defun odin-run-module ()
-    "Run odin run command with current buffer's folder."
-    (interactive)
-    (let ((folder (file-name-directory (buffer-file-name))))
-      (if folder
-          (let ((command (format "odin run %s" folder)))
-            (compile command))
-	(message "Buffer is not associated with a file"))))
-  (defun odin-check-module ()
-    "Run odin check command with current buffer's folder."
-    (interactive)
-    (let ((folder (file-name-directory (buffer-file-name))))
-      (if folder
-          (let ((command (format "odin check %s" folder)))
-            (compile command))
-	(message "Buffer is not associated with a file"))))
-  (defun odin-test-at-point ()
-    "Run odin test command with current buffer's folder. If word under cursor exists, add it as test name."
-    (interactive)
-    (let ((word (thing-at-point 'word t))
-          (folder (file-name-directory (buffer-file-name))))
-      (if folder
-          (let ((command (if word
-                             (format "odin test %s -define:ODIN_TEST_NAMES=%s" folder word)
-                           (format "odin test %s" folder))))
-            (compile command))
-	(message "Buffer is not associated with a file"))))
-  (add-to-list 'treesit-language-source-alist
-               '(odin "https://github.com/tree-sitter-grammars/tree-sitter-odin"))
-  (add-to-list 'apheleia-formatters
-	       '(odinfmt . ("odinfmt" "-stdin")))
-  (add-to-list 'apheleia-mode-alist
-	       '(odin-ts-mode . odinfmt))
-  ;; (add-to-list 'compilation-error-regexp-alist-alist
-  ;;              '(odin-test
-  ;; 		 "^\\[ERROR\\].*\\[\\([^:]+\\):\\([0-9]+\\):"
-  ;; 		 1 2 nil 2 1))
-  ;; (add-to-list 'compilation-error-regexp-alist 'odin-test)
-  
-  )
+;; agent-shell match by mode
+(add-to-list 'display-buffer-alist
+	     `((derived-mode . agent-shell-mode)
+               (display-buffer-in-side-window)
+               (side . bottom)
+               (slot . 0)
+               (window-height . 0.4)
+               (preserve-size . (nil . t))
+               (window-parameters . ((no-delete-other-windows . t)))))
+
+;;; Java
+(use-package dumb-jump
+  :ensure t
+  :hook (java-mode . (lambda ()
+		       (add-hook 'xref-backend-functions #'dumb-jump-xref-activate nil t))))
+(defun my/open-in-intellij ()
+  "Open the current file in IntelliJ IDEA at the current cursor position."
+  (interactive)
+  (let ((file (buffer-file-name))
+	(line (number-to-string (line-number-at-pos)))
+	(col (number-to-string (current-column))))
+    (if file
+	(start-process "intellij" nil "idea" "--line" line "--column" col file)
+      (user-error "Buffer is not visiting a file"))))
 
 ;;; Clojure
 (use-package cider
@@ -1013,9 +963,15 @@ specific project."
   :config
   (add-hook 'rust-ts-mode-hook
             (lambda ()
-              ;; Only enable eglot formatting if there is a Cargo.toml found in the project
-              (when (locate-dominating-file default-directory "Cargo.toml")
+	      ;; Only enable eglot formatting if there is a Cargo.toml found in the project
+	      (when (locate-dominating-file default-directory "Cargo.toml")
 		(apheleia-mode -1)  ; disable Apheleia did not get rustfmt to work
 		(add-hook 'before-save-hook #'eglot-format-buffer nil t))))
   (add-to-list 'treesit-language-source-alist
-               '(rust "https://github.com/tree-sitter/tree-sitter-rust")))
+	       '(rust "https://github.com/tree-sitter/tree-sitter-rust")))
+
+;; Load local_only config if present
+(let ((local-dir (expand-file-name "local_only" user-emacs-directory)))
+  (when (file-directory-p local-dir)
+    (add-to-list 'load-path local-dir)
+    (load (expand-file-name "init-local" local-dir) t)))
