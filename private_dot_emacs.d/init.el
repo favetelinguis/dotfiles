@@ -53,7 +53,9 @@
   :config
   ;; should prob have some conditional here to only load when demonp or othercheck github repo for info
   ;; however this is the solution that works most often for me atm
-  (dolist (var '("NIRI_SOCKET"))
+  (dolist (var '("NIRI_SOCKET"
+		 "OPENAI_API_KEY"
+		 "TAVILY_API_KEY"))
     (add-to-list 'exec-path-from-shell-variables var))
   (exec-path-from-shell-initialize))
 
@@ -490,13 +492,19 @@
   :config
   (setq agent-shell-openai-authentication
 	(agent-shell-openai-make-authentication :login t))
-  (setq agent-shell-show-usage-at-turn-end t
-	agent-shell-header-style 'text
-	agent-shell-show-context-usage-indicator t
-	agent-shell-session-strategy 'prompt
-	agent-shell-preferred-agent-config (agent-shell-openai-make-codex-config) 
-	;;	agent-shell-prefer-viewport-interaction t
-	agent-shell-show-welcome-message nil)
+  (setq agent-shell-opencode-authentication
+        (agent-shell-opencode-make-authentication :none t)) ;; make sure api key is NOT used do opencode auth login
+  (setq agent-shell-opencode-default-model-id "openai/gpt-5.3-codex")
+  (setq agent-shell-preferred-agent-config
+        (agent-shell-opencode-make-agent-config))
+  (setq agent-shell-opencode-default-session-mode-id "plan")
+  (setq ;; agent-shell-show-usage-at-turn-end t
+   agent-shell-header-style 'text
+   agent-shell-show-context-usage-indicator t
+   agent-shell-session-strategy 'prompt
+   ;;      agent-shell-preferred-agent-config (agent-shell-openai-make-codex-config) 
+   ;;	agent-shell-prefer-viewport-interaction t
+   agent-shell-show-welcome-message nil)
   (define-key project-prefix-map "a" 'agent-shell)
   (add-to-list 'project-switch-commands '(agent-shell-new-shell "Agent Shell" ?a) t))
 
@@ -864,15 +872,15 @@
             (pcase arg
 	      (1 "\\*Man.*\\*")
 	      (2 'agent-shell-mode)
-              (3 "\\*.*eshell\\*")
-              (4 "\\*compilation\\*")
+              (3 "\\*compilation\\*")
+              (4 "\\*.*eshell\\*")
               (5 "\\*gud-.*\\*")    
               (_ (user-error "Invalid prefix: use 1-5"))))
            (matching-buffers
             (seq-filter (lambda (buf)
 			  (if (symbolp selector)
 			      (eq (buffer-local-value 'major-mode buf) selector)
-			    (string-match-p buffer-pattern (buffer-name buf))))
+			    (string-match-p selector (buffer-name buf))))
 			(buffer-list))))
       (cond
        ((null matching-buffers)
