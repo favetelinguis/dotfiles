@@ -501,7 +501,7 @@
   (setq ;; agent-shell-show-usage-at-turn-end t
    agent-shell-header-style 'text
    agent-shell-show-context-usage-indicator t
-   agent-shell-session-strategy 'prompt
+   agent-shell-session-strategy 'new
    ;;      agent-shell-preferred-agent-config (agent-shell-openai-make-codex-config) 
    ;;	agent-shell-prefer-viewport-interaction t
    agent-shell-show-welcome-message nil)
