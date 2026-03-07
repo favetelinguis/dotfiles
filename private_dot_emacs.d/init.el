@@ -498,7 +498,7 @@
 	;;	agent-shell-prefer-viewport-interaction t
 	agent-shell-show-welcome-message nil)
   (define-key project-prefix-map "a" 'agent-shell)
-  (add-to-list 'project-switch-commands '(agent-shell "Agent Shell" ?a) t))
+  (add-to-list 'project-switch-commands '(agent-shell-new-shell "Agent Shell" ?a) t))
 
 ;;; Completions stack vertico - orderless - marginalia - consult
 (use-package vertico
@@ -838,8 +838,8 @@
   "d" my-prefix-dotfile-map
   "m" (lambda () (interactive) (man (format "3 %s" (thing-at-point 'word t))))
   "o" #'find-file-at-point
-  "l" #'eglot
   "v" #'project-recompile
+  ;; "l" obs l is reseved for local-only config
   "i" #'my/open-in-intellij
   "b" #'my/switch-to-bb-playground
   "SPC" #'agent-shell)
@@ -916,6 +916,7 @@
   :ensure t
   :hook (java-mode . (lambda ()
 		       (add-hook 'xref-backend-functions #'dumb-jump-xref-activate nil t))))
+
 (defun my/open-in-intellij ()
   "Open current file at point in an IDE selected from project root markers."
   (interactive)
@@ -928,7 +929,9 @@
 	 (has-cargo (and root (file-exists-p (expand-file-name "Cargo.toml" root))))
 	 (ide (cond (has-pom "idea")
 		    (has-cargo "rustrover")
-		    (t "idea"))))
+		    (t (completing-read "Open with: "
+					'("idea" "rustrover")
+					nil t nil nil "idea")))))
     (if file
 	(start-process "open-in-ide" nil ide "--line" line "--column" col file)
       (user-error "Buffer is not visiting a file"))))
