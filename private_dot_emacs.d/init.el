@@ -495,7 +495,7 @@
 	(agent-shell-openai-make-authentication :login t))
   (setq agent-shell-opencode-authentication
         (agent-shell-opencode-make-authentication :none t)) ;; make sure api key is NOT used do opencode auth login
-  (setq agent-shell-opencode-default-model-id "openai/gpt-5.3-codex")
+  (setq agent-shell-opencode-default-model-id "openai/gpt-5.3-codex/medium")
   (setq agent-shell-preferred-agent-config
         (agent-shell-opencode-make-agent-config))
   (setq agent-shell-opencode-default-session-mode-id "plan")
