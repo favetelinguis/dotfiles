@@ -488,7 +488,7 @@
   (:map agent-shell-mode-map
 	("C-c C-k" . agent-shell-clear-buffer)
 	("C-c C-o" . agent-shell-insert-shell-command-output)
-	("C-c C-SPC" . agent-shell-prompt-compose)
+	("C-c C-f" . agent-shell-prompt-compose)
 	("C-c C-s" . agent-shell-send-screenshot))
   :config
   (setq agent-shell-openai-authentication
