@@ -544,7 +544,13 @@
   ;; Marginalia must be activated in the :init section of use-package such that
   ;; the mode gets enabled right away. Note that this forces loading the
   ;; package.
-  (marginalia-mode))
+  (marginalia-mode)
+  :config
+  (add-to-list 'marginalia-annotators
+               '(agent-shell-buffer
+                 my/marginalia-annotate-agent-shell-buffer
+                 builtin
+                 none)))
 
 (use-package consult
   :ensure t
@@ -861,6 +867,49 @@
 
 ;;; Custom functions
 
+(defun my/agent-shell--completion-table (buffers)
+  "Completion table for agent-shell BUFFERS with Marginalia metadata."
+  (let ((candidates (mapcar #'buffer-name buffers)))
+    (lambda (string pred action)
+      (if (eq action 'metadata)
+          '(metadata (category . agent-shell-buffer))
+        (complete-with-action action candidates string pred)))))
+
+(defun my/marginalia-annotate-agent-shell-buffer (cand)
+  "Annotate agent-shell buffer CAND as: status mode context%."
+  (when-let* ((buffer (get-buffer cand))
+              ((buffer-live-p buffer))
+              (state (buffer-local-value 'agent-shell--state buffer)))
+    (let* ((usage (map-elt state :usage))
+           (used (or (map-elt usage :context-used) 0))
+           (size (or (map-elt usage :context-size) 0))
+           (pct (and (> size 0) (* 100.0 (/ (float used) size))))
+           (pct-str (if pct (format "%.1f%%" pct) "n/a"))
+           (pct-face (cond ((null pct) 'shadow)
+                           ((>= pct 85) 'error)
+                           ((>= pct 60) 'warning)
+                           (t 'success)))
+           (mode-id (map-nested-elt state '(:session :mode-id)))
+           (mode-name (or (and mode-id
+                               (agent-shell--resolve-session-mode-name
+                                mode-id
+                                (agent-shell--get-available-modes state)))
+                          mode-id
+                          "-"))
+           (status (cond
+                    ((eq 'busy (map-nested-elt state '(:heartbeat :status))) "busy")
+                    ((> (or (map-elt state :active-request-count) 0) 0) "busy")
+                    ((map-nested-elt state '(:session :id)) "ready")
+                    (t "new")))
+           (status-face (pcase status
+                          ("busy" 'warning)
+                          ("ready" 'success)
+                          (_ 'shadow))))
+      (marginalia--fields
+       ((propertize status 'face status-face) :width 7)
+       ((propertize mode-name 'face 'marginalia-mode) :width 18)
+       ((propertize pct-str 'face pct-face) :width -7)))))
+
 (defun my/pop-to-special-buffer (arg)
   "Pop to special buffer based on prefix argument."
   (interactive "P")
@@ -889,11 +938,14 @@
        ((= 1 (length matching-buffers))
 	(pop-to-buffer (car matching-buffers)))
        (t
-	(pop-to-buffer
-	 (get-buffer
-          (completing-read "Select buffer: "
-			   (mapcar #'buffer-name matching-buffers)
-			   nil t))))))))
+	(let* ((agent-shell-p (eq selector 'agent-shell-mode))
+	       (table (if agent-shell-p
+	                  (my/agent-shell--completion-table matching-buffers)
+			(mapcar #'buffer-name matching-buffers)))
+	       (picked (completing-read
+			(if agent-shell-p "Select agent shell: " "Select buffer: ")
+			table nil t)))
+	  (pop-to-buffer (get-buffer picked))))))))
 ;;; Window layout
 
 (dolist (pattern '("\\*compilation\\*"
