@@ -59,15 +59,19 @@
     (add-to-list 'exec-path-from-shell-variables var))
   (exec-path-from-shell-initialize))
 
-
-;; Auto-save only Claude Code temp files (adjust pattern as needed)
+;; Auto-save Claude Code prompt temp files without prompting.
+;; Matches both macOS (/var/folders/.../T/claude-prompt-*.md) and Linux (/tmp/claude-prompt-*.md).
 (add-hook 'server-visit-hook
           (lambda ()
-            (when (string-match-p "/tmp/.*claude" (or buffer-file-name ""))
-              (setq buffer-save-without-query t))))
+            (when (string-match-p "claude-prompt" (or buffer-file-name ""))
+              (setq buffer-save-without-query t)
+              (add-hook 'kill-buffer-hook
+                        (lambda ()
+                          (when (buffer-modified-p)
+                            (save-buffer)))
+                        nil t))))
 
 ;;; Update builtins
-
 (use-package transient
   :ensure t)
 
@@ -182,10 +186,6 @@
   (load custom-file 'noerror)
   ;; Use ripgrep for project search ripgrep
   (setq xref-search-program 'ripgrep)
-  (tool-bar-mode -1)      ;; Disable toolbar
-  (menu-bar-mode -1)      ;; Disable menu bar
-  (scroll-bar-mode -1)    ;; Disable scroll bar
-  (tooltip-mode -1)      ;; Disable tooltips
   ;; Disable initial scratch message
   (setq initial-scratch-message nil)
   ;; No blinking cursor
@@ -261,6 +261,8 @@
   (eglot-confirm-server-initiated-edits nil)
   :config
   (add-to-list 'eglot-ignored-server-capabilities :inlayHintProvider)
+  (add-to-list 'eglot-server-programs
+	       '(python-mode . ("ty" "server")))
   :bind
   (:map eglot-mode-map ; C-h . for eldoc M-.,? for xref
 	("C-c a" . eglot-code-actions)
@@ -491,16 +493,9 @@
 	("C-c C-f" . agent-shell-prompt-compose)
 	("C-c C-s" . agent-shell-send-screenshot))
   :config
-  (setq agent-shell-openai-authentication
-	(agent-shell-openai-make-authentication :login t))
-  (setq agent-shell-opencode-authentication
-        (agent-shell-opencode-make-authentication :none t)) ;; make sure api key is NOT used do opencode auth login
-  (setq agent-shell-opencode-default-model-id "openai/gpt-5.3-codex/medium")
-  (setq agent-shell-preferred-agent-config
-        (agent-shell-opencode-make-agent-config))
-  (setq agent-shell-opencode-default-session-mode-id "plan")
   (setq ;; agent-shell-show-usage-at-turn-end t
    agent-shell-header-style 'text
+   agent-shell-show-busy-indicator nil
    agent-shell-show-context-usage-indicator t
    agent-shell-session-strategy 'prompt
    ;;      agent-shell-preferred-agent-config (agent-shell-openai-make-codex-config) 
@@ -508,6 +503,16 @@
    agent-shell-show-welcome-message nil)
   (define-key project-prefix-map "a" 'agent-shell)
   (add-to-list 'project-switch-commands '(agent-shell-new-shell "Agent Shell" ?a) t))
+;; Put default config here then i can override using the same pattern in local only
+(with-eval-after-load 'agent-shell
+  (setq agent-shell-openai-authentication
+        (agent-shell-openai-make-authentication :login t))
+  (setq agent-shell-opencode-authentication
+        (agent-shell-opencode-make-authentication :none t))
+  (setq agent-shell-opencode-default-model-id "openai/gpt-5.4/high")
+  (setq agent-shell-preferred-agent-config
+        (agent-shell-opencode-make-agent-config))
+  (setq agent-shell-opencode-default-session-mode-id "plan"))
 
 ;;; Completions stack vertico - orderless - marginalia - consult
 (use-package vertico
@@ -653,12 +658,6 @@
   ;; You may want to use `embark-prefix-help-command' or which-key instead.
   ;; (keymap-set consult-narrow-map (concat consult-narrow-key " ?") #'consult-narrow-help)
   )
-
-;;; Terminal
-
-(use-package envrc
-  :ensure t
-  :hook (after-init . envrc-global-mode))
 
 ;;; Note taking
 (use-package org
@@ -1062,6 +1061,20 @@ specific project."
 	(my/cider-jack-in-babashka))))
   (setq cider-repl-pop-to-buffer-on-connect nil))
 
+;;; Python
+(use-package python
+  :ensure nil
+  :hook (python-mode . eglot-ensure)
+  :config
+  ;; define Ruff formatters explicitly (works well with uv projects too)
+  (setf (alist-get 'ruff-format apheleia-formatters)
+        '("ruff" "format" "--stdin-filename" filepath "-"))
+  (setf (alist-get 'ruff-organize-imports apheleia-formatters)
+        '("ruff" "check" "--select" "I" "--fix" "--stdin-filename" filepath "-"))
+  ;; Python: organize imports, then format
+  (setf (alist-get 'python-mode apheleia-mode-alist)
+        '(ruff-organize-imports ruff-format)))
+
 ;;; Rust
 (use-package rust-ts-mode
   :ensure nil
@@ -1078,6 +1091,12 @@ specific project."
   (add-to-list 'treesit-language-source-alist
 	       '(rust "https://github.com/tree-sitter/tree-sitter-rust")))
 
+;;; Terminal
+(use-package envrc
+  :ensure t
+  :demand t
+  :config (envrc-global-mode 1))
+
 ;; Load local_only config if present important this comes last so i can override
 ;; Patterns to use in extensions
 ;; build modes extending tabulated-list-mode with trasient menues for each mode kubed is a good example module
@@ -1088,3 +1107,4 @@ specific project."
   (when (file-directory-p local-dir)
     (add-to-list 'load-path local-dir)
     (load (expand-file-name "init-local" local-dir) t)))
+
