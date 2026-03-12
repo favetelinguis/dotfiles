@@ -34,38 +34,38 @@ output "eDP-1" {
 }
 binds {
     // === System & Overview ===
-    Mod+O repeat=false {
-        toggle-overview
-    }
-    Mod+Shift+Slash {
-        show-hotkey-overlay
-    }
+    // Ctrl+Alt+Mod+O repeat=false {
+    //     toggle-overview
+    // }
+    // Ctrl+Alt+Mod+Mod+Shift+Slash {
+    //     show-hotkey-overlay
+    // }
     // === Application Launchers ===
-    Mod+Return hotkey-overlay-title="Open Terminal" {
-        spawn "ghostty"
-    }
-    Mod+E hotkey-overlay-title="Open Emacs (client)" {
-        spawn "emacsclient" "-cn"
-    }
-    Mod+B hotkey-overlay-title="Open Browser" {
-        spawn "zen-browser"
-    }
-    Mod+Space hotkey-overlay-title="Application Launcher" {
+    // Ctrl+Mod+Return hotkey-overlay-title="Open Terminal" {
+    //     spawn "ghostty"
+    // }
+    // Ctrl+Mod+E hotkey-overlay-title="Open Emacs (client)" {
+    //     spawn "emacsclient" "-cn"
+    // }
+    // Ctrl+Mod+B hotkey-overlay-title="Open Browser" {
+    //     spawn "zen-browser"
+    // }
+    Ctrl+Mod+Space hotkey-overlay-title="Application Launcher" {
         spawn "fuzzel"
     }
-    Mod+N hotkey-overlay-title="Network" {
-        spawn "foot" "netpala"
-    }
-    Mod+Shift+N hotkey-overlay-title="Bluethooth" {
-        spawn "foot" "bluetui"
-    }
+    // Ctrl+Mod+N hotkey-overlay-title="Network" {
+    //     spawn "foot" "netpala"
+    // }
+    // Ctrl+Mod+Shift+N hotkey-overlay-title="Bluethooth" {
+    //     spawn "foot" "bluetui"
+    // }
     // === Security ===
-    Mod+Alt+L hotkey-overlay-title="Lock Screen" {
+    Ctrl+Mod+Alt+L hotkey-overlay-title="Lock Screen" {
         spawn "swaylock"
     }
-    Mod+Shift+E {
-        quit
-    }
+    // Ctrl+Mod+Shift+E {
+    //     quit
+    // }
     // === Audio Controls ===
     // Example volume keys mappings for PipeWire & WirePlumber.
     // The allow-when-locked=true property makes them work even when the session is locked.
@@ -105,102 +105,102 @@ binds {
         spawn "brightnessctl" "--class=backlight" "set" "10%-"
     }
     // === Window Management ===
-    Mod+Q repeat=false {
+    Ctrl+Mod+Q repeat=false {
         close-window
     }
-    Mod+F {
-        maximize-column
-    }
+    // Mod+F {
+    //     maximize-column
+    // }
     //    Mod+Shift+F { fullscreen-window; }
     //    Mod+Shift+T { toggle-window-floating; }
     //    Mod+Shift+V { switch-focus-between-floating-and-tiling; }
-    Mod+W {
-        toggle-column-tabbed-display
-    }
+    // Mod+W {
+    //     toggle-column-tabbed-display
+    // }
     // === Window Navigation ===
-    Mod+H {
+    Ctrl+Mod+H {
         focus-column-left
     }
-    Mod+U {
+    Ctrl+Mod+U {
         focus-window-down
     }
-    Mod+I {
-        focus-window-up
-    }
-    Mod+L {
-        focus-column-right
-    }
+    // Mod+I {
+    //     focus-window-up
+    // }
+    // Mod+L {
+    //     focus-column-right
+    // }
     // === Window Movement ===
-    Mod+Shift+H {
-        move-column-left
-    }
-    Mod+Shift+U {
-        move-window-down
-    }
-    Mod+Shift+I {
-        move-window-up
-    }
-    Mod+Shift+L {
-        move-column-right
-    }
+    // Mod+Shift+H {
+    //     move-column-left
+    // }
+    // Mod+Shift+U {
+    //     move-window-down
+    // }
+    // Mod+Shift+I {
+    //     move-window-up
+    // }
+    // Mod+Shift+L {
+    //     move-column-right
+    // }
     // === Workspace Navigation ===
-    Mod+J {
+    Ctrl+Mod+J {
         focus-workspace-down
     }
-    Mod+K {
+    Ctrl+Mod+K {
         focus-workspace-up
     }
-    Mod+Shift+J {
-        move-column-to-workspace-down
-    }
-    Mod+Shift+K {
-        move-column-to-workspace-up
-    }
+    // Mod+Shift+J {
+    //     move-column-to-workspace-down
+    // }
+    // Mod+Shift+K {
+    //     move-column-to-workspace-up
+    // }
     // === Workspaces Movement ===
-    Mod+Ctrl+J {
-        move-workspace-down
-    }
-    Mod+Ctrl+K {
-        move-workspace-up
-    }
+    // Mod+Ctrl+J {
+    //     move-workspace-down
+    // }
+    // Mod+Ctrl+K {
+    //     move-workspace-up
+    // }
     // === Monitor Navigation ===
-    Mod+Left {
-        focus-monitor-left
-    }
-    Mod+Down {
-        focus-monitor-down
-    }
-    Mod+Up {
-        focus-monitor-up
-    }
-    Mod+Right {
-        focus-monitor-right
-    }
+    // Mod+Left {
+    //     focus-monitor-left
+    // }
+    // Mod+Down {
+    //     focus-monitor-down
+    // }
+    // Mod+Up {
+    //     focus-monitor-up
+    // }
+    // Mod+Right {
+    //     focus-monitor-right
+    // }
     // === Move to Monitor ===
-    Mod+Shift+Left {
-        move-column-to-monitor-left
-    }
-    Mod+Shift+Down {
-        move-column-to-monitor-down
-    }
-    Mod+Shift+Up {
-        move-column-to-monitor-up
-    }
-    Mod+Shift+Right {
-        move-column-to-monitor-right
-    }
-    Mod+Ctrl+Left {
-        move-workspace-to-monitor-left
-    }
-    Mod+Ctrl+Down {
-        move-workspace-to-monitor-down
-    }
-    Mod+Ctrl+Up {
-        move-workspace-to-monitor-up
-    }
-    Mod+Ctrl+Right {
-        move-workspace-to-monitor-right
-    }
+    // Mod+Shift+Left {
+    //     move-column-to-monitor-left
+    // }
+    // Mod+Shift+Down {
+    //     move-column-to-monitor-down
+    // }
+    // Mod+Shift+Up {
+    //     move-column-to-monitor-up
+    // }
+    // Mod+Shift+Right {
+    //     move-column-to-monitor-right
+    // }
+    // Mod+Ctrl+Left {
+    //     move-workspace-to-monitor-left
+    // }
+    // Mod+Ctrl+Down {
+    //     move-workspace-to-monitor-down
+    // }
+    // Mod+Ctrl+Up {
+    //     move-workspace-to-monitor-up
+    // }
+    // Mod+Ctrl+Right {
+    //     move-workspace-to-monitor-right
+    // }
     // === Mouse Wheel Navigation ===
     Mod+WheelScrollDown cooldown-ms=150 {
         focus-workspace-down
@@ -239,101 +239,101 @@ binds {
         move-column-left
     }
     // === Numbered Workspaces ===
-    Mod+1 {
-        focus-workspace 1
-    }
-    Mod+2 {
-        focus-workspace 2
-    }
-    Mod+3 {
-        focus-workspace 3
-    }
-    Mod+4 {
-        focus-workspace 4
-    }
-    Mod+5 {
-        focus-workspace 5
-    }
-    Mod+6 {
-        focus-workspace 6
-    }
-    Mod+7 {
-        focus-workspace 7
-    }
-    Mod+8 {
-        focus-workspace 8
-    }
-    Mod+9 {
-        focus-workspace 9
-    }
+    // Mod+1 {
+    //     focus-workspace 1
+    // }
+    // Mod+2 {
+    //     focus-workspace 2
+    // }
+    // Mod+3 {
+    //     focus-workspace 3
+    // }
+    // Mod+4 {
+    //     focus-workspace 4
+    // }
+    // Mod+5 {
+    //     focus-workspace 5
+    // }
+    // Mod+6 {
+    //     focus-workspace 6
+    // }
+    // Mod+7 {
+    //     focus-workspace 7
+    // }
+    // Mod+8 {
+    //     focus-workspace 8
+    // }
+    // Mod+9 {
+    //     focus-workspace 9
+    // }
     // === Move to Numbered Workspaces ===
-    Mod+Shift+1 {
-        move-column-to-workspace 1
-    }
-    Mod+Shift+2 {
-        move-column-to-workspace 2
-    }
-    Mod+Shift+3 {
-        move-column-to-workspace 3
-    }
-    Mod+Shift+4 {
-        move-column-to-workspace 4
-    }
-    Mod+Shift+5 {
-        move-column-to-workspace 5
-    }
-    Mod+Shift+6 {
-        move-column-to-workspace 6
-    }
-    Mod+Shift+7 {
-        move-column-to-workspace 7
-    }
-    Mod+Shift+8 {
-        move-column-to-workspace 8
-    }
-    Mod+Shift+9 {
-        move-column-to-workspace 9
-    }
+    // Mod+Shift+1 {
+    //     move-column-to-workspace 1
+    // }
+    // Mod+Shift+2 {
+    //     move-column-to-workspace 2
+    // }
+    // Mod+Shift+3 {
+    //     move-column-to-workspace 3
+    // }
+    // Mod+Shift+4 {
+    //     move-column-to-workspace 4
+    // }
+    // Mod+Shift+5 {
+    //     move-column-to-workspace 5
+    // }
+    // Mod+Shift+6 {
+    //     move-column-to-workspace 6
+    // }
+    // Mod+Shift+7 {
+    //     move-column-to-workspace 7
+    // }
+    // Mod+Shift+8 {
+    //     move-column-to-workspace 8
+    // }
+    // Mod+Shift+9 {
+    //     move-column-to-workspace 9
+    // }
     // === Column Management ===
-    Mod+BracketLeft {
-        consume-or-expel-window-left
-    }
-    Mod+BracketRight {
-        consume-or-expel-window-right
-    }
+    // Mod+BracketLeft {
+    //     consume-or-expel-window-left
+    // }
+    // Mod+BracketRight {
+    //     consume-or-expel-window-right
+    // }
     //    Mod+Period { expel-window-from-column; }
     // === Sizing & Layout ===
-    Mod+R {
-        switch-preset-column-width
-    }
-    Mod+Shift+R {
-        switch-preset-window-height
-    }
-    Mod+Ctrl+R {
-        reset-window-height
-    }
-    Mod+Ctrl+F {
-        expand-column-to-available-width
-    }
-    Mod+C {
-        center-column
-    }
-    Mod+Ctrl+C {
-        center-visible-columns
-    }
+    // Mod+R {
+    //     switch-preset-column-width
+    // }
+    // Mod+Shift+R {
+    //     switch-preset-window-height
+    // }
+    // Mod+Ctrl+R {
+    //     reset-window-height
+    // }
+    // Mod+Ctrl+F {
+    //     expand-column-to-available-width
+    // }
+    // Mod+C {
+    //     center-column
+    // }
+    // Mod+Ctrl+C {
+    //     center-visible-columns
+    // }
     // === Manual Sizing ===
-    Mod+Minus {
-        set-column-width "-10%"
-    }
-    Mod+Equal {
-        set-column-width "+10%"
-    }
-    Mod+Shift+Minus {
-        set-window-height "-10%"
-    }
-    Mod+Shift+Equal {
-        set-window-height "+10%"
-    }
+    // Mod+Minus {
+    //     set-column-width "-10%"
+    // }
+    // Mod+Equal {
+    //     set-column-width "+10%"
+    // }
+    // Mod+Shift+Minus {
+    //     set-window-height "-10%"
+    // }
+    // Mod+Shift+Equal {
+    //     set-window-height "+10%"
+    // }
     // === Screenshots ===
     XF86Launch1 {
         screenshot
@@ -353,13 +353,13 @@ binds {
     Alt+Print {
         screenshot-window
     }
-    // === System Controls ===
-    Mod+Escape allow-inhibiting=false {
-        toggle-keyboard-shortcuts-inhibit
-    }
-    Mod+Shift+P {
-        power-off-monitors
-    }
+ // === System Controls ===
+    // Mod+Escape allow-inhibiting=false {
+    //     toggle-keyboard-shortcuts-inhibit
+    // }
+    // Mod+Shift+P {
+    //     power-off-monitors
+    // }
 }
 gestures {
     hot-corners {
@@ -506,10 +506,13 @@ animations {
 // Work around WezTerm's initial configure bug
 // by setting an empty default-column-width.
 window-rule {
-    geometry-corner-radius 12
-    clip-to-geometry true
+    geometry-corner-radius 0
+    clip-to-geometry false
     tiled-state true
     draw-border-with-background false
+}
+window-rule {
+    open-fullscreen true
 }
 window-rule {
     // This regular expression is intentionally made as specific as possible,
@@ -523,8 +526,8 @@ window-rule {
 window-rule {
     match app-id="^org\\.gnome\\."
     draw-border-with-background false
-    geometry-corner-radius 12
-    clip-to-geometry true
+    geometry-corner-radius 0
+    clip-to-geometry false
 }
 window-rule {
     match app-id="^gnome-control-center$"

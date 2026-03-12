@@ -1,1 +1,88 @@
 theme = Zenburned
+
+command = /bin/bash -c "tmux new-session -A -s main"
+
+# Reset default keybinds
+# keybind = clear
+# shell-integration = none
+
+
+# General settings
+quick-terminal-animation-duration = 0
+
+# Global shortcuts
+keybind = "global:alt+space=toggle_quick_terminal"
+
+# --- Tmux Cmd keybindings (prefix = Ctrl-T / \x14) ---
+
+# Window (tab) management
+#keybind = "cmd+t=text:\x14c"
+#keybind = "cmd+shift+q=text:\x14&"
+keybind = "cmd+n=text:\x14c"
+
+# Window switching by number
+keybind = "cmd+one=text:\x141"
+keybind = "cmd+two=text:\x142"
+keybind = "cmd+three=text:\x143"
+keybind = "cmd+four=text:\x144"
+keybind = "cmd+five=text:\x145"
+keybind = "cmd+six=text:\x146"
+keybind = "cmd+seven=text:\x147"
+keybind = "cmd+eight=text:\x148"
+keybind = "cmd+nine=text:\x149"
+
+# Pane splitting
+keybind = "cmd+s=text:\x14%"
+keybind = "cmd+d=text:\x14\""
+
+# Pane navigation
+keybind = "cmd+h=text:\x14\x1b[D"
+keybind = "cmd+l=text:\x14\x1b[C"
+keybind = "cmd+k=text:\x14\x1b[A"
+keybind = "cmd+j=text:\x14\x1b[B"
+
+# Close pane
+keybind = "cmd+q=text:\x14x"
+
+# Zoom pane (toggle fullscreen for current pane)
+keybind = "cmd+m=text:\x14z"
+
+# Session picker / tree view
+keybind = "cmd+o=text:\x14s"
+keybind = "cmd+p=text:\x14i"
+keybind = "cmd+[=text:\x14["
+keybind = "cmd+]=text:\x14]"
+
+# Clipboard
+keybind = "performable:cmd+c=copy_to_clipboard"
+keybind = "cmd+v=paste_from_clipboard"
+
+# Rename window
+keybind = "cmd+comma=text:\x14,"
+
+# Application control
+keybind = "ctrl+alt+r=reload_config"
+# keybind = "alt+q=close_surface"
+
+# Tab management
+# keybind = "alt+t=new_tab"
+# keybind = "alt+shift+l=next_tab"
+# keybind = "alt+shift+h=previous_tab"
+# keybind = "alt+1=goto_tab:1"
+# keybind = "alt+2=goto_tab:2"
+# keybind = "alt+3=goto_tab:3"
+# keybind = "alt+4=goto_tab:4"
+# keybind = "alt+5=goto_tab:5"
+# keybind = "alt+6=goto_tab:6"
+
+# Split management
+# keybind = "alt+s=new_split:down"
+# keybind = "alt+v=new_split:right"
+# keybind = "alt+h=goto_split:left"
+# keybind = "alt+j=goto_split:bottom"
+# keybind = "alt+k=goto_split:top"
+# keybind = "alt+l=goto_split:right"
+# keybind = "alt+o=toggle_split_zoom"
+
+# Custom escape sequences
+# keybind = "shift+enter=text:\x1b\r"

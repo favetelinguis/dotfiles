@@ -130,6 +130,9 @@
 	("M-o" . other-window)
 	)
   :config
+  ;; Make working in tmux scrolling work
+  (xterm-mouse-mode 1)
+  (mouse-wheel-mode 1)
   (recentf-mode 1)
   (setq-default line-spacing 0.2)
   (set-face-attribute 'default nil
@@ -364,6 +367,12 @@
   ;; Enable optional extension modes:
   (corfu-history-mode)
   (corfu-popupinfo-mode))
+
+;;; Before emacs 31 I need this to use corfu in terminal
+(use-package corfu-terminal
+  :ensure t
+  :config
+  (corfu-terminal-mode +1))
 
 (use-package cape
   :ensure t
