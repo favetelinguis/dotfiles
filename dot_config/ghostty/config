@@ -3,7 +3,7 @@ theme = Zenburned
 command = /bin/bash -c "tmux new-session -A -s main"
 
 # Reset default keybinds
-# keybind = clear
+keybind = clear
 # shell-integration = none
 
 
@@ -18,7 +18,7 @@ keybind = "global:alt+space=toggle_quick_terminal"
 # Window (tab) management
 #keybind = "cmd+t=text:\x14c"
 #keybind = "cmd+shift+q=text:\x14&"
-keybind = "cmd+n=text:\x14c"
+keybind = "cmd+t=text:\x14c"
 
 # Window switching by number
 keybind = "cmd+one=text:\x141"
@@ -36,10 +36,11 @@ keybind = "cmd+s=text:\x14%"
 keybind = "cmd+d=text:\x14\""
 
 # Pane navigation
-keybind = "cmd+h=text:\x14\x1b[D"
-keybind = "cmd+l=text:\x14\x1b[C"
-keybind = "cmd+k=text:\x14\x1b[A"
-keybind = "cmd+j=text:\x14\x1b[B"
+keybind = "cmd+o=text:\x14o"
+# keybind = "cmd+h=text:\x14\x1b[D"
+# keybind = "cmd+l=text:\x14\x1b[C"
+# keybind = "cmd+k=text:\x14\x1b[A"
+# keybind = "cmd+j=text:\x14\x1b[B"
 
 # Close pane
 keybind = "cmd+q=text:\x14x"
@@ -48,10 +49,10 @@ keybind = "cmd+q=text:\x14x"
 keybind = "cmd+m=text:\x14z"
 
 # Session picker / tree view
-keybind = "cmd+o=text:\x14s"
-keybind = "cmd+p=text:\x14i"
-keybind = "cmd+[=text:\x14["
-keybind = "cmd+]=text:\x14]"
+keybind = "cmd+f=text:\x14s"
+keybind = "cmd+i=text:\x14i"
+keybind = "cmd+p=text:\x14["
+keybind = "cmd+n=text:\x14]"
 
 # Clipboard
 keybind = "performable:cmd+c=copy_to_clipboard"
@@ -59,6 +60,9 @@ keybind = "cmd+v=paste_from_clipboard"
 
 # Rename window
 keybind = "cmd+comma=text:\x14,"
+
+# Rename session
+keybind = "cmd+.=text:\x14$"
 
 # Application control
 keybind = "ctrl+alt+r=reload_config"
