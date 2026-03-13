@@ -60,9 +60,9 @@ binds {
     //     spawn "foot" "bluetui"
     // }
     // // === Security ===
-    // Mod+Alt+L hotkey-overlay-title="Lock Screen" {
-    //     spawn "swaylock"
-    // }
+    Ctrl+Mod+Alt+L hotkey-overlay-title="Lock Screen" {
+        spawn "swaylock"
+    }
     // Mod+Shift+E {
     //     quit
     // }
