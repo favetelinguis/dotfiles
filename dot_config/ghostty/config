@@ -1,6 +1,6 @@
 theme = Zenburned
 
-command = /bin/bash -c "tmux new-session -A -s main"
+command = /bin/bash -c "tmux new-session -A -s main -n 1"
 
 # Reset default keybinds
 keybind = clear
@@ -18,7 +18,7 @@ keybind = "global:alt+space=toggle_quick_terminal"
 # Window (tab) management
 #keybind = "cmd+t=text:\x14c"
 #keybind = "cmd+shift+q=text:\x14&"
-keybind = "cmd+t=text:\x14c"
+#keybind = "cmd+t=text:\x14c"
 
 # Window switching by number
 keybind = "cmd+one=text:\x141"
