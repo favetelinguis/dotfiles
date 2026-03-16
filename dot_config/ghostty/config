@@ -51,8 +51,9 @@ keybind = "cmd+m=text:\x14z"
 # Session picker / tree view
 keybind = "cmd+f=text:\x14s"
 keybind = "cmd+i=text:\x14i"
-keybind = "cmd+p=text:\x14["
-keybind = "cmd+n=text:\x14]"
+# keybind = "cmd+p=text:\x14["
+# keybind = "cmd+n=text:\x14]"
+keybind = "cmd+n=text:\x14L"
 
 # Clipboard
 keybind = "performable:cmd+c=copy_to_clipboard"
