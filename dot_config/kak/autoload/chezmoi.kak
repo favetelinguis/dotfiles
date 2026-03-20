@@ -1,24 +1,87 @@
 try %{ declare-option -hidden str chezmoi_source_root '' }
 try %{ declare-option -hidden bool chezmoi_managed false }
 try %{ declare-option -hidden str chezmoi_target '' }
+try %{ declare-option -hidden bool chezmoi_git_buffer false }
+try %{ declare-option -hidden str chezmoi_git_previous_cwd '' }
 
-evaluate-commands %sh{
-    kakquote() { printf "'%s'" "$(printf '%s' "$1" | sed "s/'/''/g")"; }
+define-command -hidden chezmoi-refresh-source-root %{
+    evaluate-commands %sh{
+        kakquote() { printf "'%s'" "$(printf '%s' "$1" | sed "s/'/''/g")"; }
 
-    if ! command -v chezmoi >/dev/null 2>&1; then
-        printf "fail %s\n" "$(kakquote "chezmoi command not found in PATH")"
-        exit
-    fi
+        if ! command -v chezmoi >/dev/null 2>&1; then
+            printf "fail %s\n" "$(kakquote "chezmoi command not found in PATH")"
+            exit
+        fi
 
-    source_root=$(chezmoi source-path 2>/dev/null) || {
-        printf "fail %s\n" "$(kakquote "unable to resolve chezmoi source directory")"
-        exit
+        source_root=$(chezmoi source-path 2>/dev/null) || {
+            printf "fail %s\n" "$(kakquote "unable to resolve chezmoi source directory")"
+            exit
+        }
+        [ -n "$source_root" ] || {
+            printf "fail %s\n" "$(kakquote "unable to resolve chezmoi source directory")"
+            exit
+        }
+
+        printf "set-option global chezmoi_source_root %s\n" "$(kakquote "$source_root")"
     }
-
-    printf "set-option global chezmoi_source_root %s\n" "$(kakquote "$source_root")"
 }
 
+define-command -hidden chezmoi-git-sync-directory %{
+    evaluate-commands %sh{
+        kakquote() { printf "'%s'" "$(printf '%s' "$1" | sed "s/'/''/g")"; }
+
+        if [ "$kak_opt_chezmoi_git_buffer" = "true" ]; then
+            source_root=$kak_opt_chezmoi_source_root
+            [ -n "$source_root" ] || exit
+            printf "change-directory %s\n" "$(kakquote "$source_root")"
+            exit
+        fi
+
+        previous_cwd=$kak_opt_chezmoi_git_previous_cwd
+        [ -n "$previous_cwd" ] || exit
+
+        printf "change-directory %s\n" "$(kakquote "$previous_cwd")"
+        printf "set-option window chezmoi_git_previous_cwd %s\n" "$(kakquote "")"
+        printf "remove-hooks window chezmoi-git-cwd\n"
+    }
+}
+
+define-command -hidden -params 1 chezmoi-git-view %{
+    chezmoi-refresh-source-root
+    evaluate-commands %sh{
+        kakquote() { printf "'%s'" "$(printf '%s' "$1" | sed "s/'/''/g")"; }
+
+        subcommand=$1
+        source_root=$kak_opt_chezmoi_source_root
+        previous_cwd=$kak_opt_chezmoi_git_previous_cwd
+        [ -n "$previous_cwd" ] || previous_cwd=$(pwd -P 2>/dev/null || pwd)
+
+        [ -n "$source_root" ] || {
+            printf "fail %s\n" "$(kakquote "unable to resolve chezmoi source directory")"
+            exit
+        }
+
+        case "$subcommand" in
+            status|diff) ;;
+            *)
+                printf "fail %s\n" "$(kakquote "unsupported chezmoi git view: $subcommand")"
+                exit
+                ;;
+        esac
+
+        printf "change-directory %s\n" "$(kakquote "$source_root")"
+        printf "git %s\n" "$(kakquote "$subcommand")"
+        printf "set-option buffer chezmoi_git_buffer true\n"
+        printf "set-option window chezmoi_git_previous_cwd %s\n" "$(kakquote "$previous_cwd")"
+        printf "remove-hooks window chezmoi-git-cwd\n"
+        printf "hook -group chezmoi-git-cwd window WinDisplay .* %%{ chezmoi-git-sync-directory }\n"
+    }
+}
+
+chezmoi-refresh-source-root
+
 define-command -hidden chezmoi-buffer-sync-state %{
+    chezmoi-refresh-source-root
     evaluate-commands %sh{
         kakquote() { printf "'%s'" "$(printf '%s' "$1" | sed "s/'/''/g")"; }
 
@@ -50,6 +113,7 @@ define-command -hidden chezmoi-buffer-sync-state %{
 define-command \
     -docstring 'fuzzy-find a managed chezmoi file and open its source state' \
     chezmoi-find %{
+    chezmoi-refresh-source-root
     evaluate-commands %sh{
         session="$kak_session"
         client="$kak_client"
@@ -81,6 +145,7 @@ SHELL
 define-command \
     -docstring 'apply the current managed file to its destination path' \
     chezmoi-apply-current %{
+    chezmoi-refresh-source-root
     evaluate-commands %sh{
         kakquote() { printf "'%s'" "$(printf '%s' "$1" | sed "s/'/''/g")"; }
         kakline() { printf '%s' "$1" | tr '\n' ' ' | sed "s/'/''/g"; }
@@ -150,6 +215,7 @@ define-command \
 define-command \
     -docstring 'add the current file to chezmoi, replacing source state if already managed' \
     chezmoi-add-current %{
+    chezmoi-refresh-source-root
     evaluate-commands %sh{
         kakquote() { printf "'%s'" "$(printf '%s' "$1" | sed "s/'/''/g")"; }
         kakline() { printf '%s' "$1" | tr '\n' ' ' | sed "s/'/''/g"; }
@@ -215,6 +281,7 @@ define-command \
 define-command \
     -docstring 'remove the current managed file from chezmoi source state' \
     chezmoi-forget-current %{
+    chezmoi-refresh-source-root
     evaluate-commands %sh{
         kakquote() { printf "'%s'" "$(printf '%s' "$1" | sed "s/'/''/g")"; }
         kakline() { printf '%s' "$1" | tr '\n' ' ' | sed "s/'/''/g"; }
@@ -283,100 +350,15 @@ define-command \
 }
 
 define-command \
-    -docstring 'apply the full chezmoi target state' \
-    chezmoi-apply-all %{
-    evaluate-commands %sh{
-        source_root="$kak_opt_chezmoi_source_root"
-        tmp=$(mktemp /tmp/kak-chezmoi-apply-all-XXXXXX)
-
-        cat > "$tmp" << SHELL
-#!/bin/sh
-cd "$source_root" || exit 1
-chezmoi apply --no-tty
-status=\$?
-printf '\nPress enter to close...'
-read dummy
-rm -f "$tmp"
-exit \$status
-SHELL
-
-        chmod +x "$tmp"
-        kak_tmp=$(printf '%s' "$tmp" | sed "s/'/''/g")
-        printf "tmux-terminal-vertical sh '%s'\n" "$kak_tmp"
-    }
-}
-
-define-command \
-    -docstring 'show chezmoi status for the current managed file' \
+    -docstring 'show git status for the chezmoi source repo' \
     chezmoi-status-current %{
-    evaluate-commands %sh{
-        kakquote() { printf "'%s'" "$(printf '%s' "$1" | sed "s/'/''/g")"; }
-
-        resolve_target() {
-            if [ -z "$kak_buffile" ]; then
-                printf '%s\n' "current buffer is not a file"
-                return 1
-            fi
-
-            source_root=$kak_opt_chezmoi_source_root
-            if [ -n "$source_root" ]; then
-                case "$kak_buffile" in
-                    "$source_root"/*)
-                        target=$(chezmoi target-path "$kak_buffile" 2>/dev/null) || {
-                            printf '%s\n' "current source buffer is not managed by chezmoi"
-                            return 1
-                        }
-                        source_file=$(chezmoi source-path "$target" 2>/dev/null) || {
-                            printf '%s\n' "current source buffer is not managed by chezmoi"
-                            return 1
-                        }
-                        [ "$source_file" = "$kak_buffile" ] || {
-                            printf '%s\n' "current source buffer is not managed by chezmoi"
-                            return 1
-                        }
-                        printf '%s\n' "$target"
-                        return 0
-                        ;;
-                esac
-            fi
-
-            target="$kak_buffile"
-            chezmoi source-path "$target" >/dev/null 2>&1 || {
-                printf '%s\n' "current file is not managed by chezmoi"
-                return 1
-            }
-            printf '%s\n' "$target"
-            return 0
-        }
-
-        target=$(resolve_target) || {
-            printf "fail %s\n" "$(kakquote "$target")"
-            exit
-        }
-
-        source_root="$kak_opt_chezmoi_source_root"
-        tmp=$(mktemp /tmp/kak-chezmoi-status-XXXXXX)
-
-        cat > "$tmp" << SHELL
-#!/bin/sh
-cd "$source_root" || exit 1
-chezmoi status "$target"
-status=\$?
-printf '\nPress enter to close...'
-read dummy
-rm -f "$tmp"
-exit \$status
-SHELL
-
-        chmod +x "$tmp"
-        kak_tmp=$(printf '%s' "$tmp" | sed "s/'/''/g")
-        printf "tmux-terminal-vertical sh '%s'\n" "$kak_tmp"
-    }
+    chezmoi-git-view status
 }
 
 define-command \
     -docstring 'show chezmoi diff for the current managed file' \
     chezmoi-diff-current %{
+    chezmoi-refresh-source-root
     evaluate-commands %sh{
         kakquote() { printf "'%s'" "$(printf '%s' "$1" | sed "s/'/''/g")"; }
 
@@ -445,6 +427,7 @@ SHELL
 define-command \
     -docstring 'show chezmoi diff for all managed files' \
     chezmoi-diff-all %{
+    chezmoi-refresh-source-root
     evaluate-commands %sh{
         source_root="$kak_opt_chezmoi_source_root"
         tmp=$(mktemp /tmp/kak-chezmoi-diff-all-XXXXXX)
@@ -467,33 +450,10 @@ SHELL
 }
 
 define-command \
-    -docstring 'show chezmoi git status' \
-    chezmoi-git-status %{
-    evaluate-commands %sh{
-        source_root="$kak_opt_chezmoi_source_root"
-        tmp=$(mktemp /tmp/kak-chezmoi-git-status-XXXXXX)
-
-        cat > "$tmp" << SHELL
-#!/bin/sh
-cd "$source_root" || exit 1
-chezmoi git status
-status=\$?
-printf '\nPress enter to close...'
-read dummy
-rm -f "$tmp"
-exit \$status
-SHELL
-
-        chmod +x "$tmp"
-        kak_tmp=$(printf '%s' "$tmp" | sed "s/'/''/g")
-        printf "tmux-terminal-vertical sh '%s'\n" "$kak_tmp"
-    }
-}
-
-define-command \
     -params 1.. \
     -docstring 'run an arbitrary chezmoi subcommand in a tmux pane' \
     chezmoi-run %{
+    chezmoi-refresh-source-root
     evaluate-commands %sh{
         source_root="$kak_opt_chezmoi_source_root"
         tmp=$(mktemp /tmp/kak-chezmoi-run-XXXXXX)
@@ -522,10 +482,8 @@ try %{ declare-user-mode chezmoi }
 map global chezmoi f ':chezmoi-find<ret>'          -docstring 'find managed file'
 map global chezmoi M ':chezmoi-add-current<ret>'   -docstring 'manage current file'
 map global chezmoi X ':chezmoi-forget-current<ret>' -docstring 'forget current file'
-# map global chezmoi a ':chezmoi-apply-current<ret>' -docstring 'apply current file'
-map global chezmoi A ':chezmoi-apply-all<ret>'     -docstring 'apply all'
-map global chezmoi s ':chezmoi-status-current<ret>' -docstring 'status current'
+map global chezmoi A ':chezmoi-apply-current<ret>' -docstring 'apply current file'
+map global chezmoi v ':chezmoi-status-current<ret>' -docstring 'repo status'
 map global chezmoi d ':chezmoi-diff-current<ret>'   -docstring 'diff current'
 map global chezmoi D ':chezmoi-diff-all<ret>'       -docstring 'diff all'
-map global chezmoi g ':chezmoi-git-status<ret>'     -docstring 'git status'
 map global chezmoi ! ':chezmoi-run '                -docstring 'run chezmoi command'
