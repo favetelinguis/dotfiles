@@ -1,0 +1,10 @@
+colorscheme zenburn
+set-option global startup_info_version 99999999
+set-option global modelinefmt '%val{cursor_line}:%val{cursor_char_column}/%val{buf_line_count} {{mode_info}} {magenta}%val{client}{default} {cyan}%val{bufname}{default} {{context_info}}'
+
+eval %sh{kak-lsp}
+map global user l ':enter-user-mode lsp<ret>' -docstring 'LSP mode'
+map global user . ':enter-user-mode chezmoi<ret>' -docstring 'chezmoi'
+
+map global user a ':agent-send<ret>'     -docstring 'send selection to Claude/Codex'
+map global user A ':agent-send-submit<ret>' -docstring 'send to Claude/Codex and submit'
