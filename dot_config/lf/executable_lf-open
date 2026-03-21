@@ -1,0 +1,133 @@
+#!/bin/sh
+
+set -eu
+
+path=${1:?missing path}
+window_name=Edit
+edit_client_name=edit
+editor=${VISUAL:-${EDITOR:-$HOME/.local/bin/kak-tmux-session}}
+
+sanitize_name() {
+    printf '%s' "$1" | tr -c '[:alnum:]_.-' '_'
+}
+
+kak_session_for_tmux() {
+    session_id=$1
+    session_id=${session_id#\$}
+    sanitize_name "$session_id"
+}
+
+normalize_path() {
+    target=$1
+    dir=$(cd -- "$(dirname -- "$target")" && pwd -P)
+    printf '%s/%s\n' "$dir" "$(basename -- "$target")"
+}
+
+is_text_file() {
+    [ -f "$1" ] || return 1
+    command -v file >/dev/null 2>&1 || return 0
+
+    mime=$(file --mime --brief --dereference -- "$1" 2>/dev/null || true)
+    [ -n "$mime" ] || return 0
+
+    case "$mime" in
+        *"charset=binary"*)
+            return 1
+            ;;
+        *)
+            return 0
+            ;;
+    esac
+}
+
+system_open() {
+    if command -v xdg-open >/dev/null 2>&1; then
+        setsid -f xdg-open -- "$1" >/dev/null 2>&1 && exit 0
+    fi
+
+    exec "$editor" -- "$1"
+}
+
+ensure_edit_window() {
+    if tmux list-windows -t "$session_id" -F '#{window_name}' | grep -Fxq "$window_name"; then
+        return 0
+    fi
+
+    tmux new-window -d -S -t "$session_id" -n "$window_name" -c "$file_dir" \
+        "sh -lc 'export KAK_CLIENT_NAME=$edit_client_name; exec \"$HOME/.local/bin/kak-tmux-session\"'"
+}
+
+find_kak_pane() {
+    tmux list-panes -t "$window_target" -F '#{pane_id}	#{pane_current_command}	#{pane_active}' 2>/dev/null \
+        | awk -F '	' '
+            $2 == "kak" && $3 == "1" { print $1; exit }
+            $2 == "kak" && first == "" { first = $1 }
+            END {
+                if (first != "") {
+                    print first
+                }
+            }
+        '
+}
+
+wait_for_kak_pane() {
+    count=0
+    while [ "$count" -lt 40 ]; do
+        pane_id=$(find_kak_pane)
+        if [ -n "$pane_id" ]; then
+            printf '%s\n' "$pane_id"
+            return 0
+        fi
+        sleep 0.05
+        count=$((count + 1))
+    done
+    return 1
+}
+
+wait_for_edit_client() {
+    count=0
+    while [ "$count" -lt 40 ]; do
+        if printf "evaluate-commands -client '%s' nop\n" "$edit_client_name" \
+            | kak -p "$kak_session" >/dev/null 2>&1; then
+            return 0
+        fi
+        sleep 0.05
+        count=$((count + 1))
+    done
+    return 1
+}
+
+if [ -e "$path" ]; then
+    path=$(normalize_path "$path")
+fi
+
+if ! is_text_file "$path"; then
+    system_open "$path"
+fi
+
+if [ -z "${TMUX:-}" ] || ! command -v tmux >/dev/null 2>&1; then
+    exec "$editor" -- "$path"
+fi
+
+session_id=$(tmux display-message -p '#{session_id}')
+kak_session=$(kak_session_for_tmux "$session_id")
+file_dir=$(dirname -- "$path")
+window_target="${session_id}:${window_name}"
+
+ensure_edit_window
+pane_id=$(wait_for_kak_pane || true)
+
+if [ -z "$pane_id" ]; then
+    exec "$editor" -- "$path"
+fi
+
+if ! wait_for_edit_client; then
+    exec "$editor" -- "$path"
+fi
+
+kak_path=$(printf '%s' "$path" | sed "s/'/''/g")
+printf "evaluate-commands -client '%s' 'edit -existing ''%s'''\n" \
+    "$edit_client_name" "$kak_path" | kak -p "$kak_session"
+
+tmux select-window -t "$window_target"
+tmux select-pane -t "$pane_id"

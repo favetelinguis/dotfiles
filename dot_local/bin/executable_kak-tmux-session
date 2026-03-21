@@ -1,0 +1,44 @@
+#!/bin/sh
+
+set -eu
+
+kak_bin=/usr/bin/kak
+
+sanitize_name() {
+    printf '%s' "$1" | tr -c '[:alnum:]_.-' '_'
+}
+
+passthrough=false
+for arg in "$@"; do
+    case "$arg" in
+        -c|-s|-p|-l|-clear|-help|-version|-ui|-d)
+            passthrough=true
+            break
+            ;;
+    esac
+done
+
+if [ "$passthrough" = true ]; then
+    exec "$kak_bin" "$@"
+fi
+
+if [ -n "${KAK_CLIENT_NAME:-}" ]; then
+    client_name=$(sanitize_name "$KAK_CLIENT_NAME")
+    set -- -e "rename-client $client_name" "$@"
+fi
+
+if [ -n "${TMUX:-}" ] && command -v tmux >/dev/null 2>&1; then
+    session_id=$(tmux display-message -p '#{session_id}' 2>/dev/null || true)
+    if [ -n "$session_id" ]; then
+        kak_session=${session_id#\$}
+        kak_session=$(sanitize_name "$kak_session")
+        if [ -n "$kak_session" ]; then
+            if "$kak_bin" -l 2>/dev/null | grep -Fxq "$kak_session"; then
+                exec "$kak_bin" -c "$kak_session" "$@"
+            fi
+            exec "$kak_bin" -s "$kak_session" "$@"
+        fi
+    fi
+fi
+
+exec "$kak_bin" "$@"

@@ -1,0 +1,2 @@
+# Route lf's default open action through the tmux/Kakoune helper.
+cmd open &$HOME/.config/lf/lf-open "$f"
