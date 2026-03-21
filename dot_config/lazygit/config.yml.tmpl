@@ -1,0 +1,10 @@
+{{- $home := .chezmoi.homeDir -}}
+{{- $filename := "{{filename}}" -}}
+{{- $line := "{{line}}" -}}
+# yaml-language-server: $schema=https://raw.githubusercontent.com/jesseduffield/lazygit/master/schema/config.json
+
+os:
+  edit: '{{ $home }}/.local/bin/kak-tmux-session "{{ $filename }}"'
+  editAtLine: '{{ $home }}/.local/bin/kak-tmux-session +{{ $line }} "{{ $filename }}"'
+  editAtLineAndWait: '{{ $home }}/.local/bin/kak-tmux-session +{{ $line }} "{{ $filename }}"'
+  editInTerminal: true
