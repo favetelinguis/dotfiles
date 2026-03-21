@@ -1,0 +1,9 @@
+{{- $data := (get . "data") | default dict -}}
+{{- $ai := (get $data "ai") | default dict -}}
+# Machine-local chezmoi configuration.
+# Enable agent compatibility paths by setting the relevant values to true.
+
+[data.ai]
+codex = {{ get $ai "codex" | default false }}
+claude = {{ get $ai "claude" | default false }}
+opencode = {{ get $ai "opencode" | default false }}

@@ -18,3 +18,104 @@ Awsome terminal, used for supporting TUIs
 network
 ** bluetui
 bluethooth
+* Chezmoi
+** Machine capability data
+Use machine-local chezmoi config for machine-specific capabilities. The local
+config lives outside this repo, normally at =~/.config/chezmoi/chezmoi.toml=.
+This file is not tracked in git and is the right place to say which agents are
+available on a given machine.
+
+Chezmoi supports local config in TOML, YAML, JSON, and JSONC. This repo uses
+TOML in examples.
+
+** Default local config on a new machine
+This repo includes =.chezmoi.toml.tmpl=. When running =chezmoi init= on a new
+machine, chezmoi uses that template to generate an initial local config with
+all agent capabilities disabled:
+
+#+begin_src toml
+[data.ai]
+codex = false
+claude = false
+opencode = false
+#+end_src
+
+After init, enable the agents that exist on the current machine and run
+=chezmoi apply= again.
+
+** Recommended local config shape
+Keep agent capability flags under =[data.ai]=:
+
+#+begin_src toml
+[data.ai]
+codex = true
+claude = true
+opencode = false
+#+end_src
+
+Optional machine metadata can live next to it:
+
+#+begin_src toml
+[data.machine]
+profile = "workstation"
+#+end_src
+
+Use explicit booleans for capabilities. Do not infer capabilities from whether
+a binary happens to be installed on PATH.
+
+** How templates use it
+Values under =[data]= become template data. In templates from this repo they
+are read as =.ai.codex=, =.ai.claude=, and =.ai.opencode=.
+
+Typical template checks look like:
+
+#+begin_src text
+{{ if .ai.codex }}
+{{ if and .ai.claude .ai.codex }}
+{{ if eq .machine.profile "workstation" }}
+#+end_src
+
+Chezmoi also exposes built-in machine facts under =.chezmoi=, including
+=.chezmoi.os=, =.chezmoi.arch=, =.chezmoi.hostname=, and
+=.chezmoi.homeDir=.
+
+** Shared data versus local data
+Use the local chezmoi config for machine-specific values. Use shared
+=.chezmoidata= files only for static repo-wide data that should be the same
+across machines.
+
+Useful details:
+- data in the local config under =[data]= is merged into template data
+- shared =.chezmoidata*= files are read before templates
+- =.chezmoidata*= files are data files, not templates
+- dictionary values merge, lists are replaced
+- =chezmoi data= shows the final merged template data for the current machine
+
+** Agent skills layout
+Agent skills are stored once in the canonical shared location:
+=~/.config/agents/skills=.
+
+Compatibility paths are managed by chezmoi and enabled from =[data.ai]=.
+This repo uses per-skill symlinks inside the agent-specific skill directories so
+existing agent-managed or system-provided skills are not hidden by a full
+directory replacement.
+
+Examples:
+- =~/.claude/skills/<skill-name>=
+- =~/.codex/skills/<skill-name>=
+- =~/.config/opencode/skills/<skill-name>=
+
+These per-skill compatibility entries point at the shared canonical directory
+instead of copying the same skills into multiple places.
+
+Each skill should live in its own directory:
+
+#+begin_src text
+~/.config/agents/skills/<skill-name>/SKILL.md
+#+end_src
+
+** Useful commands
+- =chezmoi data=
+- =chezmoi execute-template '{{ toPrettyJson . }}'=
+- =chezmoi diff=
+- =chezmoi apply=

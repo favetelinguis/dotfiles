@@ -1,0 +1,4 @@
+{{- $ai := (get . "ai") | default dict -}}
+{{- if (get $ai "claude" | default false) -}}
+{{ .chezmoi.homeDir }}/.config/agents/skills/kak-task-expert
+{{- end -}}
