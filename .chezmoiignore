@@ -1,1 +1,100 @@
 README.org
+{{- $apps := (get . "apps") | default dict -}}
+{{- $agent := (get . "agent") | default dict -}}
+{{- $foot := (get $apps "foot") | default false -}}
+{{- $fuzzel := (get $apps "fuzzel") | default false -}}
+{{- $mako := (get $apps "mako") | default false -}}
+{{- $niri := (get $apps "niri") | default false -}}
+{{- $swaylock := (get $apps "swaylock") | default false -}}
+{{- $ghostty := (get $apps "ghostty") | default false -}}
+{{- $kak := (get $apps "kak") | default false -}}
+{{- $tmux := (get $apps "tmux") | default false -}}
+{{- $kakTaskScripts := (get $apps "kak_task_scripts") | default false -}}
+{{- $lf := (get $apps "lf") | default false -}}
+{{- $lazygit := (get $apps "lazygit") | default false -}}
+{{- $gitui := (get $apps "gitui") | default false -}}
+{{- $emacs := (get $apps "emacs") | default false -}}
+{{- $codex := (get $agent "codex") | default false -}}
+{{- $claude := (get $agent "claude") | default false -}}
+{{- $opencode := (get $agent "opencode") | default false -}}
+{{- $anyAgent := or $codex $claude $opencode -}}
+{{- $hasConfig := or $foot $fuzzel $mako $niri $swaylock $ghostty $kak $lf $lazygit $gitui $emacs $anyAgent -}}
+{{- $hasLocalBin := $kakTaskScripts -}}
+
+{{- if not $hasConfig }}
+.config
+.config/**
+{{- end }}
+{{- if not $hasLocalBin }}
+.local
+.local/**
+{{- end }}
+
+{{- if not $foot }}
+.config/foot
+.config/foot/**
+{{- end }}
+{{- if not $fuzzel }}
+.config/fuzzel
+.config/fuzzel/**
+{{- end }}
+{{- if not $mako }}
+.config/mako
+.config/mako/**
+{{- end }}
+{{- if not $niri }}
+.config/niri
+.config/niri/**
+{{- end }}
+{{- if not $swaylock }}
+.config/swaylock
+.config/swaylock/**
+{{- end }}
+{{- if not $ghostty }}
+.config/ghostty
+.config/ghostty/**
+{{- end }}
+{{- if not $kak }}
+.config/kak
+.config/kak/**
+{{- end }}
+{{- if not $lf }}
+.config/lf
+.config/lf/**
+{{- end }}
+{{- if not $lazygit }}
+.config/lazygit
+.config/lazygit/**
+{{- end }}
+{{- if not $gitui }}
+.config/gitui
+.config/gitui/**
+{{- end }}
+{{- if not $emacs }}
+.emacs.d
+.emacs.d/**
+{{- end }}
+{{- if not $tmux }}
+.tmux.conf
+{{- end }}
+{{- if not $kakTaskScripts }}
+.local/bin/kak-task-list
+.local/bin/kak-task-run
+.local/bin/kak-tmux-session
+{{- end }}
+{{- if not $anyAgent }}
+.config/agents
+.config/agents/**
+{{- end }}
+{{- if not $codex }}
+.codex
+.codex/**
+{{- end }}
+{{- if not $claude }}
+.claude
+.claude/**
+{{- end }}
+{{- if not $opencode }}
+.config/opencode
+.config/opencode/**
+{{- end }}
