@@ -1,0 +1,54 @@
+try %{ declare-option -hidden str clipboard_copy_command '' }
+try %{ declare-option -hidden str clipboard_paste_command '' }
+
+evaluate-commands %sh{
+    kakquote() { printf "'%s'" "$(printf '%s' "$1" | sed "s/'/''/g")"; }
+
+    copy_command=''
+    paste_command=''
+
+    case "$(uname -s 2>/dev/null)" in
+        Darwin)
+            if command -v pbcopy >/dev/null 2>&1 && command -v pbpaste >/dev/null 2>&1; then
+                copy_command='pbcopy'
+                paste_command='pbpaste'
+            fi
+            ;;
+        Linux)
+            if [ -n "$WAYLAND_DISPLAY" ] &&
+               command -v wl-copy >/dev/null 2>&1 &&
+               command -v wl-paste >/dev/null 2>&1; then
+                copy_command='wl-copy'
+                paste_command='wl-paste --no-newline'
+            elif command -v xsel >/dev/null 2>&1; then
+                copy_command='xsel --clipboard --input'
+                paste_command='xsel --clipboard --output'
+            fi
+            ;;
+    esac
+
+    printf "set-option global clipboard_copy_command %s\n" "$(kakquote "$copy_command")"
+    printf "set-option global clipboard_paste_command %s\n" "$(kakquote "$paste_command")"
+}
+
+define-command -hidden clipboard-copy %{
+    evaluate-commands %sh{
+        kakquote() { printf "'%s'" "$(printf '%s' "$1" | sed "s/'/''/g")"; }
+
+        [ -n "$kak_opt_clipboard_copy_command" ] && exit
+
+        printf "fail %s\n" "$(kakquote "no supported clipboard copy command found; expected pbcopy on macOS, wl-copy on Wayland, or xsel on X11")"
+    }
+    execute-keys "<a-|>%opt{clipboard_copy_command}<ret>"
+}
+
+define-command -hidden clipboard-paste %{
+    evaluate-commands %sh{
+        kakquote() { printf "'%s'" "$(printf '%s' "$1" | sed "s/'/''/g")"; }
+
+        [ -n "$kak_opt_clipboard_paste_command" ] && exit
+
+        printf "fail %s\n" "$(kakquote "no supported clipboard paste command found; expected pbpaste on macOS, wl-paste on Wayland, or xsel on X11")"
+    }
+    execute-keys "<a-!>%opt{clipboard_paste_command}<ret>"
+}
