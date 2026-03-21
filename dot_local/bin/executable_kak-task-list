@@ -1,0 +1,191 @@
+#!/bin/sh
+
+slugify() {
+    printf '%s' "$1" |
+        tr '[:upper:]' '[:lower:]' |
+        sed 's/[^a-z0-9][^a-z0-9]*/-/g; s/^-//; s/-$//'
+}
+
+sanitize_field() {
+    printf '%s' "$1" |
+        tr '\t\r\n' '   ' |
+        sed 's/^ *//; s/ *$//'
+}
+
+context_dir() {
+    input=$1
+
+    if [ -z "$input" ]; then
+        pwd -P
+        return
+    fi
+
+    if [ -d "$input" ]; then
+        (
+            cd "$input" 2>/dev/null &&
+            pwd -P
+        )
+        return
+    fi
+
+    if [ -e "$input" ]; then
+        dir=${input%/*}
+        [ "$dir" != "$input" ] || dir=.
+        (
+            cd "$dir" 2>/dev/null &&
+            pwd -P
+        )
+        return
+    fi
+
+    printf '%s\n' "${PWD}"
+}
+
+parse_metadata() {
+    script=$1
+    scope=$2
+    task_name=$3
+
+    title=
+    group=
+    desc=
+    sudo_mode=
+    cwd_mode=
+    run_mode=
+    error_pattern=
+    count=0
+
+    while IFS= read -r line; do
+        count=$((count + 1))
+        [ "$count" -le 40 ] || break
+        case "$line" in
+            '# kak-task-title:'*)
+                title=${line#\# kak-task-title:}
+                ;;
+            '# kak-task-desc:'*)
+                desc=${line#\# kak-task-desc:}
+                ;;
+            '# kak-task-group:'*)
+                group=${line#\# kak-task-group:}
+                ;;
+            '# kak-task-sudo:'*)
+                sudo_mode=${line#\# kak-task-sudo:}
+                ;;
+            '# kak-task-cwd:'*)
+                cwd_mode=${line#\# kak-task-cwd:}
+                ;;
+            '# kak-task-mode:'*)
+                run_mode=${line#\# kak-task-mode:}
+                ;;
+            '# kak-task-error-pattern:'*)
+                error_pattern=${line#\# kak-task-error-pattern:}
+                ;;
+        esac
+    done < "$script"
+
+    title=$(sanitize_field "$title")
+    group=$(sanitize_field "$group")
+    desc=$(sanitize_field "$desc")
+    sudo_mode=$(sanitize_field "$sudo_mode")
+    cwd_mode=$(sanitize_field "$cwd_mode")
+    run_mode=$(sanitize_field "$run_mode")
+    error_pattern=$(sanitize_field "$error_pattern")
+
+    [ -n "$title" ] || title=$(printf '%s' "$task_name" | tr '_-' '  ' | sed 's/  */ /g; s/^ //; s/ $//')
+    [ -n "$group" ] || group=misc
+
+    case "$sudo_mode" in
+        yes|no) ;;
+        *) sudo_mode=no ;;
+    esac
+
+    case "$run_mode" in
+        fifo|terminal) ;;
+        *) run_mode=fifo ;;
+    esac
+
+    case "$cwd_mode" in
+        repo|cwd|subdir:*)
+            ;;
+        *)
+            if [ "$scope" = project ]; then
+                cwd_mode=repo
+            else
+                cwd_mode=cwd
+            fi
+            ;;
+    esac
+
+    if [ "$sudo_mode" = yes ]; then
+        run_mode=terminal
+    fi
+
+    printf '%s\t%s\t%s\t%s\t%s\t%s\t%s\n' \
+        "$title" \
+        "$group" \
+        "$desc" \
+        "$run_mode" \
+        "$sudo_mode" \
+        "$cwd_mode" \
+        "$error_pattern"
+}
+
+context=$(context_dir "${1-}")
+repo_root=$(git -C "$context" rev-parse --show-toplevel 2>/dev/null || true)
+repo_slug=
+[ -n "$repo_root" ] && repo_slug=$(slugify "$(basename "$repo_root")")
+
+bin_dir=${HOME%/}/.local/bin
+[ -d "$bin_dir" ] || exit 0
+
+tmp=$(mktemp "${TMPDIR:-/tmp}/kak-task-list.XXXXXX") || exit 1
+trap 'rm -f "$tmp"' EXIT HUP INT TERM
+
+for script in "$bin_dir"/kak-task-*; do
+    [ -e "$script" ] || continue
+    [ -f "$script" ] || continue
+    [ -x "$script" ] || continue
+
+    base=$(basename "$script")
+    scope=
+    task_name=
+    precedence=
+
+    case "$base" in
+        kak-task--*)
+            scope=global
+            task_name=${base#kak-task--}
+            precedence=1
+            ;;
+        kak-task-*"--"*)
+            prefix=${base#kak-task-}
+            prefix=${prefix%%--*}
+            [ -n "$repo_slug" ] || continue
+            [ "$prefix" = "$repo_slug" ] || continue
+            scope=project
+            task_name=${base#kak-task-${prefix}--}
+            precedence=0
+            ;;
+        *)
+            continue
+            ;;
+    esac
+
+    [ -n "$task_name" ] || continue
+    meta=$(parse_metadata "$script" "$scope" "$task_name")
+    printf '%s\t%s\t%s\t%s\t%s\n' \
+        "$precedence" \
+        "$base" \
+        "$task_name" \
+        "$scope" \
+        "$meta" >> "$tmp"
+done
+
+[ -s "$tmp" ] || exit 0
+
+tab=$(printf '\t')
+sort -t "$tab" -k1,1n -k6,6 -k5,5 -k3,3 "$tmp" |
+awk -F '\t' '!seen[$3]++ {
+    printf "%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n",
+        $2, $3, $4, $5, $6, $7, $8, $9, $10, $11
+}'

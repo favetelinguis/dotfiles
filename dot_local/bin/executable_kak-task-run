@@ -1,0 +1,99 @@
+#!/bin/sh
+
+context_dir() {
+    input=$1
+
+    if [ -z "$input" ]; then
+        pwd -P
+        return
+    fi
+
+    if [ -d "$input" ]; then
+        (
+            cd "$input" 2>/dev/null &&
+            pwd -P
+        )
+        return
+    fi
+
+    if [ -e "$input" ]; then
+        dir=${input%/*}
+        [ "$dir" != "$input" ] || dir=.
+        (
+            cd "$dir" 2>/dev/null &&
+            pwd -P
+        )
+        return
+    fi
+
+    printf '%s\n' "${PWD}"
+}
+
+fail() {
+    printf '%s\n' "$*" >&2
+    exit 1
+}
+
+[ $# -ge 1 ] || fail "usage: kak-task-run <script-basename> [context] [args...]"
+
+base=$1
+shift
+context=
+if [ $# -ge 1 ]; then
+    context=$1
+    shift
+fi
+
+context=$(context_dir "$context")
+task_list=${HOME%/}/.local/bin/kak-task-list
+[ -x "$task_list" ] || fail "task helper not found: $task_list"
+
+row=$("$task_list" "$context" | awk -F '\t' -v base="$base" '$1 == base { print; exit }')
+[ -n "$row" ] || fail "task $base is not available for the current context"
+
+tab=$(printf '\t')
+IFS="$tab" read -r basename task_name scope title group desc mode sudo_mode cwd_mode error_pattern << EOF
+$row
+EOF
+
+repo_root=$(git -C "$context" rev-parse --show-toplevel 2>/dev/null || true)
+repo_slug=
+if [ -n "$repo_root" ]; then
+    repo_slug=$(basename "$repo_root" | tr '[:upper:]' '[:lower:]' | sed 's/[^a-z0-9][^a-z0-9]*/-/g; s/^-//; s/-$//')
+fi
+
+case "$cwd_mode" in
+    repo)
+        [ -n "$repo_root" ] || fail "task $basename requires a git repo"
+        workdir=$repo_root
+        ;;
+    cwd|'')
+        workdir=$context
+        ;;
+    subdir:*)
+        subdir=${cwd_mode#subdir:}
+        if [ "$scope" = project ]; then
+            [ -n "$repo_root" ] || fail "task $basename requires a git repo"
+            workdir=$repo_root/$subdir
+        else
+            workdir=$context/$subdir
+        fi
+        ;;
+    *)
+        fail "task $basename has an unsupported cwd mode: $cwd_mode"
+        ;;
+esac
+
+script_path=${HOME%/}/.local/bin/$basename
+[ -f "$script_path" ] || fail "task script not found: $script_path"
+[ -x "$script_path" ] || fail "task script is not executable: $script_path"
+
+cd "$workdir" 2>/dev/null || fail "unable to change directory to $workdir"
+
+export KAK_TASK_NAME=$task_name
+export KAK_TASK_SCOPE=$scope
+export KAK_TASK_REPO_ROOT=$repo_root
+export KAK_TASK_REPO_SLUG=$repo_slug
+export KAK_TASK_FILE=$script_path
+
+exec "$script_path" "$@"

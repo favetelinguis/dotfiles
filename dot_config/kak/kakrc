@@ -13,12 +13,20 @@ eval %sh{kak-lsp}
 map global user l ':enter-user-mode lsp<ret>' -docstring 'LSP mode'
 map global user . ':enter-user-mode chezmoi<ret>' -docstring 'chezmoi'
 map global user v ':enter-user-mode git<ret>' -docstring 'git'
+map global user t ':enter-user-mode task<ret>' -docstring 'tasks'
 map global user w ':enter-user-mode window<ret>' -docstring 'window'
 
 map global user a ':agent-send<ret>'     -docstring 'send selection to Claude/Codex'
 map global user A ':agent-send-submit<ret>' -docstring 'send to Claude/Codex and submit'
 
 try %{ declare-user-mode window }
+try %{ declare-user-mode task }
 map global window d ':split<ret>'  -docstring 'split below'
 map global window s ':vsplit<ret>' -docstring 'split right'
 map global window t ':tabnew<ret>' -docstring 'new tmux window'
+
+map global task t ':task-menu<ret>'              -docstring 'task menu'
+map global task r ':task-rerun<ret>'             -docstring 'rerun last task'
+map global task o ':task-open-last-output<ret>'  -docstring 'open last output'
+map global task n ':task-next-error<ret>'        -docstring 'next task error'
+map global task p ':task-previous-error<ret>'    -docstring 'previous task error'
