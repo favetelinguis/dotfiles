@@ -1,0 +1,4 @@
+interface:
+  display_name: "fzf Scripting Expert"
+  short_description: "Write shell and Kakoune fzf flows"
+  default_prompt: "Use $fzf-scripting-expert to create or review fzf scripting for Kakoune or shell that matches my tmux-backed local patterns."
