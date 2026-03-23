@@ -1,6 +1,14 @@
+{{- $shell := "" -}}
+{{- if eq .chezmoi.os "linux" -}}
+{{- $shell = trim (index (splitList ":" (output "getent" "passwd" .chezmoi.username)) 6) -}}
+{{- else if eq .chezmoi.os "darwin" -}}
+{{- $shell = regexFind "/[^[:space:]]+" (output "dscl" "." "-read" (printf "/Users/%s" .chezmoi.username) "UserShell") -}}
+{{- else -}}
+{{- $shell = env "SHELL" -}}
+{{- end -}}
 theme = Zenburned
 
-command = /bin/bash -c "tmux new-session -A -s main -n 1"
+command = {{ $shell }} -c "tmux new-session -A -s main -n 1"
 
 # Reset default keybinds
 keybind = clear
