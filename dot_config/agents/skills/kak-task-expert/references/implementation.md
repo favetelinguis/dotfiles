@@ -31,29 +31,22 @@ Chezmoi source files:
 
 ## Task naming
 
-- Global task scripts:
-  - `~/.local/bin/kak-task--<task-name>`
-- Project task scripts:
-  - `~/.local/bin/kak-task-<repo-slug>--<task-name>`
+Supported task scripts:
+- `~/.local/bin/kak-task--<task-name>`
 
-`repo-slug` is:
-- derived from `basename "$git_root"`
-- lowercased
-- non-alphanumeric runs collapsed to `-`
+Chezmoi source path:
+- `dot_local/bin/executable_kak-task--<task-name>`
 
-Example:
-- repo root `~/src/My App` -> slug `my-app`
-- project task: `kak-task-my-app--test`
+Logical task names are derived from the basename suffix after `kak-task--`.
 
 ## Discovery model
 
-`kak-task-list` scans only `~/.local/bin/kak-task-*`.
+`kak-task-list` scans only `~/.local/bin/kak-task--*`.
 
 Discovery rules:
 - include only executable regular files
-- global tasks always qualify
-- project tasks qualify only when the active context is inside a git repo and the task prefix matches the active repo slug
-- if a project task and a global task share the same logical task name, prefer the project task
+- do not scan repo-scoped or slug-prefixed basenames
+- sort by group, title, then task name
 
 Context resolution:
 - if the input is a directory, use it
@@ -69,7 +62,7 @@ Supported comment headers:
 - `# kak-task-desc: ...`
 - `# kak-task-group: ...`
 - `# kak-task-sudo: no|yes`
-- `# kak-task-cwd: repo|cwd|subdir:<path>`
+- `# kak-task-cwd: repo|cwd|subdir:<path>|<absolute-path>`
 - `# kak-task-mode: fifo|terminal`
 - `# kak-task-error-pattern: <regex>`
 
@@ -77,9 +70,15 @@ Defaults:
 - `title`: derived from task name, replacing `-` and `_` with spaces
 - `group`: `misc`
 - `sudo`: `no`
-- `cwd`: `repo` for project tasks, `cwd` for global tasks
+- `cwd`: `cwd`
 - `mode`: `fifo`
 - if `sudo=yes`, force `mode=terminal`
+
+`cwd` handling:
+- `repo`: use the active git root; fail if no repo is active
+- `cwd`: use the resolved context directory
+- `subdir:<path>`: use `<repo-root>/<path>` when inside a repo, otherwise `<context-dir>/<path>`
+- `/absolute/path`: use the path as-is
 
 ## Helper contract
 
@@ -87,14 +86,13 @@ Defaults:
 
 1. script basename
 2. logical task name
-3. scope: `global` or `project`
-4. title
-5. group
-6. description
-7. mode
-8. sudo mode
-9. cwd mode
-10. error pattern
+3. title
+4. group
+5. description
+6. mode
+7. sudo mode
+8. cwd mode
+9. error pattern
 
 `kak-task-run <script-basename> [context] [args...]`:
 - resolves the matching row via `~/.local/bin/kak-task-list`
@@ -102,7 +100,6 @@ Defaults:
 - computes working directory from `cwd_mode`
 - exports:
   - `KAK_TASK_NAME`
-  - `KAK_TASK_SCOPE`
   - `KAK_TASK_REPO_ROOT`
   - `KAK_TASK_REPO_SLUG`
   - `KAK_TASK_FILE`
@@ -121,7 +118,9 @@ Helper lookup:
 - fifo output buffers
 - terminal launches
 - rerun state
+- pid/log tracking for fifo tasks
 - error navigation commands
+- task cancellation and running-task lookup
 
 `kakrc` owns:
 - `declare-user-mode task`
@@ -134,17 +133,26 @@ Do not add hidden keybindings to autoload files.
 
 Picker behavior:
 - if inside tmux and `fzf` exists, open a tmux split picker
-- otherwise build a Kakoune `menu -auto-single`
+- otherwise build a Kakoune `menu`
 
 Display behavior:
-- show scope/group/title and optionally description
+- show `[group] title` and append the description when present
 
 Execution behavior:
-- fifo tasks open a `*task* <script-basename>` buffer
+- fifo tasks open a buffer named `*task:<script-basename>:<context-name>*`
+- fifo tasks write output to `${TMPDIR:-/tmp}/kak-task-pids/<basename>@<context>.log`
+- fifo tasks track the background pid in `${TMPDIR:-/tmp}/kak-task-pids/<basename>@<context>`
+- fifo tasks store metadata in a sibling `.meta` file for `task-find`
+- prevent starting the same task twice in the same context while its pid is still alive
 - fifo buffers set `filetype=make`
 - fifo buffers set `jump_current_line 0`
 - if the task has an error pattern, set buffer `make_error_pattern`
 - terminal tasks require tmux
+
+`task-find` behavior:
+- requires tmux and `fzf`
+- lists active fifo tasks from pid/meta files
+- reopens or recreates the fifo tail buffer for the chosen running task
 
 Sudo behavior:
 - `kak-task-sudo: yes` means terminal mode only
@@ -160,10 +168,20 @@ Sudo behavior:
 - `task-open-last-output`
 - `task-next-error`
 - `task-previous-error`
+- `task-cancel`
+- `task-find`
+
+Task mode bindings in `kakrc`:
+- `t` opens the task picker
+- `r` reruns the last task
+- `o` opens the last output buffer
+- `n` and `p` navigate task errors
+- `x` cancels the last running fifo task
+- `f` finds running fifo tasks
 
 ## Example tasks
 
-Global task:
+Current-directory task:
 
 ```sh
 #!/bin/sh
@@ -175,7 +193,7 @@ exec chezmoi apply
 Path:
 - `~/.local/bin/kak-task--sync-dotfiles`
 
-Project task:
+Repo-root task:
 
 ```sh
 #!/bin/sh
@@ -186,7 +204,19 @@ exec cargo test
 ```
 
 Path:
-- `~/.local/bin/kak-task-myrepo--test`
+- `~/.local/bin/kak-task--test`
+
+Absolute-path task:
+
+```sh
+#!/bin/sh
+# kak-task-title: Deploy
+# kak-task-cwd: /srv/myapp
+exec ./deploy.sh
+```
+
+Path:
+- `~/.local/bin/kak-task--deploy`
 
 Sudo task:
 
@@ -206,8 +236,8 @@ When adding a new task:
 - keep the script directly runnable from the shell
 
 When changing task discovery:
-- preserve the current basename contract unless the user explicitly asks to migrate it
-- preserve project-over-global precedence
+- preserve the `kak-task--<task-name>` basename contract unless the user explicitly asks to migrate it
+- keep discovery limited to executable regular files under `~/.local/bin`
 
 When changing Kakoune integration:
 - keep command definitions in `task.kak`
