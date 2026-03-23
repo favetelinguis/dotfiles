@@ -1,0 +1,32 @@
+{{- $shell := (get . "shell") | default dict -}}
+#!/bin/sh
+
+set -eu
+
+source_line='[ -f "$HOME/.config/shell/local.sh" ] && . "$HOME/.config/shell/local.sh"'
+bash_enabled={{ if (get $shell "bash" | default false) }}true{{ else }}false{{ end }}
+zsh_enabled={{ if (get $shell "zsh" | default false) }}true{{ else }}false{{ end }}
+
+append_source_line() {
+    target=$1
+    shell_name=$2
+
+    if [ ! -f "$target" ]; then
+        printf '%s\n' "chezmoi shell hook error: ${shell_name} is enabled but ${target} does not exist" >&2
+        exit 1
+    fi
+
+    if grep -Fqx "$source_line" "$target"; then
+        return 0
+    fi
+
+    printf '\n%s\n' "$source_line" >>"$target"
+}
+
+if $bash_enabled; then
+    append_source_line "$HOME/.bashrc" "bash"
+fi
+
+if $zsh_enabled; then
+    append_source_line "$HOME/.zshrc" "zsh"
+fi

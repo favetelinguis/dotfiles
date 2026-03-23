@@ -1,0 +1,11 @@
+{{- $shell := (get . "shell") | default dict -}}
+{{- if or (get $shell "bash" | default false) (get $shell "zsh" | default false) -}}
+# Shared shell customizations sourced from enterprise-managed shell rc files.
+if [ -x "$HOME/.local/bin/kak-tmux-session" ]; then
+    export EDITOR="$HOME/.local/bin/kak-tmux-session"
+    export GIT_EDITOR="$HOME/.local/bin/kak-tmux-session"
+    k() {
+        "$HOME/.local/bin/kak-tmux-session" "$@"
+    }
+fi
+{{- end -}}

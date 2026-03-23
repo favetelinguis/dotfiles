@@ -13,6 +13,9 @@ This repo includes =.chezmoi.toml.tmpl=. When you run =chezmoi init= on a new
 machine, chezmoi generates an initial local config with everything disabled:
 
 #+begin_src toml
+[diff]
+exclude = ["scripts"]
+
 [data.apps]
 foot = false
 fuzzel = false
@@ -32,6 +35,10 @@ emacs = false
 codex = false
 claude = false
 opencode = false
+
+[data.shell]
+bash = false
+zsh = false
 #+end_src
 
 Edit the local config, turn on only what exists on the current machine, then
@@ -61,9 +68,22 @@ Agent toggles:
 - =agent.claude=
 - =agent.opencode=
 
+Shell toggles:
+- =shell.bash=
+- =shell.zsh=
+
 Enabling any =agent.*= value installs the shared skills in
 =~/.config/agents/skills=. Enabling a specific =agent.*= value also installs
 that agent's compatibility symlinks.
+
+Enabling =shell.bash= installs =~/.config/shell/local.sh= and appends a
+single guarded source line to =~/.bashrc=. Enabling =shell.zsh= does the same
+for =~/.zshrc=. The source line is appended only if it is missing, and
+=chezmoi apply= fails if the requested rc file does not already exist.
+By default this repo sets =[diff].exclude = ["scripts"]=, so =chezmoi diff=
+does not show script entries at all. It also does not show the append-only
+change to an unmanaged rc file. Use =chezmoi diff --include scripts= if you
+want to inspect scripts explicitly.
 
 Examples:
 
@@ -78,6 +98,9 @@ swaylock = true
 #+end_src
 
 #+begin_src toml
+[diff]
+exclude = ["scripts"]
+
 [data.apps]
 kak = true
 tmux = true
@@ -91,6 +114,10 @@ gitui = true
 codex = true
 claude = true
 opencode = false
+
+[data.shell]
+bash = true
+zsh = false
 #+end_src
 
 ** Agent skills layout

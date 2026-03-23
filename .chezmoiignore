@@ -1,6 +1,7 @@
 README.org
 {{- $apps := (get . "apps") | default dict -}}
 {{- $agent := (get . "agent") | default dict -}}
+{{- $shell := (get . "shell") | default dict -}}
 {{- $foot := (get $apps "foot") | default false -}}
 {{- $fuzzel := (get $apps "fuzzel") | default false -}}
 {{- $mako := (get $apps "mako") | default false -}}
@@ -17,8 +18,11 @@ README.org
 {{- $codex := (get $agent "codex") | default false -}}
 {{- $claude := (get $agent "claude") | default false -}}
 {{- $opencode := (get $agent "opencode") | default false -}}
+{{- $bash := (get $shell "bash") | default false -}}
+{{- $zsh := (get $shell "zsh") | default false -}}
 {{- $anyAgent := or $codex $claude $opencode -}}
-{{- $hasConfig := or $foot $fuzzel $mako $niri $swaylock $ghostty $kak $lf $lazygit $gitui $emacs $anyAgent -}}
+{{- $hasShell := or $bash $zsh -}}
+{{- $hasConfig := or $foot $fuzzel $mako $niri $swaylock $ghostty $kak $lf $lazygit $gitui $emacs $anyAgent $hasShell -}}
 {{- $hasLocalBin := $kakTaskScripts -}}
 
 {{- if not $hasConfig }}
