@@ -1,0 +1,73 @@
+#!/bin/sh
+# kak-fzf-split-open: open a file in a new tmux split targeting the original kak pane.
+# Called from fzf execute-silent bindings (ctrl-o).
+#
+# Usage: kak-fzf-split-open <session> <original_pane_id> <item>
+#
+# <item> may be either:
+#   - a plain file path           (from fzf-files)
+#   - "filepath:lineno:content"   (from fzf-grep / rg output)
+#
+# Split direction is chosen from the current tmux layout:
+#   single pane         -> wide terminal: side (-h), tall: below (-v)
+#   side-by-side panes  -> split below (-v)
+#   stacked panes       -> split to the side (-h)
+
+set -eu
+
+session="$1"
+# If original_pane was not captured, fall back to current pane.
+original_pane="${2:-${TMUX_PANE:-}}"
+item="$3"
+
+# --- parse item: plain path or rg-style "filepath:lineno:content" ---
+filepath=$(printf '%s' "$item" | cut -d: -f1)
+maybe_lineno=$(printf '%s' "$item" | cut -d: -f2)
+if printf '%s' "$maybe_lineno" | grep -qE '^[0-9]+$'; then
+    lineno="$maybe_lineno"
+else
+    filepath="$item"
+    lineno=""
+fi
+
+# --- layout detection (exclude the fzf pane from the count) ---
+fzf_pane="${TMUX_PANE:-}"
+if [ -n "$fzf_pane" ]; then
+    pane_info=$(tmux list-panes -F '#{pane_id} #{pane_left} #{pane_top}' 2>/dev/null \
+        | grep -v "^${fzf_pane} " || true)
+else
+    pane_info=$(tmux list-panes -F '#{pane_id} #{pane_left} #{pane_top}' 2>/dev/null || true)
+fi
+
+pane_count=$(printf '%s\n' "$pane_info" | grep -c . 2>/dev/null || echo 0)
+panes_x=$(printf '%s\n' "$pane_info" | awk '{print $2}' | sort -u | wc -l | tr -d ' ')
+panes_y=$(printf '%s\n' "$pane_info" | awk '{print $3}' | sort -u | wc -l | tr -d ' ')
+
+if [ "${pane_count:-0}" -le 1 ]; then
+    # Single pane: use aspect ratio (terminal cells are ~2x taller than wide)
+    width=$(tmux display-message -t "$original_pane" -p '#{pane_width}' 2>/dev/null || echo 80)
+    height=$(tmux display-message -t "$original_pane" -p '#{pane_height}' 2>/dev/null || echo 24)
+    if [ "$width" -ge "$((height * 2))" ]; then
+        split_flag="-h"
+    else
+        split_flag="-v"
+    fi
+elif [ "${panes_x:-1}" -gt 1 ]; then
+    # Side-by-side panes -> alternate by splitting below
+    split_flag="-v"
+elif [ "${panes_y:-1}" -gt 1 ]; then
+    # Stacked panes -> alternate by splitting to the side
+    split_flag="-h"
+else
+    split_flag="-v"
+fi
+
+# --- build kak edit command and open the split ---
+kak_path=$(printf '%s' "$filepath" | sed "s/'/''/g")
+if [ -n "$lineno" ]; then
+    kak_cmd="edit -existing '${kak_path}' ${lineno}"
+else
+    kak_cmd="edit -existing '${kak_path}'"
+fi
+
+tmux split-window $split_flag -t "$original_pane" kak -c "$session" -e "$kak_cmd"

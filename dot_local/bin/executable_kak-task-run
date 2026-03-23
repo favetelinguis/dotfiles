@@ -1,3 +1,4 @@
+
 #!/bin/sh
 
 context_dir() {
@@ -52,7 +53,7 @@ row=$("$task_list" "$context" | awk -F '\t' -v base="$base" '$1 == base { print;
 [ -n "$row" ] || fail "task $base is not available for the current context"
 
 tab=$(printf '\t')
-IFS="$tab" read -r basename task_name scope title group desc mode sudo_mode cwd_mode error_pattern << EOF
+IFS="$tab" read -r basename task_name title group desc mode sudo_mode cwd_mode error_pattern << EOF
 $row
 EOF
 
@@ -67,13 +68,15 @@ case "$cwd_mode" in
         [ -n "$repo_root" ] || fail "task $basename requires a git repo"
         workdir=$repo_root
         ;;
+    /*)
+        workdir=$cwd_mode
+        ;;
     cwd|'')
         workdir=$context
         ;;
     subdir:*)
         subdir=${cwd_mode#subdir:}
-        if [ "$scope" = project ]; then
-            [ -n "$repo_root" ] || fail "task $basename requires a git repo"
+        if [ -n "$repo_root" ]; then
             workdir=$repo_root/$subdir
         else
             workdir=$context/$subdir
@@ -91,7 +94,6 @@ script_path=${HOME%/}/.local/bin/$basename
 cd "$workdir" 2>/dev/null || fail "unable to change directory to $workdir"
 
 export KAK_TASK_NAME=$task_name
-export KAK_TASK_SCOPE=$scope
 export KAK_TASK_REPO_ROOT=$repo_root
 export KAK_TASK_REPO_SLUG=$repo_slug
 export KAK_TASK_FILE=$script_path

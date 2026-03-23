@@ -1,3 +1,4 @@
+
 ## fzf integration for Kakoune via tmux splits
 ## Requires: fzf, fd (or find), rg — all running inside tmux
 
@@ -12,12 +13,17 @@ define-command fzf-files -docstring 'fuzzy-find a file and open it' %{
     evaluate-commands %sh{
         session="$kak_session"
         client="$kak_client"
+        original_pane="${kak_client_env_TMUX_PANE:-}"
+        split_helper="${HOME}/.local/bin/kak-fzf-split-open"
         tmp=$(mktemp /tmp/kak-fzf-files-XXXXXX)
-        # Heredoc: $session/$client/$PWD expand here; \$... is literal $ in script
+        # Heredoc: $session/$client/$PWD/$original_pane expand here; \$... is literal $ in script
         cat > "$tmp" << SHELL
 #!/bin/sh
 cd "$PWD"
-result=\$( (fd --type f 2>/dev/null || find . -type f) | fzf --reverse --border)
+result=\$( (fd --type f 2>/dev/null || find . -type f) | \
+    fzf --reverse --border \
+        --header 'enter: open  ╱  ctrl-o: open in split' \
+        --bind "ctrl-o:execute-silent($split_helper '$session' '$original_pane' {})+abort")
 [ -z "\$result" ] && rm -f "$tmp" && exit
 kak_path=\$(printf '%s' "\$result" | sed "s/'/''/g")
 printf "evaluate-commands -client '$client' 'edit -existing ''%s'''\n" "\$kak_path" | kak -p '$session'
@@ -59,12 +65,16 @@ define-command fzf-grep -docstring 'live-grep files with fzf, jump to match' %{
     evaluate-commands %sh{
         session="$kak_session"
         client="$kak_client"
+        original_pane="${kak_client_env_TMUX_PANE:-}"
+        split_helper="${HOME}/.local/bin/kak-fzf-split-open"
         tmp=$(mktemp /tmp/kak-fzf-grep-XXXXXX)
         cat > "$tmp" << SHELL
 #!/bin/sh
 cd "$PWD"
 result=\$(rg --line-number --no-heading --with-filename --smart-case -- '' | \
     fzf --disabled --reverse --border --prompt 'grep> ' \
+        --header 'enter: open  ╱  ctrl-o: open in split' \
+        --bind "ctrl-o:execute-silent($split_helper '$session' '$original_pane' {})+abort" \
         --bind 'change:reload:rg --line-number --no-heading --with-filename --smart-case -- {q} || true')
 [ -z "\$result" ] && rm -f "$tmp" && exit
 filepath=\$(printf '%s' "\$result" | cut -d: -f1)
