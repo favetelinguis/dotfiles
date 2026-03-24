@@ -1,0 +1,25 @@
+#!/bin/sh
+
+set -eu
+
+root=${KAK_NOTE_ROOT:-"${HOME}/kak_notes"}
+filepath="${root}/todo.md"
+
+mkdir -p "$root" 2>/dev/null || {
+    printf 'unable to create notes directory %s\n' "$root" >&2
+    exit 1
+}
+
+if [ ! -d "$root/.git" ]; then
+    git -C "$root" init >/dev/null
+fi
+
+if [ ! -e "$filepath" ]; then
+    : > "$filepath"
+    git -C "$root" add -- "todo.md"
+    if ! git -C "$root" diff --cached --quiet -- "todo.md"; then
+        git -C "$root" commit -m "Create note todo.md" -- "todo.md" >/dev/null
+    fi
+fi
+
+exec "${HOME}/.local/bin/kak-tmux-session" "$filepath"

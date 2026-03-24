@@ -1,0 +1,47 @@
+#!/bin/sh
+
+set -eu
+
+root=${KAK_NOTE_ROOT:-"${HOME}/kak_notes"}
+split_helper="${HOME}/.local/bin/kak-fzf-split-open"
+open_helper="${HOME}/.local/bin/kak-picker-open"
+
+mkdir -p "$root" 2>/dev/null || {
+    printf 'unable to create notes directory %s\n' "$root" >&2
+    exit 1
+}
+
+if [ ! -d "$root/.git" ]; then
+    git -C "$root" init >/dev/null
+fi
+
+cd "$root" || exit 1
+
+if [ -n "${KAK_PICKER_SESSION:-}" ] \
+    && [ -n "${KAK_PICKER_ORIGINAL_PANE:-}" ] \
+    && [ -x "$split_helper" ]; then
+    result=$(
+        rg --line-number --no-heading --with-filename --smart-case --glob '!todo.md' -- '' . | \
+            fzf --disabled --reverse --border --prompt 'notes grep> ' \
+                --header 'enter: open  /  ctrl-o: open in split' \
+                --bind "ctrl-o:execute-silent($split_helper '$KAK_PICKER_SESSION' '$KAK_PICKER_ORIGINAL_PANE' {})+abort" \
+                --bind 'change:reload:rg --line-number --no-heading --with-filename --smart-case --glob '"'"'!todo.md'"'"' -- {q} . || true'
+    )
+else
+    result=$(
+        rg --line-number --no-heading --with-filename --smart-case --glob '!todo.md' -- '' . | \
+            fzf --disabled --reverse --border --prompt 'notes grep> ' \
+                --bind 'change:reload:rg --line-number --no-heading --with-filename --smart-case --glob '"'"'!todo.md'"'"' -- {q} . || true'
+    )
+fi
+
+[ -n "$result" ] || exit 0
+
+filepath=$(printf '%s' "$result" | cut -d: -f1)
+lineno=$(printf '%s' "$result" | cut -d: -f2)
+filepath=${filepath#./}
+
+[ -n "$filepath" ] || exit 0
+[ -n "$lineno" ] || exit 0
+
+exec "$open_helper" grep "$root/$filepath" "$lineno"

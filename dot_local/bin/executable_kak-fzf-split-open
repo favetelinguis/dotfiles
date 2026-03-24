@@ -62,12 +62,11 @@ else
     split_flag="-v"
 fi
 
-# --- build kak edit command and open the split ---
-kak_path=$(printf '%s' "$filepath" | sed "s/'/''/g")
+# --- open the split through the tmux-scoped kak wrapper ---
 if [ -n "$lineno" ]; then
-    kak_cmd="edit -existing '${kak_path}' ${lineno}"
+    tmux split-window $split_flag -c "$PWD" -t "$original_pane" \
+        "${HOME}/.local/bin/kak-tmux-session" "+${lineno}" "$filepath"
 else
-    kak_cmd="edit -existing '${kak_path}'"
+    tmux split-window $split_flag -c "$PWD" -t "$original_pane" \
+        "${HOME}/.local/bin/kak-tmux-session" "$filepath"
 fi
-
-tmux split-window $split_flag -t "$original_pane" kak -c "$session" -e "$kak_cmd"

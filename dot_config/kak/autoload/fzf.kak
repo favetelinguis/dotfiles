@@ -1,41 +1,50 @@
-
 ## fzf integration for Kakoune via tmux splits
 ## Requires: fzf, fd (or find), rg — all running inside tmux
 
-# ── helpers ──────────────────────────────────────────────────────────────────
-
-# Write a self-contained shell script to a temp file and return its path.
-# Each fzf-* command uses this pattern to avoid multi-level quoting hell.
-
-# ── fzf-files ────────────────────────────────────────────────────────────────
-
-define-command fzf-files -docstring 'fuzzy-find a file and open it' %{
+define-command -hidden -params 2 fzf-launch-picker %{
     evaluate-commands %sh{
-        session="$kak_session"
-        client="$kak_client"
-        original_pane="${kak_client_env_TMUX_PANE:-}"
-        split_helper="${HOME}/.local/bin/kak-fzf-split-open"
-        tmp=$(mktemp /tmp/kak-fzf-files-XXXXXX)
-        # Heredoc: $session/$client/$PWD/$original_pane expand here; \$... is literal $ in script
-        cat > "$tmp" << SHELL
+        kakquote() { printf "'%s'" "$(printf '%s' "$1" | sed "s/'/''/g")"; }
+
+        picker=$1
+        tmp_prefix=$2
+        picker_path="${HOME}/.local/bin/${picker}"
+
+        [ -x "$picker_path" ] || {
+            printf "fail %s\n" "$(kakquote "picker helper not found: $picker_path")"
+            exit
+        }
+
+        tmp=$(mktemp "${TMPDIR:-/tmp}/${tmp_prefix}.XXXXXX") || {
+            printf "fail %s\n" "$(kakquote "unable to create a temporary picker script")"
+            exit
+        }
+
+        session_q=$(printf '%s' "$kak_session" | sed "s/'/'\\\\''/g")
+        client_q=$(printf '%s' "$kak_client" | sed "s/'/'\\\\''/g")
+        pane_q=$(printf '%s' "${kak_client_env_TMUX_PANE:-}" | sed "s/'/'\\\\''/g")
+        picker_q=$(printf '%s' "$picker_path" | sed "s/'/'\\\\''/g")
+        cwd_q=$(printf '%s' "$PWD" | sed "s/'/'\\\\''/g")
+
+        cat >"$tmp" << SHELL
 #!/bin/sh
-cd "$PWD"
-result=\$( (fd --type f 2>/dev/null || find . -type f) | \
-    fzf --reverse --border \
-        --header 'enter: open  ╱  ctrl-o: open in split' \
-        --bind "ctrl-o:execute-silent($split_helper '$session' '$original_pane' {})+abort")
-[ -z "\$result" ] && rm -f "$tmp" && exit
-kak_path=\$(printf '%s' "\$result" | sed "s/'/''/g")
-printf "evaluate-commands -client '$client' 'edit -existing ''%s'''\n" "\$kak_path" | kak -p '$session'
-rm -f "$tmp"
+export KAK_PICKER_SESSION='$session_q'
+export KAK_PICKER_CLIENT='$client_q'
+export KAK_PICKER_ORIGINAL_PANE='$pane_q'
+cd '$cwd_q' || exit 1
+'$picker_q'
+status=\$?
+rm -f '$tmp'
+exit "\$status"
 SHELL
+
         chmod +x "$tmp"
-        kak_tmp=$(printf '%s' "$tmp" | sed "s/'/''/g")
-        printf "tmux-terminal-vertical sh '%s'\n" "$kak_tmp"
+        printf "tmux-terminal-vertical sh %s\n" "$(kakquote "$tmp")"
     }
 }
 
-# ── fzf-buffers ──────────────────────────────────────────────────────────────
+define-command fzf-files -docstring 'fuzzy-find a file and open it' %{
+    fzf-launch-picker kak-picker-files kak-fzf-files
+}
 
 define-command fzf-buffers -docstring 'fuzzy-pick an open buffer and switch to it' %{
     evaluate-commands %sh{
@@ -47,7 +56,7 @@ define-command fzf-buffers -docstring 'fuzzy-pick an open buffer and switch to i
 #!/bin/sh
 cd "$PWD"
 eval "set -- $buflist"
-result=\$(printf '%s\n' "\$@" | fzf --reverse --border)
+result=\$(printf '%s\n' "\$@" | fzf --reverse --border --prompt 'buffers> ')
 [ -z "\$result" ] && rm -f "$tmp" && exit
 kak_buf=\$(printf '%s' "\$result" | sed "s/'/''/g")
 printf "evaluate-commands -client '$client' 'buffer ''%s'''\n" "\$kak_buf" | kak -p '$session'
@@ -59,64 +68,10 @@ SHELL
     }
 }
 
-# ── fzf-grep ─────────────────────────────────────────────────────────────────
-
 define-command fzf-grep -docstring 'live-grep files with fzf, jump to match' %{
-    evaluate-commands %sh{
-        session="$kak_session"
-        client="$kak_client"
-        original_pane="${kak_client_env_TMUX_PANE:-}"
-        split_helper="${HOME}/.local/bin/kak-fzf-split-open"
-        tmp=$(mktemp /tmp/kak-fzf-grep-XXXXXX)
-        cat > "$tmp" << SHELL
-#!/bin/sh
-cd "$PWD"
-result=\$(rg --line-number --no-heading --with-filename --smart-case -- '' | \
-    fzf --disabled --reverse --border --prompt 'grep> ' \
-        --header 'enter: open  ╱  ctrl-o: open in split' \
-        --bind "ctrl-o:execute-silent($split_helper '$session' '$original_pane' {})+abort" \
-        --bind 'change:reload:rg --line-number --no-heading --with-filename --smart-case -- {q} || true')
-[ -z "\$result" ] && rm -f "$tmp" && exit
-filepath=\$(printf '%s' "\$result" | cut -d: -f1)
-lineno=\$(printf '%s' "\$result" | cut -d: -f2)
-kak_path=\$(printf '%s' "\$filepath" | sed "s/'/''/g")
-printf "evaluate-commands -client '$client' 'edit -existing ''%s'' %s'\n" "\$kak_path" "\$lineno" | kak -p '$session'
-rm -f "$tmp"
-SHELL
-        chmod +x "$tmp"
-        kak_tmp=$(printf '%s' "$tmp" | sed "s/'/''/g")
-        printf "tmux-terminal-vertical sh '%s'\n" "$kak_tmp"
-    }
+    fzf-launch-picker kak-picker-grep kak-fzf-grep
 }
 
-# ── fzf-git-branch ───────────────────────────────────────────────────────────
-
-define-command fzf-git-branch -docstring 'fuzzy-pick a git branch and check it out' %{
-    evaluate-commands %sh{
-        session="$kak_session"
-        client="$kak_client"
-        tmp=$(mktemp /tmp/kak-fzf-branch-XXXXXX)
-        cat > "$tmp" << SHELL
-#!/bin/sh
-cd "$PWD"
-result=\$(git branch --all --format='%(refname:short)' 2>/dev/null | fzf --reverse --border)
-[ -z "\$result" ] && rm -f "$tmp" && exit
-out=\$(git checkout "\$result" 2>&1)
-msg=\$(printf '%s' "\$out" | head -3 | sed "s/'/''/g")
-printf "evaluate-commands -client '$client' 'echo -markup ''{Information}%s'''\n" "\$msg" | kak -p '$session'
-rm -f "$tmp"
-SHELL
-        chmod +x "$tmp"
-        kak_tmp=$(printf '%s' "$tmp" | sed "s/'/''/g")
-        printf "tmux-terminal-vertical sh '%s'\n" "$kak_tmp"
-    }
+define-command fzf-directories -docstring 'fuzzy-find a directory and open Kakoune there' %{
+    fzf-launch-picker kak-picker-directories kak-fzf-directories
 }
-
-# ── key bindings ─────────────────────────────────────────────────────────────
-
-declare-user-mode fzf
-map global user f ':enter-user-mode fzf<ret>' -docstring 'fzf'
-map global fzf f ':fzf-files<ret>'            -docstring 'files'
-map global fzf b ':fzf-buffers<ret>'          -docstring 'buffers'
-map global fzf g ':fzf-grep<ret>'             -docstring 'grep'
-map global fzf B ':fzf-git-branch<ret>'       -docstring 'git branch'

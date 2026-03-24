@@ -12,6 +12,8 @@ set-option global modelinefmt '%val{cursor_line}:%val{cursor_char_column}/%val{b
 eval %sh{kak-lsp}
 map global user l ':enter-user-mode lsp<ret>' -docstring 'LSP mode'
 map global user . ':enter-user-mode chezmoi<ret>' -docstring 'chezmoi'
+map global user f ':enter-user-mode fzf<ret>' -docstring 'fzf'
+map global user n ':enter-user-mode note<ret>' -docstring 'notes'
 map global user v ':enter-user-mode git<ret>' -docstring 'git'
 map global user t ':enter-user-mode task<ret>' -docstring 'tasks'
 map global user w ':enter-user-mode window<ret>' -docstring 'window'
@@ -21,9 +23,22 @@ map global user A ':agent-send-submit<ret>' -docstring 'send to Claude/Codex and
 
 try %{ declare-user-mode window }
 try %{ declare-user-mode task }
+try %{ declare-user-mode fzf }
+try %{ declare-user-mode note }
 map global window d ':split<ret>'  -docstring 'split below'
 map global window s ':vsplit<ret>' -docstring 'split right'
 map global window t ':tabnew<ret>' -docstring 'new tmux window'
+
+map global fzf f ':fzf-files<ret>'       -docstring 'files'
+map global fzf b ':fzf-buffers<ret>'     -docstring 'buffers'
+map global fzf g ':fzf-grep<ret>'        -docstring 'grep'
+map global fzf d ':fzf-directories<ret>' -docstring 'directories'
+
+map global note n ':note-create<ret>'         -docstring 'create note'
+map global note t ':note-todo-open<ret>'      -docstring 'open todo'
+map global note f ':note-list<ret>'           -docstring 'list notes'
+map global note g ':note-grep<ret>'           -docstring 'grep notes'
+map global note X ':note-delete-current<ret>' -docstring 'delete note'
 
 map global task t ':task-menu<ret>'              -docstring 'task menu'
 map global task r ':task-rerun<ret>'             -docstring 'rerun last task'

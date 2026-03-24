@@ -1,0 +1,37 @@
+#!/bin/sh
+
+set -eu
+
+root=${1:-$PWD}
+split_helper="${HOME}/.local/bin/kak-fzf-split-open"
+open_helper="${HOME}/.local/bin/kak-picker-open"
+
+cd "$root" || exit 1
+
+if [ -n "${KAK_PICKER_SESSION:-}" ] \
+    && [ -n "${KAK_PICKER_ORIGINAL_PANE:-}" ] \
+    && [ -x "$split_helper" ]; then
+    result=$(
+        rg --line-number --no-heading --with-filename --smart-case -- '' | \
+            fzf --disabled --reverse --border --prompt 'grep> ' \
+                --header 'enter: open  /  ctrl-o: open in split' \
+                --bind "ctrl-o:execute-silent($split_helper '$KAK_PICKER_SESSION' '$KAK_PICKER_ORIGINAL_PANE' {})+abort" \
+                --bind 'change:reload:rg --line-number --no-heading --with-filename --smart-case -- {q} || true'
+    )
+else
+    result=$(
+        rg --line-number --no-heading --with-filename --smart-case -- '' | \
+            fzf --disabled --reverse --border --prompt 'grep> ' \
+                --bind 'change:reload:rg --line-number --no-heading --with-filename --smart-case -- {q} || true'
+    )
+fi
+
+[ -n "$result" ] || exit 0
+
+filepath=$(printf '%s' "$result" | cut -d: -f1)
+lineno=$(printf '%s' "$result" | cut -d: -f2)
+
+[ -n "$filepath" ] || exit 0
+[ -n "$lineno" ] || exit 0
+
+exec "$open_helper" grep "$filepath" "$lineno"

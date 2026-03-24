@@ -213,6 +213,49 @@ define-command \
     }
 }
 
+define-command -hidden -params 2 note-launch-picker %{
+    note-ensure-root
+    evaluate-commands %sh{
+        kakquote() { printf "'%s'" "$(printf '%s' "$1" | sed "s/'/''/g")"; }
+
+        helper=$1
+        tmp_prefix=$2
+        helper_path="${HOME}/.local/bin/${helper}"
+        root=$kak_opt_note_root
+
+        [ -x "$helper_path" ] || {
+            printf "fail %s\n" "$(kakquote "note helper not found: $helper_path")"
+            exit
+        }
+
+        tmp=$(mktemp "${TMPDIR:-/tmp}/${tmp_prefix}.XXXXXX") || {
+            printf "fail %s\n" "$(kakquote "unable to create a temporary picker script")"
+            exit
+        }
+
+        session_q=$(printf '%s' "$kak_session" | sed "s/'/'\\\\''/g")
+        client_q=$(printf '%s' "$kak_client" | sed "s/'/'\\\\''/g")
+        pane_q=$(printf '%s' "${kak_client_env_TMUX_PANE:-}" | sed "s/'/'\\\\''/g")
+        helper_q=$(printf '%s' "$helper_path" | sed "s/'/'\\\\''/g")
+        root_q=$(printf '%s' "$root" | sed "s/'/'\\\\''/g")
+
+        cat >"$tmp" << SHELL
+#!/bin/sh
+export KAK_PICKER_SESSION='$session_q'
+export KAK_PICKER_CLIENT='$client_q'
+export KAK_PICKER_ORIGINAL_PANE='$pane_q'
+export KAK_NOTE_ROOT='$root_q'
+'$helper_q'
+status=\$?
+rm -f '$tmp'
+exit "\$status"
+SHELL
+
+        chmod +x "$tmp"
+        printf "tmux-terminal-vertical sh %s\n" "$(kakquote "$tmp")"
+    }
+}
+
 define-command \
     -docstring 'delete the current note and commit the deletion' \
     note-delete-current %{
@@ -295,71 +338,14 @@ define-command \
 define-command \
     -docstring 'fuzzy-find a note and open it' \
     note-list %{
-    note-ensure-root
-    evaluate-commands %sh{
-        session="$kak_session"
-        client="$kak_client"
-        root="$kak_opt_note_root"
-        tmp=$(mktemp /tmp/kak-note-list-XXXXXX)
-        root_q=$(printf '%s' "$root" | sed "s/'/'\\\\''/g")
-
-        cat > "$tmp" << SHELL
-#!/bin/sh
-root='$root_q'
-cd "\$root" || exit 1
-result=\$( (fd --type f --exclude todo.md . 2>/dev/null || find . -type f ! -name todo.md | sed 's#^\./##') | fzf --reverse --border --prompt 'notes> ')
-[ -z "\$result" ] && rm -f "$tmp" && exit
-kak_path=\$(printf '%s' "\$root/\$result" | sed "s/'/''/g")
-printf "evaluate-commands -client '$client' 'edit -existing ''%s'''\n" "\$kak_path" | kak -p '$session'
-rm -f "$tmp"
-SHELL
-
-        chmod +x "$tmp"
-        kak_tmp=$(printf '%s' "$tmp" | sed "s/'/''/g")
-        printf "tmux-terminal-vertical sh '%s'\n" "$kak_tmp"
-    }
+    note-launch-picker kak-note-list kak-note-list
 }
 
 define-command \
     -docstring 'live-grep notes and jump to a match' \
     note-grep %{
-    note-ensure-root
-    evaluate-commands %sh{
-        session="$kak_session"
-        client="$kak_client"
-        root="$kak_opt_note_root"
-        tmp=$(mktemp /tmp/kak-note-grep-XXXXXX)
-        root_q=$(printf '%s' "$root" | sed "s/'/'\\\\''/g")
-
-        cat > "$tmp" << SHELL
-#!/bin/sh
-root='$root_q'
-cd "\$root" || exit 1
-result=\$(rg --line-number --no-heading --with-filename --smart-case --glob '!todo.md' -- '' . | \
-    fzf --disabled --reverse --border --prompt 'notes grep> ' \
-        --bind 'change:reload:rg --line-number --no-heading --with-filename --smart-case --glob '"'"'!todo.md'"'"' -- {q} . || true')
-[ -z "\$result" ] && rm -f "$tmp" && exit
-filepath=\$(printf '%s' "\$result" | cut -d: -f1)
-lineno=\$(printf '%s' "\$result" | cut -d: -f2)
-filepath=\${filepath#./}
-kak_path=\$(printf '%s' "\$root/\$filepath" | sed "s/'/''/g")
-printf "evaluate-commands -client '$client' 'edit -existing ''%s'' %s'\n" "\$kak_path" "\$lineno" | kak -p '$session'
-rm -f "$tmp"
-SHELL
-
-        chmod +x "$tmp"
-        kak_tmp=$(printf '%s' "$tmp" | sed "s/'/''/g")
-        printf "tmux-terminal-vertical sh '%s'\n" "$kak_tmp"
-    }
+    note-launch-picker kak-note-grep kak-note-grep
 }
 
 hook global BufOpenFile .* %{ note-buffer-sync-state }
 hook global BufNewFile  .* %{ note-buffer-sync-state }
-
-try %{ declare-user-mode note }
-map global user n ':enter-user-mode note<ret>' -docstring 'notes'
-map global note n ':note-create<ret>'          -docstring 'create note'
-map global note t ':note-todo-open<ret>'       -docstring 'open todo'
-map global note f ':note-list<ret>'            -docstring 'list notes'
-map global note g ':note-grep<ret>'            -docstring 'grep notes'
-map global note X ':note-delete-current<ret>'  -docstring 'delete note'

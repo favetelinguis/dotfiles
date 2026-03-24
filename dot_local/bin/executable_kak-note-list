@@ -1,0 +1,37 @@
+#!/bin/sh
+
+set -eu
+
+root=${KAK_NOTE_ROOT:-"${HOME}/kak_notes"}
+split_helper="${HOME}/.local/bin/kak-fzf-split-open"
+open_helper="${HOME}/.local/bin/kak-picker-open"
+
+mkdir -p "$root" 2>/dev/null || {
+    printf 'unable to create notes directory %s\n' "$root" >&2
+    exit 1
+}
+
+if [ ! -d "$root/.git" ]; then
+    git -C "$root" init >/dev/null
+fi
+
+cd "$root" || exit 1
+
+if [ -n "${KAK_PICKER_SESSION:-}" ] \
+    && [ -n "${KAK_PICKER_ORIGINAL_PANE:-}" ] \
+    && [ -x "$split_helper" ]; then
+    result=$(
+        (fd --type f --exclude todo.md . 2>/dev/null || find . -type f ! -name todo.md | sed 's#^\./##') | \
+            fzf --reverse --border --prompt 'notes> ' \
+                --header 'enter: open  /  ctrl-o: open in split' \
+                --bind "ctrl-o:execute-silent($split_helper '$KAK_PICKER_SESSION' '$KAK_PICKER_ORIGINAL_PANE' {})+abort"
+    )
+else
+    result=$(
+        (fd --type f --exclude todo.md . 2>/dev/null || find . -type f ! -name todo.md | sed 's#^\./##') | \
+            fzf --reverse --border --prompt 'notes> '
+    )
+fi
+
+[ -n "$result" ] || exit 0
+exec "$open_helper" file "$root/$result"

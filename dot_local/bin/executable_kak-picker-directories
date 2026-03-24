@@ -1,0 +1,16 @@
+#!/bin/sh
+
+set -eu
+
+root=${1:-$PWD}
+open_helper="${HOME}/.local/bin/kak-picker-open"
+
+cd "$root" || exit 1
+
+result=$(
+    (fd --type d 2>/dev/null || find . -type d | sed '/^\.$/d') | \
+        fzf --reverse --border --prompt 'dirs> '
+)
+
+[ -n "$result" ] || exit 0
+exec "$open_helper" directory "$result"

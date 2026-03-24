@@ -8,4 +8,40 @@ if [ -x "$HOME/.local/bin/kak-tmux-session" ]; then
         "$HOME/.local/bin/kak-tmux-session" "$@"
     }
 fi
+
+if [ -x "$HOME/.local/bin/kak-picker-files" ]; then
+    kff() {
+        "$HOME/.local/bin/kak-picker-files" "$@"
+    }
+fi
+
+if [ -x "$HOME/.local/bin/kak-picker-grep" ]; then
+    kfg() {
+        "$HOME/.local/bin/kak-picker-grep" "$@"
+    }
+fi
+
+if [ -x "$HOME/.local/bin/kak-picker-directories" ]; then
+    kfd() {
+        "$HOME/.local/bin/kak-picker-directories" "$@"
+    }
+fi
+
+if [ -x "$HOME/.local/bin/kak-note-todo" ]; then
+    knt() {
+        "$HOME/.local/bin/kak-note-todo" "$@"
+    }
+fi
+
+if [ -x "$HOME/.local/bin/kak-note-list" ]; then
+    knf() {
+        "$HOME/.local/bin/kak-note-list" "$@"
+    }
+fi
+
+if [ -x "$HOME/.local/bin/kak-note-grep" ]; then
+    kng() {
+        "$HOME/.local/bin/kak-note-grep" "$@"
+    }
+fi
 {{- end -}}

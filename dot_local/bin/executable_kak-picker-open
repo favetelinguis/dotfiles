@@ -1,0 +1,76 @@
+#!/bin/sh
+
+set -eu
+
+kakquote() {
+    printf "'%s'" "$(printf '%s' "$1" | sed "s/'/''/g")"
+}
+
+send_to_client() {
+    command_text=$1
+    kak_bin=$(command -v kak 2>/dev/null || true)
+    [ -n "$kak_bin" ] || return 1
+
+    printf "evaluate-commands -client '%s' '%s'\n" \
+        "$KAK_PICKER_CLIENT" \
+        "$command_text" | "$kak_bin" -p "$KAK_PICKER_SESSION"
+}
+
+mode=${1:-}
+[ -n "$mode" ] || {
+    printf '%s\n' "usage: kak-picker-open <file|grep|directory> ..." >&2
+    exit 1
+}
+shift
+
+case "$mode" in
+    file)
+        path=${1:-}
+        [ -n "$path" ] || {
+            printf '%s\n' "kak-picker-open file requires a path" >&2
+            exit 1
+        }
+
+        if [ -n "${KAK_PICKER_SESSION:-}" ] && [ -n "${KAK_PICKER_CLIENT:-}" ]; then
+            path_q=$(printf '%s' "$path" | sed "s/'/''/g")
+            send_to_client "edit -existing ''${path_q}''" || exit 1
+            exit 0
+        fi
+
+        exec "${HOME}/.local/bin/kak-tmux-session" "$path"
+        ;;
+    grep)
+        path=${1:-}
+        line=${2:-}
+        [ -n "$path" ] || {
+            printf '%s\n' "kak-picker-open grep requires a path" >&2
+            exit 1
+        }
+        [ -n "$line" ] || {
+            printf '%s\n' "kak-picker-open grep requires a line number" >&2
+            exit 1
+        }
+
+        if [ -n "${KAK_PICKER_SESSION:-}" ] && [ -n "${KAK_PICKER_CLIENT:-}" ]; then
+            path_q=$(printf '%s' "$path" | sed "s/'/''/g")
+            send_to_client "edit -existing ''${path_q}'' ${line}" || exit 1
+            exit 0
+        fi
+
+        exec "${HOME}/.local/bin/kak-tmux-session" "+${line}" "$path"
+        ;;
+    directory)
+        dir=${1:-}
+        [ -n "$dir" ] || {
+            printf '%s\n' "kak-picker-open directory requires a path" >&2
+            exit 1
+        }
+
+        cd "$dir" || exit 1
+        exec "${HOME}/.local/bin/kak-tmux-session"
+        ;;
+    *)
+        printf 'unknown kak-picker-open mode: %s\n' "$mode" >&2
+        exit 1
+        ;;
+esac

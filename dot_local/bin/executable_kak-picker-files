@@ -1,0 +1,28 @@
+#!/bin/sh
+
+set -eu
+
+root=${1:-$PWD}
+split_helper="${HOME}/.local/bin/kak-fzf-split-open"
+open_helper="${HOME}/.local/bin/kak-picker-open"
+
+cd "$root" || exit 1
+
+if [ -n "${KAK_PICKER_SESSION:-}" ] \
+    && [ -n "${KAK_PICKER_ORIGINAL_PANE:-}" ] \
+    && [ -x "$split_helper" ]; then
+    result=$(
+        (fd --type f 2>/dev/null || find . -type f) | \
+            fzf --reverse --border --prompt 'files> ' \
+                --header 'enter: open  /  ctrl-o: open in split' \
+                --bind "ctrl-o:execute-silent($split_helper '$KAK_PICKER_SESSION' '$KAK_PICKER_ORIGINAL_PANE' {})+abort"
+    )
+else
+    result=$(
+        (fd --type f 2>/dev/null || find . -type f) | \
+            fzf --reverse --border --prompt 'files> '
+    )
+fi
+
+[ -n "$result" ] || exit 0
+exec "$open_helper" file "$result"
