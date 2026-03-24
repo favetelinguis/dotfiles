@@ -84,7 +84,7 @@ define-command -hidden note-commit-current %{
             exit
         fi
 
-        output=$(git -C "$root" commit -m "$commit_msg" -- "$relpath" 2>&1)
+        output=$(git -C "$root" commit --no-verify -m "$commit_msg" -- "$relpath" 2>&1)
         status=$?
         if [ $status -ne 0 ]; then
             printf "fail %s\n" "$(kakquote "$(printf '%s' "$output" | tr '\n' ' ')")"
@@ -144,7 +144,7 @@ define-command -hidden note-create-from-prompt %{
             fi
 
             if ! git -C "$root" diff --cached --quiet -- "$filename"; then
-                output=$(git -C "$root" commit -m "Create note $filename" -- "$filename" 2>&1)
+                output=$(git -C "$root" commit --no-verify -m "Create note $filename" -- "$filename" 2>&1)
                 status=$?
                 if [ $status -ne 0 ]; then
                     printf "fail %s\n" "$(kakquote "$(printf '%s' "$output" | tr '\n' ' ')")"
@@ -200,7 +200,7 @@ define-command \
             fi
 
             if ! git -C "$root" diff --cached --quiet -- "todo.md"; then
-                output=$(git -C "$root" commit -m "Create note todo.md" -- "todo.md" 2>&1)
+                output=$(git -C "$root" commit --no-verify -m "Create note todo.md" -- "todo.md" 2>&1)
                 status=$?
                 if [ $status -ne 0 ]; then
                     printf "fail %s\n" "$(kakquote "$(printf '%s' "$output" | tr '\n' ' ')")"
@@ -322,7 +322,7 @@ define-command \
         fi
 
         if ! git -C "$root" diff --cached --quiet -- "$relpath"; then
-            output=$(git -C "$root" commit -m "Delete note $filename" -- "$relpath" 2>&1)
+            output=$(git -C "$root" commit --no-verify -m "Delete note $filename" -- "$relpath" 2>&1)
             status=$?
             if [ $status -ne 0 ]; then
                 printf "fail %s\n" "$(kakquote "$(printf '%s' "$output" | tr '\n' ' ')")"
