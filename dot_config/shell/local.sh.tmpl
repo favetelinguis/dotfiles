@@ -44,4 +44,10 @@ if [ -x "$HOME/.local/bin/kak-note-grep" ]; then
         "$HOME/.local/bin/kak-note-grep" "$@"
     }
 fi
+
+if [ -n "${ZSH_VERSION-}" ]; then
+    PROMPT=$'%F{blue}%~%f\n%# '
+elif [ -n "${BASH_VERSION-}" ]; then
+    PS1='\[\e[34m\]\w\[\e[0m\]\n\$ '
+fi
 {{- end -}}
