@@ -45,6 +45,12 @@ if [ -x "$HOME/.local/bin/kak-note-grep" ]; then
     }
 fi
 
+if [ -x "$HOME/.local/bin/kak-task-menu" ]; then
+    ktt() {
+        "$HOME/.local/bin/kak-task-menu" "$@"
+    }
+fi
+
 wta() {
     d=$(git rev-parse --path-format=absolute --git-common-dir)
     if [ "$(git rev-parse --is-bare-repository)" = "true" ]; then

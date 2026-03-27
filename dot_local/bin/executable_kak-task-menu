@@ -1,0 +1,87 @@
+#!/bin/sh
+
+set -eu
+
+fail() {
+    printf '%s\n' "$*" >&2
+    exit 1
+}
+
+usage() {
+    fail "usage: kak-task-menu [context-path]"
+}
+
+[ $# -le 1 ] || usage
+
+context=${1:-$PWD}
+task_list=${HOME%/}/.local/bin/kak-task-list
+task_run=${HOME%/}/.local/bin/kak-task-run
+
+[ -x "$task_list" ] || fail "task helper not found: $task_list"
+[ -x "$task_run" ] || fail "task helper not found: $task_run"
+
+catalog=$("$task_list" "$context")
+[ -n "$catalog" ] || fail "no tasks found in ~/.local/bin for the current context"
+
+tab=$(printf '\t')
+choice=
+
+if command -v fzf >/dev/null 2>&1; then
+    choice=$(
+        printf '%s\n' "$catalog" |
+            awk -F '\t' '
+{
+    desc = $5
+    if (desc == "") {
+        desc = "-"
+    }
+    printf "%s\t[%s] %s\t%s\n", $1, $4, $3, desc
+}' |
+            fzf --delimiter="$tab" --with-nth=2.. --reverse --border --prompt='task> ' --exit-0
+    )
+    [ -n "$choice" ] || exit 0
+else
+    tmp=$(mktemp "${TMPDIR:-/tmp}/kak-task-menu.XXXXXX") || exit 1
+    trap 'rm -f "$tmp"' EXIT HUP INT TERM
+
+    printf '%s\n' "$catalog" > "$tmp"
+    nl=1
+    while IFS="$tab" read -r base task_name title group desc mode sudo_mode cwd_mode error_pattern; do
+        if [ -n "$desc" ]; then
+            printf '%d. [%s] %s - %s\n' "$nl" "$group" "$title" "$desc" >&2
+        else
+            printf '%d. [%s] %s\n' "$nl" "$group" "$title" >&2
+        fi
+        nl=$((nl + 1))
+    done < "$tmp"
+
+    printf 'task number> ' >&2
+    IFS= read -r selection || exit 1
+    [ -n "$selection" ] || exit 0
+
+    case "$selection" in
+        *[!0-9]*)
+            fail "invalid task selection: $selection"
+            ;;
+    esac
+    [ "$selection" -ge 1 ] 2>/dev/null || fail "invalid task selection: $selection"
+
+    choice=$(sed -n "${selection}p" "$tmp")
+    [ -n "$choice" ] || fail "invalid task selection: $selection"
+fi
+
+IFS="$tab" read -r base task_name title group desc mode sudo_mode cwd_mode error_pattern << EOF
+$choice
+EOF
+
+[ -n "$base" ] || exit 0
+
+if [ "$sudo_mode" = yes ]; then
+    if ! sudo -n true >/dev/null 2>&1; then
+        printf 'Acquiring sudo credentials for %s...\n' "$title" >&2
+        sudo -v
+        printf '\n' >&2
+    fi
+fi
+
+exec "$task_run" "$base" "$context"
