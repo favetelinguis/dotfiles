@@ -45,6 +45,30 @@ if [ -x "$HOME/.local/bin/kak-note-grep" ]; then
     }
 fi
 
+wta() {
+    d=$(git rev-parse --path-format=absolute --git-common-dir)
+    if [ "$(git rev-parse --is-bare-repository)" = "true" ]; then
+        r=$(basename "$d" .git)
+    else
+        r=$(basename "$(dirname "$d")")
+    fi
+    git worktree add -b "$1" "../$r.$1"
+}
+
+wtr() {
+    d=$(git rev-parse --path-format=absolute --git-common-dir)
+    if [ "$(git rev-parse --is-bare-repository)" = "true" ]; then
+        r=$(basename "$d" .git)
+    else
+        r=$(basename "$(dirname "$d")")
+    fi
+    git worktree remove "../$r.$1"
+}
+
+wtl() {
+    git worktree list
+}
+
 if [ -n "${ZSH_VERSION-}" ]; then
     PROMPT=$'%F{blue}%~%f\n%# '
 elif [ -n "${BASH_VERSION-}" ]; then
