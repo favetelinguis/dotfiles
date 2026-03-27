@@ -75,6 +75,73 @@ wtl() {
     git worktree list
 }
 
+js_pick_path() {
+    if ! command -v zoxide >/dev/null 2>&1; then
+        printf '%s\n' "js: zoxide is not installed" >&2
+        return 1
+    fi
+
+    zoxide query -i
+}
+
+js_session_root() {
+    if git_root=$(git -C "$1" rev-parse --show-toplevel 2>/dev/null); then
+        printf '%s\n' "$git_root"
+    else
+        printf '%s\n' "$1"
+    fi
+}
+
+js_session_name() {
+    basename -- "$1" | tr -c '[:alnum:]_-' '_'
+}
+
+js() {
+    if ! command -v tmux >/dev/null 2>&1; then
+        printf '%s\n' "js: tmux is not installed" >&2
+        return 1
+    fi
+
+    selected_path=$(js_pick_path) || return 1
+    [ -n "$selected_path" ] || return 0
+
+    session_root=$(js_session_root "$selected_path")
+    session_name=$(js_session_name "$session_root")
+    [ -n "$session_name" ] || return 1
+
+    session_cmd=
+    case "$session_root" in
+        *.review)
+            session_cmd='exec gh dash'
+            ;;
+    esac
+
+    if tmux has-session -t "=$session_name" 2>/dev/null; then
+        if [ -n "${TMUX-}" ]; then
+            tmux switch-client -t "=$session_name"
+        else
+            exec tmux attach-session -t "=$session_name"
+        fi
+        return 0
+    fi
+
+    if [ -n "${TMUX-}" ]; then
+        if [ -n "$session_cmd" ]; then
+            tmux new-session -d -s "$session_name" -c "$session_root" "$session_cmd"
+        else
+            tmux new-session -d -s "$session_name" -c "$session_root"
+        fi
+        tmux switch-client -t "=$session_name"
+        return 0
+    fi
+
+    if [ -n "$session_cmd" ]; then
+        exec tmux new-session -s "$session_name" -c "$session_root" "$session_cmd"
+    fi
+
+    exec tmux new-session -s "$session_name" -c "$session_root"
+}
+
 if [ -n "${ZSH_VERSION-}" ]; then
     PROMPT=$'%F{blue}%~%f\n%# '
 elif [ -n "${BASH_VERSION-}" ]; then
