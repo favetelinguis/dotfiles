@@ -9,7 +9,7 @@ cd "$root" || exit 1
 
 result=$(
     (fd --type d 2>/dev/null || find . -type d | sed '/^\.$/d') | \
-        fzf --reverse --border --prompt 'dirs> '
+        fzf --height=40% --reverse --border --prompt 'dirs> '
 )
 
 [ -n "$result" ] || exit 0

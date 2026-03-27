@@ -29,7 +29,7 @@ if [ -n "${KAK_PICKER_SESSION:-}" ] \
 else
     result=$(
         (fd --type f --exclude todo.md . 2>/dev/null || find . -type f ! -name todo.md | sed 's#^\./##') | \
-            fzf --reverse --border --prompt 'notes> '
+            fzf --height=40% --reverse --border --prompt 'notes> '
     )
 fi
 

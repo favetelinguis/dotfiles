@@ -30,7 +30,7 @@ if [ -n "${KAK_PICKER_SESSION:-}" ] \
 else
     result=$(
         rg --line-number --no-heading --with-filename --smart-case --glob '!todo.md' -- '' . | \
-            fzf --disabled --reverse --border --prompt 'notes grep> ' \
+            fzf --height=40% --disabled --reverse --border --prompt 'notes grep> ' \
                 --bind 'change:reload:rg --line-number --no-heading --with-filename --smart-case --glob '"'"'!todo.md'"'"' -- {q} . || true'
     )
 fi

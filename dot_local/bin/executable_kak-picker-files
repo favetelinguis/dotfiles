@@ -20,7 +20,7 @@ if [ -n "${KAK_PICKER_SESSION:-}" ] \
 else
     result=$(
         (fd --type f 2>/dev/null || find . -type f) | \
-            fzf --reverse --border --prompt 'files> '
+            fzf --height=40% --reverse --border --prompt 'files> '
     )
 fi
 

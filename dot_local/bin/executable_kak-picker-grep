@@ -21,7 +21,7 @@ if [ -n "${KAK_PICKER_SESSION:-}" ] \
 else
     result=$(
         rg --line-number --no-heading --with-filename --smart-case -- '' | \
-            fzf --disabled --reverse --border --prompt 'grep> ' \
+            fzf --height=40% --disabled --reverse --border --prompt 'grep> ' \
                 --bind 'change:reload:rg --line-number --no-heading --with-filename --smart-case -- {q} || true'
     )
 fi
