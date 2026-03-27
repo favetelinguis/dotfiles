@@ -9,6 +9,8 @@ README.org
 {{- $swaylock := (get $apps "swaylock") | default false -}}
 {{- $ghostty := (get $apps "ghostty") | default false -}}
 {{- $kak := (get $apps "kak") | default false -}}
+{{- $nvim := (get $apps "nvim") | default false -}}
+{{- $ghDash := (get $apps "gh_dash") | default false -}}
 {{- $tmux := (get $apps "tmux") | default false -}}
 {{- $kakTaskScripts := (get $apps "kak_task_scripts") | default false -}}
 {{- $lf := (get $apps "lf") | default false -}}
@@ -22,7 +24,7 @@ README.org
 {{- $zsh := (get $shell "zsh") | default false -}}
 {{- $anyAgent := or $codex $claude $opencode -}}
 {{- $hasShell := or $bash $zsh -}}
-{{- $hasConfig := or $foot $fuzzel $mako $niri $swaylock $ghostty $kak $lf $lazygit $gitui $emacs $anyAgent $hasShell -}}
+{{- $hasConfig := or $foot $fuzzel $mako $niri $swaylock $ghostty $kak $nvim $ghDash $lf $lazygit $gitui $emacs $anyAgent $hasShell -}}
 {{- $hasLocalBin := $kakTaskScripts -}}
 
 {{- if not $hasConfig }}
@@ -61,6 +63,14 @@ README.org
 {{- if not $kak }}
 .config/kak
 .config/kak/**
+{{- end }}
+{{- if not $nvim }}
+.config/nvim
+.config/nvim/**
+{{- end }}
+{{- if not $ghDash }}
+.config/gh-dash
+.config/gh-dash/**
 {{- end }}
 {{- if not $lf }}
 .config/lf

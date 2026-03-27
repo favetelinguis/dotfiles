@@ -24,6 +24,8 @@ niri = false
 swaylock = false
 ghostty = false
 kak = false
+nvim = false
+gh_dash = false
 tmux = false
 kak_task_scripts = false
 lf = false
@@ -56,6 +58,8 @@ App toggles:
 - =apps.swaylock=
 - =apps.ghostty=
 - =apps.kak=
+- =apps.nvim=
+- =apps.gh_dash=
 - =apps.tmux=
 - =apps.kak_task_scripts=
 - =apps.lf=
