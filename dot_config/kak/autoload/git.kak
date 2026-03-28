@@ -299,7 +299,7 @@ commits=\$(build_commits)
 }
 
 result=\$(printf '%s\n' "\$commits" | \
-    fzf --reverse --border --delimiter "\$SEP" --with-nth=1 \
+    fzf --reverse --delimiter "\$SEP" --with-nth=1 \
         --prompt 'timemachine> ' \
         --header 'move to preview, <ret> keep revision, <esc> restore file' \
         --bind "start:execute-silent(\$0 --preview {2} {3}),focus:execute-silent(\$0 --preview {2} {3})")

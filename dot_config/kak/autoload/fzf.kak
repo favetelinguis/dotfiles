@@ -56,7 +56,7 @@ define-command fzf-buffers -docstring 'fuzzy-pick an open buffer and switch to i
 #!/bin/sh
 cd "$PWD"
 eval "set -- $buflist"
-result=\$(printf '%s\n' "\$@" | fzf --reverse --border --prompt 'buffers> ')
+result=\$(printf '%s\n' "\$@" | fzf --reverse --prompt 'buffers> ')
 [ -z "\$result" ] && rm -f "$tmp" && exit
 kak_buf=\$(printf '%s' "\$result" | sed "s/'/''/g")
 printf "evaluate-commands -client '$client' 'buffer ''%s'''\n" "\$kak_buf" | kak -p '$session'

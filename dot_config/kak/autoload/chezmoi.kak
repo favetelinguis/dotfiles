@@ -123,7 +123,7 @@ define-command \
         cat > "$tmp" << SHELL
 #!/bin/sh
 cd "$source_root" || exit 1
-result=\$(chezmoi managed --include files --path-style absolute 2>/dev/null | fzf --reverse --border --prompt 'chezmoi> ')
+result=\$(chezmoi managed --include files --path-style absolute 2>/dev/null | fzf --reverse --prompt 'chezmoi> ')
 [ -z "\$result" ] && rm -f "$tmp" && exit
 source_file=\$(chezmoi source-path "\$result" 2>/dev/null) || {
     msg=\$(printf '%s' "unable to resolve source path for \$result" | sed "s/'/''/g")

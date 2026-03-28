@@ -189,7 +189,7 @@ choice=\$(printf '%s\n' "\$list" | awk -F '\t' '
         desc = "-"
     }
     printf "%s\t[%s] %s\t%s\n", \$1, \$4, \$3, desc
-}' | fzf --delimiter="\$TAB" --with-nth=2.. --reverse --border --prompt='task> ' --exit-0)
+}' | fzf --delimiter="\$TAB" --with-nth=2.. --reverse --prompt='task> ' --exit-0)
 [ -n "\$choice" ] || {
     rm -f "\$SELF"
     exit 0
@@ -532,7 +532,7 @@ KAK_BIN='$kak_bin_q'
 SELF='$tmp'
 TAB=\$(printf '\t')
 
-choice=\$(printf '%s' '$list_q' | fzf --delimiter="\$TAB" --with-nth=2 --reverse --border --prompt='running tasks> ' --exit-0)
+choice=\$(printf '%s' '$list_q' | fzf --delimiter="\$TAB" --with-nth=2 --reverse --prompt='running tasks> ' --exit-0)
 [ -n "\$choice" ] || { rm -f "\$SELF"; exit 0; }
 
 buffer=\$(printf '%s' "\$choice" | cut -f1)

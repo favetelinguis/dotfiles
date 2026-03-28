@@ -13,14 +13,14 @@ if [ -n "${KAK_PICKER_SESSION:-}" ] \
     && [ -x "$split_helper" ]; then
     result=$(
         (fd --type f 2>/dev/null || find . -type f) | \
-            fzf --reverse --border --prompt 'files> ' \
+            fzf --reverse --prompt 'files> ' \
                 --header 'enter: open  /  ctrl-o: open in split' \
                 --bind "ctrl-o:execute-silent($split_helper '$KAK_PICKER_SESSION' '$KAK_PICKER_ORIGINAL_PANE' {})+abort"
     )
 else
     result=$(
         (fd --type f 2>/dev/null || find . -type f) | \
-            fzf --height=40% --reverse --border --prompt 'files> '
+            fzf --height=40% --reverse --prompt 'files> '
     )
 fi
 

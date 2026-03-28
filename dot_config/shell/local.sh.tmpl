@@ -1,6 +1,8 @@
 {{- $shell := (get . "shell") | default dict -}}
 {{- if or (get $shell "bash" | default false) (get $shell "zsh" | default false) -}}
 # Shared shell customizations sourced from enterprise-managed shell rc files.
+export FZF_CTRL_R_OPTS='--height=40% --reverse'
+
 if [ -x "$HOME/.local/bin/kak-tmux-session" ]; then
     export EDITOR="$HOME/.local/bin/kak-tmux-session"
     export GIT_EDITOR="$HOME/.local/bin/kak-tmux-session"
@@ -51,28 +53,128 @@ if [ -x "$HOME/.local/bin/kak-task-menu" ]; then
     }
 fi
 
-wta() {
-    d=$(git rev-parse --path-format=absolute --git-common-dir)
+wt_repo_name() {
+    d=$(git rev-parse --path-format=absolute --git-common-dir) || return 1
     if [ "$(git rev-parse --is-bare-repository)" = "true" ]; then
-        r=$(basename "$d" .git)
+        basename "$d" .git
     else
-        r=$(basename "$(dirname "$d")")
+        basename "$(dirname "$d")"
     fi
-    git worktree add -b "$1" "../$r.$1"
+}
+
+wt_main_root() {
+    d=$(git rev-parse --path-format=absolute --git-common-dir) || return 1
+    if [ "$(git rev-parse --is-bare-repository)" = "true" ]; then
+        printf '%s\n' "$d"
+    else
+        dirname "$d"
+    fi
+}
+
+wta() {
+    r=$(wt_repo_name) || return 1
+    main_root=$(wt_main_root) || return 1
+    target="$(dirname "$main_root")/$r.$1"
+    git worktree add -b "$1" "$target" || return 1
+    cd "$target" || return 1
 }
 
 wtr() {
-    d=$(git rev-parse --path-format=absolute --git-common-dir)
-    if [ "$(git rev-parse --is-bare-repository)" = "true" ]; then
-        r=$(basename "$d" .git)
-    else
-        r=$(basename "$(dirname "$d")")
+    if [ "$#" -gt 1 ]; then
+        printf '%s\n' "wtr: usage: wtr [branch]" >&2
+        return 1
     fi
-    git worktree remove "../$r.$1"
+
+    r=$(wt_repo_name) || return 1
+    main_root=$(wt_main_root) || return 1
+    current_root=$(git rev-parse --show-toplevel 2>/dev/null || true)
+
+    if [ "$#" -eq 1 ]; then
+        branch=$1
+        target="$(dirname "$main_root")/$r.$branch"
+    else
+        if [ -z "$current_root" ]; then
+            printf '%s\n' "wtr: unable to determine the current worktree" >&2
+            return 1
+        fi
+
+        branch=$(git symbolic-ref --quiet --short HEAD 2>/dev/null) || {
+            printf '%s\n' "wtr: refusing to remove a detached HEAD worktree" >&2
+            return 1
+        }
+        target=$current_root
+
+        if [ "$target" = "$main_root" ]; then
+            printf '%s\n' "wtr: refusing to remove the main worktree" >&2
+            return 1
+        fi
+    fi
+
+    if [ -n "$current_root" ] && [ "$current_root" = "$target" ]; then
+        cd "$main_root" || return 1
+    fi
+
+    git worktree remove "$target" || return 1
+    git -C "$main_root" branch -d "$branch"
+}
+
+wtj() {
+    if ! command -v fzf >/dev/null 2>&1; then
+        printf '%s\n' "wtj: fzf is not installed" >&2
+        return 1
+    fi
+
+    current_root=$(git rev-parse --show-toplevel 2>/dev/null) || return 1
+    repo_name=$(wt_repo_name) || return 1
+    tab=$(printf '\t')
+    choice=$(
+        git worktree list --porcelain |
+            while IFS= read -r line || [ -n "$line" ]; do
+                case "$line" in
+                    "worktree "*) path=${line#worktree }
+                        branch='-'
+                        ;;
+                    "branch "*) branch=${line#branch refs/heads/}
+                        ;;
+                    detached) branch='detached'
+                        ;;
+                    '')
+                        if [ -n "${path:-}" ]; then
+                            name=$(basename "$path")
+                            case "$name" in
+                                "$repo_name".*) name=${name#"$repo_name".}
+                                    ;;
+                            esac
+                            current_marker='  '
+                            if [ "$path" = "$current_root" ]; then
+                                current_marker='* '
+                            fi
+
+                            dirty_marker='-'
+                            if [ -n "$(git -C "$path" status --porcelain 2>/dev/null)" ]; then
+                                dirty_marker='D'
+                            fi
+
+                            printf '%s\t%s %s [%s] %s\n' "$path" "$dirty_marker" "$current_marker" "$branch" "$name"
+                        fi
+                        path=
+                        branch='-'
+                        ;;
+                esac
+            done |
+            fzf --height=40% --delimiter="$tab" --with-nth=2.. --reverse --prompt='worktree> ' --exit-0
+    )
+    [ -n "$choice" ] || return 0
+
+    IFS="$tab" read -r target _ << EOF
+$choice
+EOF
+    [ -n "$target" ] || return 0
+    cd "$target" || return 1
 }
 
 wtl() {
-    git worktree list
+    wtj "$@"
 }
 
 js_pick_path() {

@@ -22,14 +22,14 @@ if [ -n "${KAK_PICKER_SESSION:-}" ] \
     && [ -x "$split_helper" ]; then
     result=$(
         (fd --type f --exclude todo.md . 2>/dev/null || find . -type f ! -name todo.md | sed 's#^\./##') | \
-            fzf --reverse --border --prompt 'notes> ' \
+            fzf --reverse --prompt 'notes> ' \
                 --header 'enter: open  /  ctrl-o: open in split' \
                 --bind "ctrl-o:execute-silent($split_helper '$KAK_PICKER_SESSION' '$KAK_PICKER_ORIGINAL_PANE' {})+abort"
     )
 else
     result=$(
         (fd --type f --exclude todo.md . 2>/dev/null || find . -type f ! -name todo.md | sed 's#^\./##') | \
-            fzf --height=40% --reverse --border --prompt 'notes> '
+            fzf --height=40% --reverse --prompt 'notes> '
     )
 fi
 

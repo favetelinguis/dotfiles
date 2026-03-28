@@ -22,7 +22,7 @@ if [ -n "${KAK_PICKER_SESSION:-}" ] \
     && [ -x "$split_helper" ]; then
     result=$(
         rg --line-number --no-heading --with-filename --smart-case --glob '!todo.md' -- '' . | \
-            fzf --disabled --reverse --border --prompt 'notes grep> ' \
+            fzf --disabled --reverse --prompt 'notes grep> ' \
                 --header 'enter: open  /  ctrl-o: open in split' \
                 --bind "ctrl-o:execute-silent($split_helper '$KAK_PICKER_SESSION' '$KAK_PICKER_ORIGINAL_PANE' {})+abort" \
                 --bind 'change:reload:rg --line-number --no-heading --with-filename --smart-case --glob '"'"'!todo.md'"'"' -- {q} . || true'
@@ -30,7 +30,7 @@ if [ -n "${KAK_PICKER_SESSION:-}" ] \
 else
     result=$(
         rg --line-number --no-heading --with-filename --smart-case --glob '!todo.md' -- '' . | \
-            fzf --height=40% --disabled --reverse --border --prompt 'notes grep> ' \
+            fzf --height=40% --disabled --reverse --prompt 'notes grep> ' \
                 --bind 'change:reload:rg --line-number --no-heading --with-filename --smart-case --glob '"'"'!todo.md'"'"' -- {q} . || true'
     )
 fi
