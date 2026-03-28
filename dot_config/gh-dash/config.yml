@@ -78,15 +78,17 @@ defaults:
     refetchIntervalMinutes: 30
 keybindings:
     prs:
+        - key: C
+          name: ai code review
+          command: >
+              tmux new-window -n "PR-{{.PrNumber}}"
+              'wt switch pr:{{.PrNumber}} -x "opencode --prompt review-pr-for-this-branch"'
         - key: e
-          name: edit in neovim
-          command: >-
-              nvim "+Octo https://github.com/{{.RepoName}}/pull/{{.PrNumber}}"
-    issues:
-        - key: e
-          name: edit in neovim
-          command: >-
-              nvim "+Octo https://github.com/{{.RepoName}}/issues/{{.IssueNumber}}"
+          name: neovim code review
+          command: >
+              tmux new-window -n {{.RepoName}}
+              'nvim -c
+              ":silent Octo pr edit {{.PrNumber}}"'
 repoPaths: {}
 theme:
     ui:
@@ -95,7 +97,7 @@ theme:
             showSeparator: true
             compact: false
 pager:
-    diff: ""
+    diff: "diffnav"
 confirmQuit: false
 showAuthorIcons: true
 smartFilteringAtLaunch: true
