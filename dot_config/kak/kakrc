@@ -14,6 +14,7 @@ map global user l ':enter-user-mode lsp<ret>' -docstring 'LSP mode'
 map global user . ':enter-user-mode chezmoi<ret>' -docstring 'chezmoi'
 map global user f ':enter-user-mode fzf<ret>' -docstring 'fzf'
 map global user n ':enter-user-mode note<ret>' -docstring 'notes'
+map global user r ':enter-user-mode gh<ret>' -docstring 'review'
 map global user v ':enter-user-mode git<ret>' -docstring 'git'
 map global user t ':enter-user-mode task<ret>' -docstring 'tasks'
 map global user u ':enter-user-mode utility<ret>' -docstring 'utility'
@@ -25,6 +26,7 @@ map global user A ':agent-send-submit<ret>' -docstring 'send to Claude/Codex and
 try %{ declare-user-mode window }
 try %{ declare-user-mode task }
 try %{ declare-user-mode fzf }
+try %{ declare-user-mode gh }
 try %{ declare-user-mode note }
 try %{ declare-user-mode utility }
 map global window d ':split<ret>'  -docstring 'split below'
@@ -37,6 +39,14 @@ map global fzf E ':lf-files<ret>'        -docstring 'lf explorer'
 map global fzf b ':fzf-buffers<ret>'     -docstring 'buffers'
 map global fzf g ':fzf-grep<ret>'        -docstring 'grep'
 map global fzf d ':fzf-directories<ret>' -docstring 'directories'
+
+map global gh d ':gh-pr-diff<ret>'                  -docstring 'open PR diff'
+map global gh f ':gh-pr-files<ret>'                 -docstring 'changed files'
+map global gh o ':gh-diff-open-working-tree-file<ret>' -docstring 'open worktree file'
+map global gh r ':gh-pr-refresh<ret>'               -docstring 'refresh review'
+map global gh w ':gh-pr-view-web<ret>'              -docstring 'open PR in browser'
+map global gh '[' ':gh-prev-hunk<ret>'              -docstring 'previous hunk'
+map global gh ']' ':gh-next-hunk<ret>'              -docstring 'next hunk'
 
 map global note n ':note-create<ret>'         -docstring 'create note'
 map global note t ':note-todo-open<ret>'      -docstring 'open todo'

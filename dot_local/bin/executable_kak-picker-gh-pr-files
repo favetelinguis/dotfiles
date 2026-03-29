@@ -1,0 +1,100 @@
+#!/bin/sh
+
+set -eu
+
+command -v lf >/dev/null 2>&1 || {
+    printf '%s\n' 'kak-picker-gh-pr-files: lf is not installed' >&2
+    exit 1
+}
+
+command -v kak >/dev/null 2>&1 || {
+    printf '%s\n' 'kak-picker-gh-pr-files: kak is not installed' >&2
+    exit 1
+}
+
+[ -n "${KAK_PICKER_SESSION:-}" ] || {
+    printf '%s\n' 'kak-picker-gh-pr-files: KAK_PICKER_SESSION is not set' >&2
+    exit 1
+}
+
+[ -n "${KAK_PICKER_CLIENT:-}" ] || {
+    printf '%s\n' 'kak-picker-gh-pr-files: KAK_PICKER_CLIENT is not set' >&2
+    exit 1
+}
+
+[ -n "${KAK_GH_PICKER_ROOT:-}" ] || {
+    printf '%s\n' 'kak-picker-gh-pr-files: KAK_GH_PICKER_ROOT is not set' >&2
+    exit 1
+}
+
+[ -d "$KAK_GH_PICKER_ROOT" ] || {
+    printf '%s\n' 'kak-picker-gh-pr-files: KAK_GH_PICKER_ROOT is not a directory' >&2
+    exit 1
+}
+
+[ -n "${KAK_GH_PICKER_MANIFEST:-}" ] || {
+    printf '%s\n' 'kak-picker-gh-pr-files: KAK_GH_PICKER_MANIFEST is not set' >&2
+    exit 1
+}
+
+[ -f "$KAK_GH_PICKER_MANIFEST" ] || {
+    printf '%s\n' 'kak-picker-gh-pr-files: KAK_GH_PICKER_MANIFEST is not a file' >&2
+    exit 1
+}
+
+start_path=${KAK_GH_PICKER_START:-}
+if [ -n "$start_path" ] && [ ! -e "$start_path" ]; then
+    start_path=
+fi
+if [ -z "$start_path" ]; then
+    start_path=$KAK_GH_PICKER_ROOT
+fi
+
+tmp_dir=$(mktemp -d "${TMPDIR:-/tmp}/kak-picker-gh-pr-files.XXXXXX")
+opener_script="$tmp_dir/opener"
+
+cleanup() {
+    status=$?
+    rm -f "$opener_script"
+    rmdir "$tmp_dir" 2>/dev/null || true
+    exit "$status"
+}
+
+trap cleanup EXIT HUP INT TERM
+
+cat >"$opener_script" <<'EOF'
+#!/bin/sh
+set -eu
+
+[ -n "${KAK_PICKER_SESSION:-}" ] || exit 1
+[ -n "${KAK_PICKER_CLIENT:-}" ] || exit 1
+[ -n "${KAK_GH_PICKER_MANIFEST:-}" ] || exit 1
+
+path=${1:-}
+[ -n "$path" ] || exit 0
+
+case "$path" in
+    /*)
+        ;;
+    *)
+        path=$PWD/$path
+        ;;
+esac
+
+relpath=$(awk -F '\t' -v selected="$path" '$1 == selected { print $2; exit }' "$KAK_GH_PICKER_MANIFEST")
+[ -n "$relpath" ] || exit 0
+
+relpath_q=$(printf '%s' "$relpath" | sed "s/'/''/g")
+printf "evaluate-commands -try-client '%s' 'gh-pr-diff-file ''%s'''\n" \
+    "$KAK_PICKER_CLIENT" \
+    "$relpath_q" | kak -p "$KAK_PICKER_SESSION"
+EOF
+
+chmod +x "$opener_script"
+
+OPENER="$opener_script" \
+lf \
+    -command 'cmd open &$OPENER "$f"' \
+    -command 'map <enter> open' \
+    -command 'map o open' \
+    "$start_path"

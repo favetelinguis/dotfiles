@@ -50,6 +50,41 @@ resolve_base() {
     return 1
 }
 
+resolve_review_pr_number() {
+    branch_name=$(git branch --show-current 2>/dev/null || true)
+    case "$branch_name" in
+        review/pr-*)
+            pr_number=${branch_name#review/pr-}
+            case "$pr_number" in
+                ''|*[!0-9]*)
+                    ;;
+                *)
+                    printf '%s\n' "$pr_number"
+                    return 0
+                    ;;
+            esac
+            ;;
+    esac
+
+    repo_root=$(git rev-parse --show-toplevel 2>/dev/null || true)
+    worktree_name=${repo_root##*/}
+    case "$worktree_name" in
+        *.PR*)
+            pr_number=${worktree_name##*.PR}
+            case "$pr_number" in
+                ''|*[!0-9]*)
+                    ;;
+                *)
+                    printf '%s\n' "$pr_number"
+                    return 0
+                    ;;
+            esac
+            ;;
+    esac
+
+    return 1
+}
+
 resolve_pr_base() {
     if ! command -v gh >/dev/null 2>&1; then
         return 1
@@ -131,15 +166,20 @@ repo_root=$(git rev-parse --show-toplevel 2>/dev/null) || {
 
 cd "$repo_root" || exit 1
 
-if [ "$#" -gt 0 ]; then
-    review_with_gh "$1" || true
+review_pr=${1:-}
+if [ -z "$review_pr" ]; then
+    review_pr=$(resolve_review_pr_number 2>/dev/null || true)
+fi
+
+if [ -n "$review_pr" ]; then
+    review_with_gh "$review_pr" || true
 else
     review_with_gh || true
 fi
 
 base=
-if [ "$#" -gt 0 ]; then
-    pr_base=$(resolve_pr_base "$1" 2>/dev/null || true)
+if [ -n "$review_pr" ]; then
+    pr_base=$(resolve_pr_base "$review_pr" 2>/dev/null || true)
 else
     pr_base=$(resolve_pr_base 2>/dev/null || true)
 fi
