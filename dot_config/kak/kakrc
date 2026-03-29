@@ -30,6 +30,8 @@ map global window s ':vsplit<ret>' -docstring 'split right'
 map global window t ':tabnew<ret>' -docstring 'new tmux window'
 
 map global fzf f ':fzf-files<ret>'       -docstring 'files'
+map global fzf e ':nnn-files<ret>'       -docstring 'nnn explorer'
+map global fzf E ':lf-files<ret>'        -docstring 'lf explorer'
 map global fzf b ':fzf-buffers<ret>'     -docstring 'buffers'
 map global fzf g ':fzf-grep<ret>'        -docstring 'grep'
 map global fzf d ':fzf-directories<ret>' -docstring 'directories'

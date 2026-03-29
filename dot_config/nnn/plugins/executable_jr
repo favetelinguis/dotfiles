@@ -1,0 +1,18 @@
+#!/bin/sh
+
+set -eu
+
+if [ -z "${NNN_PIPE:-}" ]; then
+    printf '%s\n' "jr plugin: NNN_PIPE is not set" >&2
+    exit 1
+fi
+
+jr_bin="${HOME}/.local/bin/jr"
+
+if [ ! -x "$jr_bin" ]; then
+    printf 'jr plugin: %s is not executable\n' "$jr_bin" >&2
+    exit 1
+fi
+
+printf '+l' > "$NNN_PIPE"
+exec "$jr_bin" --print0

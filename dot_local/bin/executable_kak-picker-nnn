@@ -1,0 +1,71 @@
+#!/bin/sh
+
+set -eu
+
+command -v nnn >/dev/null 2>&1 || {
+    printf '%s\n' 'kak-picker-nnn: nnn is not installed' >&2
+    exit 1
+}
+
+command -v kak >/dev/null 2>&1 || {
+    printf '%s\n' 'kak-picker-nnn: kak is not installed' >&2
+    exit 1
+}
+
+[ -n "${KAK_PICKER_SESSION:-}" ] || {
+    printf '%s\n' 'kak-picker-nnn: KAK_PICKER_SESSION is not set' >&2
+    exit 1
+}
+
+[ -n "${KAK_PICKER_CLIENT:-}" ] || {
+    printf '%s\n' 'kak-picker-nnn: KAK_PICKER_CLIENT is not set' >&2
+    exit 1
+}
+
+tmp_dir=$(mktemp -d "${TMPDIR:-/tmp}/kak-picker-nnn.XXXXXX")
+opener_script="$tmp_dir/opener"
+
+cleanup() {
+    status=$?
+    rm -f "$opener_script"
+    rmdir "$tmp_dir" 2>/dev/null || true
+    exit "$status"
+}
+
+trap cleanup EXIT HUP INT TERM
+
+start_path=${KAK_PICKER_BUFFERFILE:-}
+if [ -n "$start_path" ] && [ ! -e "$start_path" ]; then
+    start_path=
+fi
+if [ -z "$start_path" ]; then
+    start_path=$PWD
+fi
+
+cat > "$opener_script" <<'EOF'
+#!/bin/sh
+set -eu
+
+[ -n "${KAK_PICKER_SESSION:-}" ] || exit 1
+[ -n "${KAK_PICKER_CLIENT:-}" ] || exit 1
+
+path=${1:-}
+[ -n "$path" ] || exit 0
+
+case "$path" in
+    /*)
+        ;;
+    *)
+        path=$PWD/$path
+        ;;
+esac
+
+[ -f "$path" ] || [ -L "$path" ] || exit 0
+path_q=$(printf '%s' "$path" | sed "s/'/''/g")
+printf "evaluate-commands -try-client '%s' 'edit -existing ''%s'''\n" \
+    "$KAK_PICKER_CLIENT" \
+    "$path_q" | kak -p "$KAK_PICKER_SESSION"
+EOF
+chmod +x "$opener_script"
+
+NNN_OPENER="$opener_script" nnn -c "$start_path"
