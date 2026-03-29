@@ -332,6 +332,43 @@ js() {
     exec tmux new-session -s "$session_name" -c "$session_root"
 }
 
+d2() {
+    if [ "$#" -ne 2 ]; then
+        printf '%s\n' "d2: usage: d2 <file-a> <file-b>" >&2
+        return 1
+    fi
+
+    if ! command -v git >/dev/null 2>&1; then
+        printf '%s\n' "d2: git is not installed" >&2
+        return 1
+    fi
+
+    if [ -x "$HOME/.local/bin/diffnav-zenburn" ]; then
+        diffnav_command=$HOME/.local/bin/diffnav-zenburn
+    elif command -v diffnav >/dev/null 2>&1; then
+        diffnav_command=$(command -v diffnav)
+    else
+        printf '%s\n' "d2: diffnav is not installed" >&2
+        return 1
+    fi
+
+    git diff --no-index --quiet -- "$1" "$2"
+    diff_status=$?
+    case "$diff_status" in
+        0)
+            printf '%s\n' "d2: no differences"
+            return 0
+            ;;
+        1)
+            ;;
+        *)
+            return "$diff_status"
+            ;;
+    esac
+
+    git diff --no-index --no-ext-diff -- "$1" "$2" | "$diffnav_command"
+}
+
 if [ -n "${ZSH_VERSION-}" ]; then
     PROMPT=$'%F{blue}%~%f\n%# '
 elif [ -n "${BASH_VERSION-}" ]; then
