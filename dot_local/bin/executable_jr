@@ -37,20 +37,93 @@ resolve_repo_name() {
     fi
 }
 
+resolve_repo_identity() {
+    remote_url=$(git config --get remote.origin.url 2>/dev/null || true)
+    [ -n "$remote_url" ] || {
+        printf '%s\n' 'jr: unable to determine remote.origin.url' >&2
+        exit 1
+    }
+
+    case "$remote_url" in
+        git@*:* )
+            remote_path=${remote_url#*:}
+            ;;
+        ssh://git@*/*)
+            remote_path=${remote_url#ssh://git@*/}
+            ;;
+        https://*/*|http://*/*|git://*/*)
+            remote_path=${remote_url#*://*/}
+            ;;
+        *)
+            printf 'jr: unsupported remote URL: %s\n' "$remote_url" >&2
+            exit 1
+            ;;
+    esac
+
+    remote_path=${remote_path%.git}
+    owner=${remote_path%%/*}
+    repo=${remote_path#*/}
+    repo=${repo%%/*}
+
+    [ -n "$owner" ] && [ -n "$repo" ] || {
+        printf 'jr: unable to parse GitHub repo from remote URL: %s\n' "$remote_url" >&2
+        exit 1
+    }
+
+    printf '%s\t%s\n' "$owner" "$repo"
+}
+
+encode_review_component() {
+    printf '%s' "$1" | base64 | tr -d '\n=' | tr '/+' '_-'
+}
+
 review_branch_name() {
     printf 'review/pr-%s\n' "$1"
 }
 
 review_worktree_path() {
+    pr_number=$1
+    author_login=$2
+    head_ref=$3
+    head_ref_encoded=$(encode_review_component "$head_ref")
+
+    printf '%s/gh__%s__%s__PR%s__%s__%s\n' \
+        "${JR_REVIEWS_ROOT:-$HOME/.reviews}" \
+        "$repo_owner" \
+        "$repo_short_name" \
+        "$pr_number" \
+        "$author_login" \
+        "$head_ref_encoded"
+}
+
+legacy_review_worktree_path() {
     printf '%s/%s.PR%s\n' "${JR_REVIEWS_ROOT:-$HOME/.reviews}" "$repo_name" "$1"
+}
+
+find_existing_review_worktree() {
+    pr_number=$1
+    reviews_root=${JR_REVIEWS_ROOT:-$HOME/.reviews}
+
+    for candidate in \
+        "$reviews_root"/gh__"${repo_owner}"__"${repo_short_name}"__PR"${pr_number}"__* \
+        "$(legacy_review_worktree_path "$pr_number")"
+    do
+        [ -e "$candidate" ] || continue
+        if git -C "$candidate" rev-parse --show-toplevel >/dev/null 2>&1; then
+            printf '%s\n' "$candidate"
+            return 0
+        fi
+    done
+
+    return 1
 }
 
 list_prs() {
     gh pr list \
         --limit "${JR_LIMIT:-80}" \
         --state open \
-        --json number,title,author,updatedAt,isDraft,reviewDecision,changedFiles,additions,deletions \
-        --template '{{range .}}{{printf "#%v\t" .number}}{{if .isDraft}}DRAFT{{else if eq .reviewDecision "APPROVED"}}APPROVED{{else if eq .reviewDecision "CHANGES_REQUESTED"}}CHANGES{{else if eq .reviewDecision "REVIEW_REQUIRED"}}REVIEW{{else}}OPEN{{end}}{{printf "\t%s\t%s\t%v\t%v\t%v\t%s\n" .author.login (timefmt "2006-01-02 15:04" .updatedAt) .changedFiles .additions .deletions .title}}{{end}}'
+        --json number,title,author,updatedAt,isDraft,reviewDecision,changedFiles,additions,deletions,headRefName \
+        --template '{{range .}}{{printf "#%v\t" .number}}{{if .isDraft}}DRAFT{{else if eq .reviewDecision "APPROVED"}}APPROVED{{else if eq .reviewDecision "CHANGES_REQUESTED"}}CHANGES{{else if eq .reviewDecision "REVIEW_REQUIRED"}}REVIEW{{else}}OPEN{{end}}{{printf "\t%s\t%s\t%v\t%v\t%v\t%s\t%s\n" .author.login (timefmt "2006-01-02 15:04" .updatedAt) .changedFiles .additions .deletions .headRefName .title}}{{end}}'
 }
 
 format_pr_rows() {
@@ -59,18 +132,46 @@ format_pr_rows() {
             printf "pr\t%-8s  %-16s  %-16s  %-18s  %s\n", "state", "author", "updated", "size", "title"
         }
         {
-            title = $8
-            for (i = 9; i <= NF; i++) {
+            title = $9
+            for (i = 10; i <= NF; i++) {
                 title = title "\t" $i
             }
+            gsub(/\t/, " ", title)
             size = $5 "f +" $6 "/-" $7
             printf "%s\t%-8s  %-16s  %-16s  %-18s  %s\n", $1, $2, $3, $4, size, title
         }
     '
 }
 
+lookup_pr_metadata() {
+    pr_number=$1
+    list_output=$2
+
+    printf '%s\n' "$list_output" | awk -F '\t' -v target="#$pr_number" '
+        $1 == target {
+            printf "%s\t%s\n", $3, $8
+            exit
+        }
+    '
+}
+
 review_session_name() {
-    worktree_name=$(basename -- "$1")
+    worktree_path=$1
+    worktree_name=$(basename -- "$worktree_path")
+
+    case "$worktree_name" in
+        gh__*__*__PR*__*__*)
+            session_repo_owner=${worktree_name#gh__}
+            session_repo_owner=${session_repo_owner%%__*}
+            session_rest=${worktree_name#gh__"${session_repo_owner}"__}
+            session_repo_name=${session_rest%%__*}
+            session_rest=${session_rest#"${session_repo_name}"__}
+            session_pr=${session_rest%%__*}
+            printf 'review %s__%s %s\n' "$session_repo_owner" "$session_repo_name" "$session_pr"
+            return 0
+            ;;
+    esac
+
     printf 'review %s\n' "$(printf '%s' "$worktree_name" | tr -c '[:alnum:]_-' '_')"
 }
 
@@ -87,10 +188,20 @@ update_review_checkout() {
 
 ensure_review_worktree() {
     pr_number=$1
-    worktree_path=$(review_worktree_path "$pr_number")
+    author_login=${2:-}
+    head_ref=${3:-}
     reviews_root=${JR_REVIEWS_ROOT:-$HOME/.reviews}
 
     mkdir -p "$reviews_root"
+
+    worktree_path=$(find_existing_review_worktree "$pr_number" 2>/dev/null || true)
+    if [ -z "$worktree_path" ]; then
+        [ -n "$author_login" ] && [ -n "$head_ref" ] || {
+            printf 'jr: missing review metadata for pull request %s\n' "$pr_number" >&2
+            exit 1
+        }
+        worktree_path=$(review_worktree_path "$pr_number" "$author_login" "$head_ref")
+    fi
 
     if [ -e "$worktree_path" ] && ! git -C "$worktree_path" rev-parse --show-toplevel >/dev/null 2>&1; then
         printf 'jr: review path exists and is not a git worktree: %s\n' "$worktree_path" >&2
@@ -138,7 +249,9 @@ setup_review_window() {
 
 open_review_window() {
     pr_number=$1
-    worktree_path=$(ensure_review_worktree "$pr_number")
+    author_login=${2:-}
+    head_ref=${3:-}
+    worktree_path=$(ensure_review_worktree "$pr_number" "$author_login" "$head_ref")
 
     if [ -z "${TMUX:-}" ] || ! command -v tmux >/dev/null 2>&1; then
         if command -v tmux >/dev/null 2>&1; then
@@ -231,11 +344,19 @@ pick_pr() {
 
     [ -n "$selection" ] || exit 0
 
-    pr_number=${selection%%"$tab"*}
+    IFS="$tab" read -r pr_number _ << EOF
+$selection
+EOF
     pr_number=${pr_number#\#}
     [ -n "$pr_number" ] || exit 1
+    metadata=$(lookup_pr_metadata "$pr_number" "$list_output")
+    IFS="$tab" read -r author_login head_ref << EOF
+$metadata
+EOF
+    [ -n "$author_login" ] || exit 1
+    [ -n "$head_ref" ] || exit 1
 
-    open_review_window "$pr_number"
+    open_review_window "$pr_number" "$author_login" "$head_ref"
 }
 
 show_pr() {
@@ -307,6 +428,7 @@ esac
 
 require_command git
 require_command gh
+require_command base64
 
 if [ "$mode" = pick ]; then
     require_command fzf
@@ -314,6 +436,9 @@ fi
 
 repo_root=$(resolve_repo_root)
 repo_name=$(resolve_repo_name)
+IFS="$tab" read -r repo_owner repo_short_name << EOF
+$(resolve_repo_identity)
+EOF
 cd "$repo_root" || exit 1
 
 case "$mode" in

@@ -75,6 +75,21 @@ define-command -hidden gh-review-refresh-state %{
 
             worktree_name=${repo_root##*/}
             case "$worktree_name" in
+                gh__*__*__PR*__*__*)
+                    worktree_rest=${worktree_name#gh__}
+                    worktree_rest=${worktree_rest#*__}
+                    worktree_rest=${worktree_rest#*__}
+                    pr_field=${worktree_rest%%__*}
+                    pr_number=${pr_field#PR}
+                    case "$pr_number" in
+                        ''|*[!0-9]*)
+                            ;;
+                        *)
+                            printf '%s\n' "$pr_number"
+                            return 0
+                            ;;
+                    esac
+                    ;;
                 *.PR*)
                     pr_number=${worktree_name##*.PR}
                     case "$pr_number" in

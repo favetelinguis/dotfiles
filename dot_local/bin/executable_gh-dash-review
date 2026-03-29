@@ -1,0 +1,158 @@
+#!/bin/sh
+
+set -eu
+
+usage() {
+    printf '%s\n' 'usage: gh-dash-review [path]'
+}
+
+tab=$(printf '\t')
+
+decode_review_component() {
+    encoded=$1
+
+    case $((${#encoded} % 4)) in
+        0)
+            padded=$encoded
+            ;;
+        2)
+            padded=${encoded}==
+            ;;
+        3)
+            padded=${encoded}=
+            ;;
+        *)
+            return 1
+            ;;
+    esac
+
+    printf '%s' "$padded" | tr '_-' '/+' | base64 -d
+}
+
+resolve_repo_root() {
+    git -C "$1" rev-parse --show-toplevel 2>/dev/null
+}
+
+resolve_review_context() {
+    repo_root=$1
+    worktree_name=${repo_root##*/}
+
+    case "$worktree_name" in
+        gh__*__*__PR*__*__*)
+            repo_owner=${worktree_name#gh__}
+            repo_owner=${repo_owner%%__*}
+
+            worktree_rest=${worktree_name#gh__"${repo_owner}"__}
+            repo_name=${worktree_rest%%__*}
+            worktree_rest=${worktree_rest#"${repo_name}"__}
+
+            pr_field=${worktree_rest%%__*}
+            worktree_rest=${worktree_rest#"${pr_field}"__}
+
+            author_login=${worktree_rest%%__*}
+            head_ref_encoded=${worktree_rest#"${author_login}"__}
+            head_ref=$(decode_review_component "$head_ref_encoded") || return 1
+
+            pr_number=${pr_field#PR}
+            case "$pr_number" in
+                ''|*[!0-9]*)
+                    return 1
+                    ;;
+            esac
+
+            printf 'Current PR #%s\trepo:%s/%s author:%s head:%s\n' \
+                "$pr_number" \
+                "$repo_owner" \
+                "$repo_name" \
+                "$author_login" \
+                "$head_ref"
+            return 0
+            ;;
+    esac
+
+    return 1
+}
+
+write_review_config() {
+    base_config=$1
+    section_title=$2
+    filter=$3
+    temp_config=$4
+
+    escaped_title=$(printf '%s' "$section_title" | sed 's/\\/\\\\/g; s/"/\\"/g')
+    escaped_filter=$(printf '%s' "$filter" | sed 's/\\/\\\\/g; s/"/\\"/g')
+
+    awk -v title="$escaped_title" -v filter="$escaped_filter" '
+        BEGIN {
+            print "prSections:"
+            printf "    - title: \"%s\"\n", title
+            printf "      filters: \"%s\"\n", filter
+        }
+
+        /^prSections:/ {
+            skipping = 1
+            next
+        }
+
+        skipping && /^[^[:space:]]/ {
+            skipping = 0
+        }
+
+        !skipping {
+            print
+        }
+    ' "$base_config" >"$temp_config"
+}
+
+case "${1:-}" in
+    -h|--help)
+        usage
+        exit 0
+        ;;
+esac
+
+if [ "$#" -gt 1 ]; then
+    usage >&2
+    exit 1
+fi
+
+command -v gh >/dev/null 2>&1 || {
+    printf '%s\n' 'gh-dash-review: gh is not installed' >&2
+    exit 1
+}
+
+command -v base64 >/dev/null 2>&1 || {
+    printf '%s\n' 'gh-dash-review: base64 is not installed' >&2
+    exit 1
+}
+
+context_path=${1:-$PWD}
+base_config=${GH_DASH_CONFIG:-$HOME/.config/gh-dash/config.yml}
+
+if [ ! -d "$context_path" ]; then
+    context_path=$(dirname -- "$context_path")
+fi
+
+if repo_root=$(resolve_repo_root "$context_path" 2>/dev/null); then
+    cd "$repo_root" || exit 1
+else
+    cd "$HOME" || exit 1
+    exec gh dash --config "$base_config"
+fi
+
+IFS="$tab" read -r review_title review_filter << EOF
+$(resolve_review_context "$repo_root" 2>/dev/null || true)
+EOF
+if [ -z "$review_filter" ]; then
+    cd "$HOME" || exit 1
+    exec gh dash --config "$base_config"
+fi
+
+temp_config=$(mktemp "${TMPDIR:-/tmp}/gh-dash-review.XXXXXX.yml")
+trap 'rm -f "$temp_config"' EXIT HUP INT TERM
+
+write_review_config "$base_config" "$review_title" "$review_filter" "$temp_config"
+export GH_REPO=${review_filter#repo:}
+GH_REPO=${GH_REPO%% *}
+
+exec gh dash --config "$temp_config"
