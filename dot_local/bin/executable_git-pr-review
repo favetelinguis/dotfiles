@@ -25,6 +25,20 @@ resolve_diffnav_editor() {
     return 1
 }
 
+resolve_diffnav_command() {
+    if [ -x "$HOME/.local/bin/diffnav-zenburn" ]; then
+        printf '%s\n' "$HOME/.local/bin/diffnav-zenburn"
+        return 0
+    fi
+
+    if command -v diffnav >/dev/null 2>&1; then
+        command -v diffnav
+        return 0
+    fi
+
+    return 1
+}
+
 resolve_base() {
     for candidate in master main; do
         if git rev-parse --verify --quiet "${candidate}^{commit}" >/dev/null; then
@@ -74,12 +88,18 @@ review_with_gh() {
     fi
 
     editor=$(resolve_diffnav_editor || true)
+    diffnav_command=$(resolve_diffnav_command || true)
+    [ -n "$diffnav_command" ] || {
+        printf '%s\n' 'git-pr-review: diffnav is not installed' >&2
+        exit 1
+    }
+
     exec sh -c '
         if [ -n "${2:-}" ]; then
             export EDITOR="$2"
         fi
-        cat "$1" | diffnav
-    ' sh "$diff_file" "$editor"
+        exec "$3" <"$1"
+    ' sh "$diff_file" "$editor" "$diffnav_command"
 }
 
 case "${1:-}" in
@@ -99,7 +119,7 @@ command -v git >/dev/null 2>&1 || {
     exit 1
 }
 
-command -v diffnav >/dev/null 2>&1 || {
+resolve_diffnav_command >/dev/null 2>&1 || {
     printf '%s\n' 'git-pr-review: diffnav is not installed' >&2
     exit 1
 }
@@ -151,9 +171,15 @@ if git diff --quiet "${base}...HEAD"; then
 fi
 
 editor=$(resolve_diffnav_editor || true)
+diffnav_command=$(resolve_diffnav_command || true)
+[ -n "$diffnav_command" ] || {
+    printf '%s\n' 'git-pr-review: diffnav is not installed' >&2
+    exit 1
+}
+
 exec sh -c '
     if [ -n "${2:-}" ]; then
         export EDITOR="$2"
     fi
-    git diff --find-renames --relative "$1...HEAD" | diffnav
-' sh "$base" "$editor"
+    git diff --find-renames --relative "$1...HEAD" | "$3"
+' sh "$base" "$editor" "$diffnav_command"

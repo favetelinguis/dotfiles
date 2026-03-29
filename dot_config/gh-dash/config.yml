@@ -93,7 +93,7 @@ theme:
             showSeparator: true
             compact: false
 pager:
-    diff: "diffnav"
+    diff: "diffnav-zenburn"
 confirmQuit: false
 showAuthorIcons: true
 smartFilteringAtLaunch: true
