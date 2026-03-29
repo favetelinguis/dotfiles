@@ -16,6 +16,7 @@ map global user f ':enter-user-mode fzf<ret>' -docstring 'fzf'
 map global user n ':enter-user-mode note<ret>' -docstring 'notes'
 map global user v ':enter-user-mode git<ret>' -docstring 'git'
 map global user t ':enter-user-mode task<ret>' -docstring 'tasks'
+map global user u ':enter-user-mode utility<ret>' -docstring 'utility'
 map global user w ':enter-user-mode window<ret>' -docstring 'window'
 
 map global user a ':agent-send<ret>'     -docstring 'send selection to Claude/Codex'
@@ -25,6 +26,7 @@ try %{ declare-user-mode window }
 try %{ declare-user-mode task }
 try %{ declare-user-mode fzf }
 try %{ declare-user-mode note }
+try %{ declare-user-mode utility }
 map global window d ':split<ret>'  -docstring 'split below'
 map global window s ':vsplit<ret>' -docstring 'split right'
 map global window t ':tabnew<ret>' -docstring 'new tmux window'
@@ -49,3 +51,5 @@ map global task n ':task-next-error<ret>'        -docstring 'next task error'
 map global task p ':task-previous-error<ret>'    -docstring 'previous task error'
 map global task x ':task-cancel<ret>'            -docstring 'cancel running task'
 map global task f ':task-find<ret>'              -docstring 'find running tasks'
+
+map global utility t ':utility-jwt-decode-cursor<ret>' -docstring 'decode jwt'
