@@ -1,0 +1,60 @@
+#!/bin/sh
+
+set -eu
+
+command -v fzf >/dev/null 2>&1 || {
+    printf '%s\n' 'kak-picker-gh-pr-files-fzf: fzf is not installed' >&2
+    exit 1
+}
+
+command -v kak >/dev/null 2>&1 || {
+    printf '%s\n' 'kak-picker-gh-pr-files-fzf: kak is not installed' >&2
+    exit 1
+}
+
+[ -n "${KAK_PICKER_SESSION:-}" ] || {
+    printf '%s\n' 'kak-picker-gh-pr-files-fzf: KAK_PICKER_SESSION is not set' >&2
+    exit 1
+}
+
+[ -n "${KAK_PICKER_CLIENT:-}" ] || {
+    printf '%s\n' 'kak-picker-gh-pr-files-fzf: KAK_PICKER_CLIENT is not set' >&2
+    exit 1
+}
+
+[ -n "${KAK_GH_PICKER_MANIFEST:-}" ] || {
+    printf '%s\n' 'kak-picker-gh-pr-files-fzf: KAK_GH_PICKER_MANIFEST is not set' >&2
+    exit 1
+}
+
+[ -f "$KAK_GH_PICKER_MANIFEST" ] || {
+    printf '%s\n' 'kak-picker-gh-pr-files-fzf: KAK_GH_PICKER_MANIFEST is not a file' >&2
+    exit 1
+}
+
+start_relpath=
+if [ -n "${KAK_GH_PICKER_START:-}" ] && [ -e "$KAK_GH_PICKER_START" ]; then
+    start_relpath=$(awk -F '\t' -v selected="$KAK_GH_PICKER_START" '$1 == selected { print $2; exit }' "$KAK_GH_PICKER_MANIFEST")
+fi
+
+list_entries() {
+    if [ -n "$start_relpath" ]; then
+        printf '%s\n' "$start_relpath"
+        awk -F '\t' -v selected="$start_relpath" '$2 != selected { print $2 }' "$KAK_GH_PICKER_MANIFEST"
+    else
+        awk -F '\t' '{ print $2 }' "$KAK_GH_PICKER_MANIFEST"
+    fi
+}
+
+result=$(
+    list_entries | \
+        fzf --reverse --prompt 'review> ' \
+            --header 'enter: open diff'
+)
+
+[ -n "$result" ] || exit 0
+
+result_q=$(printf '%s' "$result" | sed "s/'/''/g")
+printf "evaluate-commands -try-client '%s' 'gh-pr-diff-file ''%s'''\n" \
+    "$KAK_PICKER_CLIENT" \
+    "$result_q" | kak -p "$KAK_PICKER_SESSION"

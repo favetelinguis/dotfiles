@@ -458,6 +458,116 @@ SHELL
     }
 }
 
+define-command -docstring 'fuzzy-find changed pull request files with fzf' gh-pr-files-fzf %{
+    gh-review-ensure-state
+    evaluate-commands %sh{
+        kakquote() { printf "'%s'" "$(printf '%s' "$1" | sed "s/'/''/g")"; }
+
+        resolve_review_section_path() {
+            [ -n "$kak_buffile" ] && [ -f "$kak_buffile" ] || return 1
+            awk -v target="$kak_cursor_line" '
+NR > target { exit }
+/^diff --git / {
+    old = ""
+    new = ""
+    path = ""
+    next
+}
+/^--- / {
+    old = substr($0, 5)
+    if (old == "/dev/null") {
+        old = ""
+    } else if (index(old, "a/") == 1) {
+        old = substr(old, 3)
+    }
+    next
+}
+/^\+\+\+ / {
+    new = substr($0, 5)
+    if (new == "/dev/null") {
+        new = ""
+    } else if (index(new, "b/") == 1) {
+        new = substr(new, 3)
+    }
+    path = (new != "" ? new : old)
+}
+END {
+    if (path != "") {
+        print path
+    }
+}' "$kak_buffile"
+        }
+
+        helper_path="${HOME}/.local/bin/kak-picker-gh-pr-files-fzf"
+        [ -x "$helper_path" ] || {
+            printf "fail %s\n" "$(kakquote "picker helper not found: $helper_path")"
+            exit
+        }
+
+        [ -n "$kak_opt_gh_review_picker_root" ] && [ -d "$kak_opt_gh_review_picker_root" ] || {
+            printf "fail %s\n" "$(kakquote "no changed-file picker state is available")"
+            exit
+        }
+        [ -n "$kak_opt_gh_review_manifest_file" ] && [ -f "$kak_opt_gh_review_manifest_file" ] || {
+            printf "fail %s\n" "$(kakquote "no changed-file manifest is available")"
+            exit
+        }
+
+        tmp=$(mktemp "${TMPDIR:-/tmp}/kak-gh-fzf-picker.XXXXXX") || {
+            printf "fail %s\n" "$(kakquote "unable to create a temporary picker launcher")"
+            exit
+        }
+
+        session_q=$(printf '%s' "$kak_session" | sed "s/'/'\\\\''/g")
+        client_q=$(printf '%s' "$kak_client" | sed "s/'/'\\\\''/g")
+        manifest_q=$(printf '%s' "$kak_opt_gh_review_manifest_file" | sed "s/'/'\\\\''/g")
+        helper_q=$(printf '%s' "$helper_path" | sed "s/'/'\\\\''/g")
+        cwd_q=$(printf '%s' "$PWD" | sed "s/'/'\\\\''/g")
+        start_path=$kak_opt_gh_review_picker_root
+        if [ -n "$kak_opt_gh_review_section_path" ]; then
+            candidate=$kak_opt_gh_review_picker_root/$kak_opt_gh_review_section_path
+            if [ -e "$candidate" ]; then
+                start_path=$candidate
+            fi
+        elif [ "$kak_opt_gh_review_buffer" = "true" ]; then
+            relpath=$(resolve_review_section_path 2>/dev/null || true)
+            if [ -n "$relpath" ]; then
+                candidate=$kak_opt_gh_review_picker_root/$relpath
+                if [ -e "$candidate" ]; then
+                    start_path=$candidate
+                fi
+            fi
+        elif [ -n "$kak_buffile" ] && [ -n "$kak_opt_gh_review_repo_root" ]; then
+            case "$kak_buffile" in
+                "$kak_opt_gh_review_repo_root"/*)
+                    relpath=${kak_buffile#"$kak_opt_gh_review_repo_root"/}
+                    candidate=$kak_opt_gh_review_picker_root/$relpath
+                    if [ -e "$candidate" ]; then
+                        start_path=$candidate
+                    fi
+                    ;;
+            esac
+        fi
+        start_q=$(printf '%s' "$start_path" | sed "s/'/'\\\\''/g")
+
+        cat >"$tmp" << SHELL
+#!/bin/sh
+export KAK_PICKER_SESSION='$session_q'
+export KAK_PICKER_CLIENT='$client_q'
+export KAK_GH_PICKER_MANIFEST='$manifest_q'
+export KAK_GH_PICKER_START='$start_q'
+cd '$cwd_q' || exit 1
+'$helper_q'
+status=\$?
+rm -f '$tmp'
+exit "\$status"
+SHELL
+
+        chmod +x "$tmp"
+        printf "tmux-terminal-vertical sh %s\n" "$(kakquote "$tmp")"
+    }
+}
+
 define-command -docstring 'open the current pull request in a browser with gh' gh-pr-view-web %{
     evaluate-commands %sh{
         kakquote() { printf "'%s'" "$(printf '%s' "$1" | sed "s/'/''/g")"; }
