@@ -149,45 +149,109 @@ wtj() {
     fi
 
     current_root=$(git rev-parse --show-toplevel 2>/dev/null) || return 1
+    main_root=$(wt_main_root) || return 1
     repo_name=$(wt_repo_name) || return 1
     tab=$(printf '\t')
-    choice=$(
-        git worktree list --porcelain |
-            while IFS= read -r line || [ -n "$line" ]; do
-                case "$line" in
-                    "worktree "*) path=${line#worktree }
-                        branch='-'
-                        ;;
-                    "branch "*) branch=${line#branch refs/heads/}
-                        ;;
-                    detached) branch='detached'
-                        ;;
-                    '')
-                        if [ -n "${path:-}" ]; then
-                            name=$(basename "$path")
-                            case "$name" in
-                                "$repo_name".*) name=${name#"$repo_name".}
-                                    ;;
-                            esac
-                            current_marker='  '
-                            if [ "$path" = "$current_root" ]; then
-                                current_marker='* '
-                            fi
+    helper=$(mktemp "${TMPDIR:-/tmp}/wtj.XXXXXX") || return 1
+    cat >"$helper" <<'EOF'
+#!/bin/sh
 
-                            dirty_marker='-'
-                            if [ -n "$(git -C "$path" status --porcelain 2>/dev/null)" ]; then
-                                dirty_marker='D'
-                            fi
+set -eu
 
-                            printf '%s\t%s %s [%s] %s\n' "$path" "$dirty_marker" "$current_marker" "$branch" "$name"
+list_worktrees() {
+    current_root=$1
+    repo_name=$2
+
+    git worktree list --porcelain |
+        while IFS= read -r line || [ -n "$line" ]; do
+            case "$line" in
+                "worktree "*) path=${line#worktree }
+                    branch='-'
+                    ;;
+                "branch "*) branch=${line#branch refs/heads/}
+                    ;;
+                detached) branch='detached'
+                    ;;
+                '')
+                    if [ -n "${path:-}" ]; then
+                        name=$(basename "$path")
+                        case "$name" in
+                            "$repo_name".*) name=${name#"$repo_name".}
+                                ;;
+                        esac
+                        current_marker='  '
+                        if [ "$path" = "$current_root" ]; then
+                            current_marker='* '
                         fi
-                        path=
-                        branch='-'
-                        ;;
-                esac
-            done |
-            fzf --height=40% --delimiter="$tab" --with-nth=2.. --reverse --prompt='worktree> ' --exit-0
+
+                        dirty_marker='-'
+                        if [ -n "$(git -C "$path" status --porcelain 2>/dev/null)" ]; then
+                            dirty_marker='D'
+                        fi
+
+                        printf '%s\t%s %s [%s] %s\n' "$path" "$dirty_marker" "$current_marker" "$branch" "$name"
+                    fi
+                    path=
+                    branch='-'
+                    ;;
+            esac
+        done
+}
+
+remove_worktree() {
+    target=$1
+    current_root=$2
+    main_root=$3
+
+    [ -n "$target" ] || exit 1
+
+    if [ "$target" = "$main_root" ]; then
+        printf '%s\n' "wtj: refusing to remove the main worktree" >&2
+        exit 1
+    fi
+
+    if [ "$target" = "$current_root" ]; then
+        printf '%s\n' "wtj: refusing to remove the current worktree from the picker" >&2
+        exit 1
+    fi
+
+    branch=$(git -C "$target" symbolic-ref --quiet --short HEAD 2>/dev/null || true)
+    git worktree remove "$target" >/dev/null || exit 1
+
+    if [ -n "$branch" ]; then
+        git -C "$main_root" branch -d "$branch" >/dev/null 2>&1 || true
+    fi
+}
+
+case "${1:-}" in
+    list)
+        shift
+        list_worktrees "$@"
+        ;;
+    remove)
+        shift
+        remove_worktree "$@"
+        ;;
+    *)
+        printf '%s\n' "wtj helper: expected list|remove" >&2
+        exit 1
+        ;;
+esac
+EOF
+    chmod +x "$helper" || {
+        rm -f "$helper"
+        return 1
+    }
+    choice=$(
+        "$helper" list "$current_root" "$repo_name" |
+            fzf --height=40% --delimiter="$tab" --with-nth=2.. --reverse --prompt='worktree> ' \
+                --header='enter: cd, ctrl-x: remove worktree' \
+                --bind "ctrl-x:execute-silent($helper remove {1} '$current_root' '$main_root')+reload($helper list '$current_root' '$repo_name')" \
+                --exit-0
     )
+    status=$?
+    rm -f "$helper"
+    [ "$status" -eq 0 ] || return 0
     [ -n "$choice" ] || return 0
 
     IFS="$tab" read -r target _ << EOF

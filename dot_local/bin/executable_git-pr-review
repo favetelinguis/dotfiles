@@ -1,0 +1,159 @@
+#!/bin/sh
+
+set -eu
+
+usage() {
+    printf '%s\n' 'usage: git-pr-review [pull-request]'
+}
+
+resolve_diffnav_editor() {
+    if [ -x "$HOME/.local/bin/diffnav-open-kak" ]; then
+        printf '%s\n' "$HOME/.local/bin/diffnav-open-kak"
+        return 0
+    fi
+
+    if command -v kak >/dev/null 2>&1; then
+        command -v kak
+        return 0
+    fi
+
+    if [ -n "${EDITOR:-}" ]; then
+        printf '%s\n' "$EDITOR"
+        return 0
+    fi
+
+    return 1
+}
+
+resolve_base() {
+    for candidate in master main; do
+        if git rev-parse --verify --quiet "${candidate}^{commit}" >/dev/null; then
+            printf '%s\n' "$candidate"
+            return 0
+        fi
+    done
+
+    return 1
+}
+
+resolve_pr_base() {
+    if ! command -v gh >/dev/null 2>&1; then
+        return 1
+    fi
+
+    if [ "$#" -gt 0 ]; then
+        gh pr view "$1" --json baseRefName --jq .baseRefName 2>/dev/null
+    else
+        gh pr view --json baseRefName --jq .baseRefName 2>/dev/null
+    fi
+}
+
+review_with_gh() {
+    if ! command -v gh >/dev/null 2>&1; then
+        return 1
+    fi
+
+    diff_file=$(mktemp "${TMPDIR:-/tmp}/git-pr-review-gh.XXXXXX") || return 1
+
+    if [ "$#" -gt 0 ]; then
+        if ! gh pr diff "$1" --patch >"$diff_file" 2>/dev/null; then
+            rm -f "$diff_file"
+            return 1
+        fi
+    else
+        if ! gh pr diff --patch >"$diff_file" 2>/dev/null; then
+            rm -f "$diff_file"
+            return 1
+        fi
+    fi
+
+    if [ ! -s "$diff_file" ]; then
+        rm -f "$diff_file"
+        printf '%s\n' 'git-pr-review: GitHub reports no diff for this pull request'
+        exit 0
+    fi
+
+    editor=$(resolve_diffnav_editor || true)
+    exec sh -c '
+        if [ -n "${2:-}" ]; then
+            export EDITOR="$2"
+        fi
+        cat "$1" | diffnav
+    ' sh "$diff_file" "$editor"
+}
+
+case "${1:-}" in
+    -h|--help)
+        usage
+        exit 0
+        ;;
+esac
+
+if [ "$#" -gt 1 ]; then
+    usage >&2
+    exit 1
+fi
+
+command -v git >/dev/null 2>&1 || {
+    printf '%s\n' 'git-pr-review: git is not installed' >&2
+    exit 1
+}
+
+command -v diffnav >/dev/null 2>&1 || {
+    printf '%s\n' 'git-pr-review: diffnav is not installed' >&2
+    exit 1
+}
+
+repo_root=$(git rev-parse --show-toplevel 2>/dev/null) || {
+    printf '%s\n' 'git-pr-review: not inside a git work tree' >&2
+    exit 1
+}
+
+cd "$repo_root" || exit 1
+
+if [ "$#" -gt 0 ]; then
+    review_with_gh "$1" || true
+else
+    review_with_gh || true
+fi
+
+base=
+if [ "$#" -gt 0 ]; then
+    pr_base=$(resolve_pr_base "$1" 2>/dev/null || true)
+else
+    pr_base=$(resolve_pr_base 2>/dev/null || true)
+fi
+
+if [ -n "${pr_base:-}" ]; then
+    for candidate in "origin/$pr_base" "$pr_base"; do
+        if git rev-parse --verify --quiet "${candidate}^{commit}" >/dev/null; then
+            base=$candidate
+            break
+        fi
+    done
+fi
+
+if [ -z "$base" ]; then
+    base=$(resolve_base) || {
+        printf '%s\n' 'git-pr-review: no master or main branch found' >&2
+        exit 1
+    }
+fi
+
+git rev-parse --verify --quiet "${base}^{commit}" >/dev/null || {
+    printf '%s\n' 'git-pr-review: no master or main branch found' >&2
+    exit 1
+}
+
+if git diff --quiet "${base}...HEAD"; then
+    printf 'git-pr-review: no changes between HEAD and %s\n' "$base"
+    exit 0
+fi
+
+editor=$(resolve_diffnav_editor || true)
+exec sh -c '
+    if [ -n "${2:-}" ]; then
+        export EDITOR="$2"
+    fi
+    git diff --find-renames --relative "$1...HEAD" | diffnav
+' sh "$base" "$editor"

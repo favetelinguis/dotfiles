@@ -2,42 +2,264 @@
 
 set -eu
 
+tab=$(printf '\t')
+
 usage() {
-    printf '%s\n' "usage: jr [base-branch]" >&2
-    printf '%s\n' "       jr --print0 [base-branch]" >&2
+    printf '%s\n' 'usage: jr'
+    printf '%s\n' '       jr --show <pull-request>'
+    printf '%s\n' '       jr --window <pull-request>'
 }
 
-resolve_base() {
-    if [ -n "${1:-}" ]; then
-        printf '%s\n' "$1"
+require_command() {
+    command -v "$1" >/dev/null 2>&1 || {
+        printf 'jr: %s is not installed\n' "$1" >&2
+        exit 1
+    }
+}
+
+resolve_repo_root() {
+    git rev-parse --show-toplevel 2>/dev/null || {
+        printf '%s\n' 'jr: not inside a git work tree' >&2
+        exit 1
+    }
+}
+
+resolve_repo_name() {
+    git_common_dir=$(git rev-parse --path-format=absolute --git-common-dir 2>/dev/null) || {
+        printf '%s\n' 'jr: unable to determine git common dir' >&2
+        exit 1
+    }
+
+    if [ "$(git rev-parse --is-bare-repository 2>/dev/null)" = "true" ]; then
+        basename "$git_common_dir" .git
+    else
+        basename "$(dirname "$git_common_dir")"
+    fi
+}
+
+review_branch_name() {
+    printf 'review/pr-%s\n' "$1"
+}
+
+review_worktree_path() {
+    printf '%s/%s.PR%s\n' "${JR_REVIEWS_ROOT:-$HOME/.reviews}" "$repo_name" "$1"
+}
+
+list_prs() {
+    gh pr list \
+        --limit "${JR_LIMIT:-80}" \
+        --state open \
+        --json number,title,author,updatedAt,isDraft,reviewDecision,changedFiles,additions,deletions \
+        --template '{{range .}}{{printf "#%v\t" .number}}{{if .isDraft}}DRAFT{{else if eq .reviewDecision "APPROVED"}}APPROVED{{else if eq .reviewDecision "CHANGES_REQUESTED"}}CHANGES{{else if eq .reviewDecision "REVIEW_REQUIRED"}}REVIEW{{else}}OPEN{{end}}{{printf "\t%s\t%s\t%v\t%v\t%v\t%s\n" .author.login (timefmt "2006-01-02 15:04" .updatedAt) .changedFiles .additions .deletions .title}}{{end}}'
+}
+
+format_pr_rows() {
+    awk -F '\t' '
+        BEGIN {
+            printf "pr\t%-8s  %-16s  %-16s  %-18s  %s\n", "state", "author", "updated", "size", "title"
+        }
+        {
+            title = $8
+            for (i = 9; i <= NF; i++) {
+                title = title "\t" $i
+            }
+            size = $5 "f +" $6 "/-" $7
+            printf "%s\t%-8s  %-16s  %-16s  %-18s  %s\n", $1, $2, $3, $4, size, title
+        }
+    '
+}
+
+review_window_id() {
+    tmux list-windows -F '#{window_id}\t#{window_name}' 2>/dev/null | awk -F '\t' '$2 == "review" { print $1; exit }'
+}
+
+update_review_checkout() {
+    pr_number=$1
+    worktree_path=$2
+    branch_name=$(review_branch_name "$pr_number")
+
+    (
+        cd "$worktree_path" || exit 1
+        gh pr checkout "$pr_number" --branch "$branch_name" --force >/dev/null
+    )
+}
+
+ensure_review_worktree() {
+    pr_number=$1
+    worktree_path=$(review_worktree_path "$pr_number")
+    reviews_root=${JR_REVIEWS_ROOT:-$HOME/.reviews}
+
+    mkdir -p "$reviews_root"
+
+    if [ -e "$worktree_path" ] && ! git -C "$worktree_path" rev-parse --show-toplevel >/dev/null 2>&1; then
+        printf 'jr: review path exists and is not a git worktree: %s\n' "$worktree_path" >&2
+        exit 1
+    fi
+
+    if git -C "$worktree_path" rev-parse --show-toplevel >/dev/null 2>&1; then
+        if [ -n "$(git -C "$worktree_path" status --porcelain 2>/dev/null)" ]; then
+            printf 'jr: review worktree has local changes: %s\n' "$worktree_path" >&2
+            exit 1
+        fi
+
+        git -C "$worktree_path" pull --ff-only >/dev/null 2>&1 || true
+        update_review_checkout "$pr_number" "$worktree_path" || exit 1
+        printf '%s\n' "$worktree_path"
         return 0
     fi
 
-    if [ -n "${JR_BASE:-}" ]; then
-        printf '%s\n' "$JR_BASE"
-        return 0
+    git worktree add --detach "$worktree_path" >/dev/null
+    if ! update_review_checkout "$pr_number" "$worktree_path"; then
+        git worktree remove --force "$worktree_path" >/dev/null 2>&1 || true
+        exit 1
     fi
 
-    ref=$(git symbolic-ref --quiet refs/remotes/origin/HEAD 2>/dev/null || true)
-    if [ -n "$ref" ]; then
-        printf '%s\n' "${ref#refs/remotes/origin/}"
-        return 0
+    printf '%s\n' "$worktree_path"
+}
+
+claude_pane_command() {
+    printf '%s\n' "sh -lc 'if command -v claude >/dev/null 2>&1; then claude; else printf \"%s\\n\" \"jr: claude is not installed\"; fi; exec \"\${SHELL:-/bin/sh}\" -i'"
+}
+
+diffnav_pane_command() {
+    printf '%s\n' "\"$HOME/.local/bin/git-pr-review\"; status=\$?; if [ \"\$status\" -ne 0 ]; then printf \"%s\\n\" \"jr: git-pr-review exited with status \$status\"; fi; exec \"\${SHELL:-/bin/sh}\" -i"
+}
+
+setup_review_window() {
+    pr_number=$1
+    status_command=$(printf 'exec "%s" --show %s' "$HOME/.local/bin/jr" "$pr_number")
+    bottom_left_pane=$(tmux split-window -v -p 50 -P -F '#{pane_id}' -c "$PWD" "$status_command")
+    tmux split-window -h -t "$bottom_left_pane" -c "$PWD" "$(claude_pane_command)" >/dev/null
+    [ -n "${TMUX_PANE:-}" ] && tmux select-pane -t "$TMUX_PANE"
+    exec sh -lc "$(diffnav_pane_command)"
+}
+
+open_review_window() {
+    pr_number=$1
+    worktree_path=$(ensure_review_worktree "$pr_number")
+
+    if [ -z "${TMUX:-}" ] || ! command -v tmux >/dev/null 2>&1; then
+        cd "$worktree_path" || exit 1
+        exec "$0" --show "$pr_number"
     fi
 
-    for candidate in main master origin/main origin/master; do
-        if git rev-parse --verify --quiet "${candidate}^{commit}" >/dev/null; then
-            printf '%s\n' "$candidate"
+    review_command=$(printf 'exec "%s" --window %s' "$HOME/.local/bin/jr" "$pr_number")
+    window_id=$(review_window_id || true)
+
+    if [ -n "$window_id" ]; then
+        tmux kill-window -t "$window_id"
+    fi
+
+    new_window=$(tmux new-window -d -P -F '#{window_id}' -n review -c "$worktree_path" "$review_command")
+    tmux select-window -t "$new_window"
+}
+
+render_pr_summary() {
+    gh pr view "$1" \
+        --json additions,assignees,author,baseRefName,changedFiles,commits,createdAt,deletions,headRefName,isDraft,labels,latestReviews,mergeStateStatus,mergeable,number,reviewDecision,state,title,updatedAt,url \
+        --template '{{printf "#%v %s\n\n" .number .title}}{{printf "URL: %s\n" .url}}{{printf "State: %s" .state}}{{if .isDraft}}{{printf " (draft)"}}{{end}}{{printf "\n"}}{{printf "Author: %s\n" .author.login}}{{printf "Branches: %s -> %s\n" .headRefName .baseRefName}}{{printf "Review: "}}{{if .reviewDecision}}{{printf "%s" .reviewDecision}}{{else}}{{printf "NONE"}}{{end}}{{printf "\n"}}{{printf "Merge: %s / %s\n" .mergeable .mergeStateStatus}}{{printf "Updated: %s\n" (timefmt "2006-01-02 15:04 MST" .updatedAt)}}{{printf "Created: %s\n" (timefmt "2006-01-02 15:04 MST" .createdAt)}}{{printf "Changes: %v commits, %v files, +%v -%v\n" (len .commits) .changedFiles .additions .deletions}}{{if .labels}}{{printf "Labels: "}}{{range $i, $label := .labels}}{{if $i}}{{printf ", "}}{{end}}{{printf "%s" $label.name}}{{end}}{{printf "\n"}}{{end}}{{if .assignees}}{{printf "Assignees: "}}{{range $i, $assignee := .assignees}}{{if $i}}{{printf ", "}}{{end}}{{printf "%s" $assignee.login}}{{end}}{{printf "\n"}}{{end}}{{if .latestReviews}}{{printf "Latest reviews: "}}{{range $i, $review := .latestReviews}}{{if $i}}{{printf ", "}}{{end}}{{printf "%s:%s" $review.author.login $review.state}}{{end}}{{printf "\n"}}{{end}}'
+}
+
+render_pr_checks() {
+    output=''
+    if output=$(gh pr checks "$1" \
+        --json bucket,name,workflow \
+        --template '{{if .}}{{tablerow "bucket" "workflow" "check"}}{{range .}}{{tablerow .bucket .workflow .name}}{{end}}{{tablerender}}{{else}}No reported checks.{{end}}' 2>&1); then
+        :
+    else
+        status=$?
+        if [ "$status" -ne 8 ]; then
+            printf 'Checks unavailable: %s\n' "$output"
             return 0
         fi
-    done
+    fi
 
-    return 1
+    if [ -n "$output" ]; then
+        printf '%s\n' "$output"
+    else
+        printf '%s\n' 'No reported checks.'
+    fi
 }
 
-mode=launch
+render_pr_body() {
+    gh pr view "$1" --json body --template '{{if .body}}{{.body}}{{else}}(no description){{end}}'
+}
+
+render_pr_once() {
+    pr_number=$1
+
+    render_pr_summary "$pr_number"
+    printf '\n%s\n%s\n' 'Checks' '------'
+    render_pr_checks "$pr_number"
+    printf '\n%s\n%s\n' 'Description' '-----------'
+    render_pr_body "$pr_number"
+}
+
+pick_pr() {
+    list_output=$(list_prs)
+
+    if [ -z "$list_output" ]; then
+        printf '%s\n' 'jr: no open pull requests'
+        exit 0
+    fi
+
+    selection=$(printf '%s\n' "$list_output" | format_pr_rows | fzf \
+            --height=75% \
+            --reverse \
+            --prompt='pr> ' \
+            --delimiter="$tab" \
+            --with-nth=2 \
+            --header-lines=1 \
+            --header='enter: open review window' \
+            --exit-0) || exit 0
+
+    [ -n "$selection" ] || exit 0
+
+    pr_number=${selection%%"$tab"*}
+    pr_number=${pr_number#\#}
+    [ -n "$pr_number" ] || exit 1
+
+    open_review_window "$pr_number"
+}
+
+show_pr() {
+    pr_number=$1
+
+    if [ ! -t 0 ] || [ ! -t 1 ]; then
+        render_pr_once "$pr_number"
+        return 0
+    fi
+
+    while :; do
+        printf '\033[H\033[2J'
+        render_pr_once "$pr_number"
+        printf '\n%s' '[r] refresh  [o] open in browser  [q] quit > '
+
+        if ! IFS= read -r choice; then
+            exit 0
+        fi
+
+        case $choice in
+            q|Q|quit|exit)
+                exit 0
+                ;;
+            o|O|open|web)
+                gh pr view "$pr_number" --web >/dev/null 2>&1 || true
+                ;;
+            *)
+                ;;
+        esac
+    done
+}
+
+mode=pick
 case "${1:-}" in
-    --print0)
-        mode=print0
+    --show)
+        mode=show
+        shift
+        ;;
+    --window)
+        mode=window
         shift
         ;;
     -h|--help)
@@ -46,50 +268,47 @@ case "${1:-}" in
         ;;
 esac
 
-if [ "$#" -gt 1 ]; then
-    usage
-    exit 1
+case "$mode" in
+    pick)
+        [ "$#" -eq 0 ] || {
+            usage >&2
+            exit 1
+        }
+        ;;
+    show)
+        [ "$#" -eq 1 ] || {
+            usage >&2
+            exit 1
+        }
+        ;;
+    window)
+        [ "$#" -eq 1 ] || {
+            usage >&2
+            exit 1
+        }
+        ;;
+esac
+
+require_command git
+require_command gh
+
+if [ "$mode" = pick ]; then
+    require_command fzf
 fi
 
-if ! command -v git >/dev/null 2>&1; then
-    printf '%s\n' "jr: git is not installed" >&2
-    exit 1
-fi
-
-if [ "$mode" = launch ] && ! command -v nnn >/dev/null 2>&1; then
-    printf '%s\n' "jr: nnn is not installed" >&2
-    exit 1
-fi
-
-repo_root=$(git rev-parse --show-toplevel 2>/dev/null) || {
-    printf '%s\n' "jr: not inside a git work tree" >&2
-    exit 1
-}
-
+repo_root=$(resolve_repo_root)
+repo_name=$(resolve_repo_name)
 cd "$repo_root" || exit 1
 
-base=$(resolve_base "${1:-}") || {
-    printf '%s\n' "jr: unable to determine a base branch; pass one explicitly" >&2
-    exit 1
-}
-
-git rev-parse --verify --quiet "${base}^{commit}" >/dev/null || {
-    printf 'jr: base revision not found: %s\n' "$base" >&2
-    exit 1
-}
-
-if [ "$mode" = print0 ]; then
-    exec git diff --name-only -z "${base}...HEAD"
-fi
-
-tmp_file=$(mktemp "${TMPDIR:-/tmp}/jr.XXXXXX")
-trap 'rm -f "$tmp_file"' EXIT HUP INT TERM
-
-git diff --name-only -z "${base}...HEAD" > "$tmp_file"
-
-if [ ! -s "$tmp_file" ]; then
-    printf 'jr: no changed files between HEAD and %s\n' "$base"
-    exit 0
-fi
-
-exec nnn < "$tmp_file"
+case "$mode" in
+    pick)
+        pick_pr
+        ;;
+    show)
+        show_pr "$1"
+        ;;
+    window)
+        require_command tmux
+        setup_review_window "$1"
+        ;;
+esac
