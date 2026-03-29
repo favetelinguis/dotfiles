@@ -69,8 +69,9 @@ format_pr_rows() {
     '
 }
 
-review_window_id() {
-    tmux list-windows -F '#{window_id}\t#{window_name}' 2>/dev/null | awk -F '\t' '$2 == "review" { print $1; exit }'
+review_session_name() {
+    worktree_name=$(basename -- "$1")
+    printf 'review %s\n' "$(printf '%s' "$worktree_name" | tr -c '[:alnum:]_-' '_')"
 }
 
 update_review_checkout() {
@@ -127,10 +128,11 @@ diffnav_pane_command() {
 
 setup_review_window() {
     pr_number=$1
+    current_pane=$(tmux display-message -p '#{pane_id}')
     status_command=$(printf 'exec "%s" --show %s' "$HOME/.local/bin/jr" "$pr_number")
     bottom_left_pane=$(tmux split-window -v -p 50 -P -F '#{pane_id}' -c "$PWD" "$status_command")
     tmux split-window -h -t "$bottom_left_pane" -c "$PWD" "$(claude_pane_command)" >/dev/null
-    [ -n "${TMUX_PANE:-}" ] && tmux select-pane -t "$TMUX_PANE"
+    tmux select-pane -t "$current_pane"
     exec sh -lc "$(diffnav_pane_command)"
 }
 
@@ -139,19 +141,33 @@ open_review_window() {
     worktree_path=$(ensure_review_worktree "$pr_number")
 
     if [ -z "${TMUX:-}" ] || ! command -v tmux >/dev/null 2>&1; then
+        if command -v tmux >/dev/null 2>&1; then
+            review_command=$(printf 'exec "%s" --window %s' "$HOME/.local/bin/jr" "$pr_number")
+            session_name=$(review_session_name "$worktree_path")
+
+            if tmux has-session -t "=$session_name" 2>/dev/null; then
+                tmux select-window -t "=$session_name:1" >/dev/null 2>&1 || true
+                exec tmux attach-session -t "=$session_name"
+            fi
+
+            exec tmux new-session -s "$session_name" -n 1 -c "$worktree_path" "$review_command"
+        fi
+
         cd "$worktree_path" || exit 1
         exec "$0" --show "$pr_number"
     fi
 
     review_command=$(printf 'exec "%s" --window %s' "$HOME/.local/bin/jr" "$pr_number")
-    window_id=$(review_window_id || true)
+    session_name=$(review_session_name "$worktree_path")
 
-    if [ -n "$window_id" ]; then
-        tmux kill-window -t "$window_id"
+    if tmux has-session -t "=$session_name" 2>/dev/null; then
+        tmux select-window -t "=$session_name:1" >/dev/null 2>&1 || true
+        tmux switch-client -t "=$session_name"
+        return 0
     fi
 
-    new_window=$(tmux new-window -d -P -F '#{window_id}' -n review -c "$worktree_path" "$review_command")
-    tmux select-window -t "$new_window"
+    tmux new-session -d -s "$session_name" -n 1 -c "$worktree_path" "$review_command"
+    tmux switch-client -t "=$session_name"
 }
 
 render_pr_summary() {
