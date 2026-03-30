@@ -38,6 +38,10 @@ codex = false
 claude = false
 opencode = false
 
+[data.github]
+globalPrFilter = ""
+repoPath = ""
+
 [data.shell]
 bash = false
 zsh = false
@@ -75,6 +79,10 @@ Agent toggles:
 Shell toggles:
 - =shell.bash=
 - =shell.zsh=
+
+GitHub machine-local data:
+- =github.globalPrFilter=
+- =github.repoPath=
 
 Enabling any =agent.*= value installs the shared skills in
 =~/.config/agents/skills=. Enabling a specific =agent.*= value also installs
@@ -119,10 +127,18 @@ codex = true
 claude = true
 opencode = false
 
+[data.github]
+globalPrFilter = "is:open label:my-label"
+repoPath = ""
+
 [data.shell]
 bash = true
 zsh = false
 #+end_src
+
+=github.globalPrFilter= is intended for global GitHub PR search commands such
+as =jrg=. =github.repoPath= is reserved for future GitHub helpers and is not
+used by =jrg= yet.
 
 ** Agent skills layout
 Agent skills are stored once in the canonical shared location:

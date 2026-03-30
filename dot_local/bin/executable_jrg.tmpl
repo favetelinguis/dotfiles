@@ -1,0 +1,103 @@
+{{- $github := (get . "github") | default dict -}}
+#!/bin/sh
+
+set -eu
+
+tab=$(printf '\t')
+
+usage() {
+    printf '%s\n' 'usage: jrg'
+}
+
+require_command() {
+    command -v "$1" >/dev/null 2>&1 || {
+        printf 'jrg: %s is not installed\n' "$1" >&2
+        exit 1
+    }
+}
+
+global_pr_filter=$(cat <<'EOF'
+{{ get $github "globalPrFilter" | default "" }}
+EOF
+)
+
+list_prs() {
+    gh search prs \
+        --limit "${JRG_LIMIT:-80}" \
+        --json url,number,title,author,updatedAt,isDraft,state \
+        --jq '.[] | [.url, ("#" + (.number | tostring)), (if .isDraft then "DRAFT" else .state end), .author.login, (.updatedAt[0:16] | gsub("T"; " ")), .title] | @tsv' \
+        -- "$global_pr_filter"
+}
+
+format_pr_rows() {
+    awk -F '\t' '
+        function repo_from_url(url,   parts) {
+            split(url, parts, "/")
+            if (length(parts) >= 5) {
+                return parts[4] "/" parts[5]
+            }
+            return "unknown/unknown"
+        }
+
+        BEGIN {
+            printf "url\tpr\t%-8s  %-16s  %-16s  %-18s  %s\n", "state", "author", "updated", "size", "title"
+        }
+        {
+            title = $5
+            for (i = 6; i <= NF; i++) {
+                title = title "\t" $i
+            }
+            gsub(/\t/, " ", title)
+            repo = repo_from_url($1)
+            printf "%s\t%s\t%-8s  %-16s  %-16s  %-18s  %s\n", $1, $2, $3, $4, $5, "-", repo ": " title
+        }
+    '
+}
+
+pick_pr() {
+    [ -n "$global_pr_filter" ] || {
+        printf '%s\n' 'jrg: github.globalPrFilter is empty' >&2
+        exit 1
+    }
+
+    list_output=$(list_prs)
+
+    if [ -z "$list_output" ]; then
+        exit 0
+    fi
+
+    selection=$(printf '%s\n' "$list_output" | format_pr_rows | fzf \
+            --height=75% \
+            --reverse \
+            --prompt='pr> ' \
+            --delimiter="$tab" \
+            --with-nth=2.. \
+            --header-lines=1 \
+            --header='enter: print PR URL' \
+            --exit-0) || exit 0
+
+    [ -n "$selection" ] || exit 0
+
+    IFS="$tab" read -r pr_url _ << EOF
+$selection
+EOF
+    [ -n "$pr_url" ] || exit 1
+    printf '%s\n' "$pr_url"
+}
+
+case "${1:-}" in
+    -h|--help)
+        usage
+        exit 0
+        ;;
+esac
+
+[ "$#" -eq 0 ] || {
+    usage >&2
+    exit 1
+}
+
+require_command gh
+require_command fzf
+
+pick_pr

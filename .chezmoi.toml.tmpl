@@ -1,6 +1,7 @@
 {{- $data := (get . "data") | default dict -}}
 {{- $apps := (get $data "apps") | default dict -}}
 {{- $agent := (get $data "agent") | default dict -}}
+{{- $github := (get $data "github") | default dict -}}
 {{- $shell := (get $data "shell") | default dict -}}
 # Machine-local chezmoi configuration.
 # All values default to false so a new machine starts with nothing enabled.
@@ -31,6 +32,10 @@ emacs = {{ get $apps "emacs" | default false }}
 codex = {{ get $agent "codex" | default false }}
 claude = {{ get $agent "claude" | default false }}
 opencode = {{ get $agent "opencode" | default false }}
+
+[data.github]
+globalPrFilter = {{ get $github "globalPrFilter" | default "" | quote }}
+repoPath = {{ get $github "repoPath" | default "" | quote }}
 
 [data.shell]
 bash = {{ get $shell "bash" | default false }}

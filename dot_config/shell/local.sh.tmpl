@@ -27,6 +27,12 @@ if [ -x "$HOME/.local/bin/jr" ]; then
     }
 fi
 
+if [ -x "$HOME/.local/bin/jrg" ]; then
+    jrg() {
+        "$HOME/.local/bin/jrg" "$@"
+    }
+fi
+
 if [ -x "$HOME/.local/bin/kak-tmux-session" ]; then
     export EDITOR="$HOME/.local/bin/kak-tmux-session"
     export GIT_EDITOR="$HOME/.local/bin/kak-tmux-session"
