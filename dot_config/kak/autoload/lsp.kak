@@ -20,4 +20,7 @@ hook global BufSetOption filetype=(javascript|typescript|python|c|cpp|objc) %{
 }
 
 # Highlight references to symbol under cursor
-set-option global lsp_auto_highlight_references true
+try %{ set-option global lsp_auto_highlight_references true }
+hook -once global KakBegin .* %{
+    try %{ set-option global lsp_auto_highlight_references true }
+}

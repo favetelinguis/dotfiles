@@ -333,6 +333,13 @@ define-command -hidden git-buffer-sync-state %{
         printf "remove-hooks buffer git-auto-show-diff\n"
 
         [ -n "$buffile" ] || exit
+        [ "${kak_opt_gh_review_buffer:-false}" = "true" ] && exit
+
+        case "$buffile" in
+            "${TMPDIR:-/tmp}"/kak-gh-*)
+                exit
+                ;;
+        esac
 
         repo_dir=${buffile%/*}
         repo_root=$(git -C "$repo_dir" rev-parse --show-toplevel 2>/dev/null) || exit

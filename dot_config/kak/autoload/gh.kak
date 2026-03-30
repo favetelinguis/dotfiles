@@ -3,6 +3,7 @@ try %{ declare-option -hidden str gh_review_picker_root '' }
 try %{ declare-option -hidden str gh_review_manifest_file '' }
 try %{ declare-option -hidden str gh_review_repo_root '' }
 try %{ declare-option -hidden str gh_review_pr_number '' }
+try %{ declare-option -hidden str gh_review_head_oid '' }
 try %{ declare-option -hidden bool gh_review_buffer false }
 try %{ declare-option -hidden str gh_review_temp_file '' }
 try %{ declare-option -hidden str gh_review_section_path '' }
@@ -33,6 +34,29 @@ define-command -hidden gh-review-close-buffer %{
         fi
 
         printf "delete-buffer! %s\n" "$(kakquote "$current_buffer")"
+    }
+}
+
+define-command -hidden gh-review-drop-buffer %{
+    evaluate-commands %sh{
+        kakquote() { printf "'%s'" "$(printf '%s' "$1" | sed "s/'/''/g")"; }
+
+        temp_file=$kak_opt_gh_review_temp_file
+        current_buffer=$kak_bufname
+
+        if [ -n "$temp_file" ]; then
+            printf "nop %%sh{ rm -f %s }\n" "$(kakquote "$temp_file")"
+        fi
+
+        printf "delete-buffer! %s\n" "$(kakquote "$current_buffer")"
+    }
+}
+
+define-command -hidden gh-review-drop-stale-buffers %{
+    evaluate-commands -buffer * %sh{
+        if [ "$kak_opt_gh_review_buffer" = "true" ]; then
+            printf "gh-review-drop-buffer\n"
+        fi
     }
 }
 
@@ -107,10 +131,12 @@ define-command -hidden gh-review-refresh-state %{
             exit
         }
         review_pr=$(resolve_review_pr_number "$repo_root" 2>/dev/null || true)
+        head_oid=$(git -C "$repo_root" rev-parse HEAD 2>/dev/null) || {
+            printf "fail %s\n" "$(kakquote "unable to resolve the current worktree HEAD")"
+            exit
+        }
 
-        patch_file=$kak_opt_gh_review_patch_file
-        [ -n "$patch_file" ] || patch_file=$(mktemp "${TMPDIR:-/tmp}/kak-gh-review.XXXXXX")
-
+        patch_file=$(mktemp "${TMPDIR:-/tmp}/kak-gh-review.XXXXXX")
         manifest_file=$(mktemp "${TMPDIR:-/tmp}/kak-gh-review-manifest.XXXXXX")
         picker_root=$(mktemp -d "${TMPDIR:-/tmp}/kak-gh-review-tree.XXXXXX")
         patch_tmp=$(mktemp "${TMPDIR:-/tmp}/kak-gh-review-fetch.XXXXXX")
@@ -177,12 +203,18 @@ define-command -hidden gh-review-refresh-state %{
         cleanup
 
         if [ ! -s "$manifest_file" ]; then
+            rm -f "$patch_file"
             rm -f "$manifest_file"
             rm -rf "$picker_root"
             printf "fail %s\n" "$(kakquote "GitHub reports no changed files for the current pull request")"
             exit
         fi
 
+        printf "gh-review-drop-stale-buffers\n"
+
+        if [ -n "$kak_opt_gh_review_patch_file" ] && [ "$kak_opt_gh_review_patch_file" != "$patch_file" ]; then
+            printf "nop %%sh{ rm -f %s }\n" "$(kakquote "$kak_opt_gh_review_patch_file")"
+        fi
         if [ -n "$kak_opt_gh_review_manifest_file" ] && [ "$kak_opt_gh_review_manifest_file" != "$manifest_file" ]; then
             printf "nop %%sh{ rm -f %s }\n" "$(kakquote "$kak_opt_gh_review_manifest_file")"
         fi
@@ -195,15 +227,44 @@ define-command -hidden gh-review-refresh-state %{
         printf "set-option global gh_review_picker_root %s\n" "$(kakquote "$picker_root")"
         printf "set-option global gh_review_repo_root %s\n" "$(kakquote "$repo_root")"
         printf "set-option global gh_review_pr_number %s\n" "$(kakquote "$review_pr")"
+        printf "set-option global gh_review_head_oid %s\n" "$(kakquote "$head_oid")"
     }
 }
 
 define-command -hidden gh-review-ensure-state %{
     evaluate-commands %sh{
+        kakquote() { printf "'%s'" "$(printf '%s' "$1" | sed "s/'/''/g")"; }
+
+        resolve_repo_root() {
+            if [ -n "$kak_opt_gh_review_repo_root" ] && \
+                git -C "$kak_opt_gh_review_repo_root" rev-parse --show-toplevel >/dev/null 2>&1; then
+                printf '%s\n' "$kak_opt_gh_review_repo_root"
+                return 0
+            fi
+
+            if [ -n "$kak_buffile" ] && [ -e "$kak_buffile" ]; then
+                repo_dir=${kak_buffile%/*}
+                git -C "$repo_dir" rev-parse --show-toplevel 2>/dev/null && return 0
+            fi
+
+            git rev-parse --show-toplevel 2>/dev/null
+        }
+
         if [ -n "$kak_opt_gh_review_patch_file" ] && [ -f "$kak_opt_gh_review_patch_file" ] && \
             [ -n "$kak_opt_gh_review_manifest_file" ] && [ -f "$kak_opt_gh_review_manifest_file" ] && \
-            [ -n "$kak_opt_gh_review_picker_root" ] && [ -d "$kak_opt_gh_review_picker_root" ]; then
-            exit
+            [ -n "$kak_opt_gh_review_picker_root" ] && [ -d "$kak_opt_gh_review_picker_root" ] && \
+            [ -n "$kak_opt_gh_review_head_oid" ]; then
+            repo_root=$(resolve_repo_root 2>/dev/null || true)
+            current_head=
+            if [ -n "$repo_root" ]; then
+                current_head=$(git -C "$repo_root" rev-parse HEAD 2>/dev/null || true)
+            fi
+            if [ -n "$current_head" ] && [ "$current_head" = "$kak_opt_gh_review_head_oid" ]; then
+                exit
+            fi
+
+            printf "echo -markup %s\n" \
+                "$(kakquote "{Information}stale review diff detected; rebuilding")"
         fi
 
         printf "gh-review-refresh-state\n"
@@ -225,10 +286,11 @@ define-command -hidden -params 2 gh-review-open-buffer %{
             exit
         }
 
+        printf "evaluate-commands -no-hooks %%{\n"
         printf "edit! -existing %s\n" "$(kakquote "$temp_file")"
         printf "require-module diff\n"
-        printf "set-option buffer filetype git-diff\n"
-        printf "try %%{ add-highlighter window/git-diff-ref-diff ref diff }\n"
+        printf "set-option buffer filetype gh-review-diff\n"
+        printf "try %%{ add-highlighter window/gh-review-diff ref diff }\n"
         printf "set-option buffer readonly true\n"
         printf "set-option buffer gh_review_buffer true\n"
         printf "set-option buffer gh_review_temp_file %s\n" "$(kakquote "$temp_file")"
@@ -244,6 +306,7 @@ define-command -hidden -params 2 gh-review-open-buffer %{
             "$(kakquote "previous review hunk")"
         printf "map buffer normal ']' ':gh-next-hunk<ret>' -docstring %s\n" \
             "$(kakquote "next review hunk")"
+        printf "}\n"
     }
 }
 
@@ -252,7 +315,7 @@ define-command -docstring 'refresh cached GitHub pull request review state' gh-p
 }
 
 define-command -docstring 'open the current pull request diff in a review buffer' gh-pr-diff %{
-    gh-review-refresh-state
+    gh-review-ensure-state
     gh-review-open-buffer %opt{gh_review_patch_file} ''
 }
 
