@@ -7,6 +7,7 @@ tab=$(printf '\t')
 usage() {
     printf '%s\n' 'usage: jr'
     printf '%s\n' '       jr --show <pull-request>'
+    printf '%s\n' '       jr --open <pull-request>'
     printf '%s\n' '       jr --window <pull-request>'
 }
 
@@ -163,6 +164,12 @@ lookup_pr_metadata() {
     '
 }
 
+fetch_pr_metadata() {
+    gh pr view "$1" \
+        --json author,headRefName \
+        --template '{{printf "%s\t%s\n" .author.login .headRefName}}'
+}
+
 review_session_name() {
     worktree_path=$1
     worktree_name=$(basename -- "$worktree_path")
@@ -289,6 +296,29 @@ open_review_window() {
     tmux switch-client -t "=$session_name"
 }
 
+open_pr() {
+    pr_number=$1
+    metadata=$(fetch_pr_metadata "$pr_number" 2>/dev/null || true)
+    [ -n "$metadata" ] || {
+        printf 'jr: unable to fetch metadata for pull request %s\n' "$pr_number" >&2
+        exit 1
+    }
+
+    IFS="$tab" read -r author_login head_ref << EOF
+$metadata
+EOF
+    [ -n "$author_login" ] || {
+        printf 'jr: missing author metadata for pull request %s\n' "$pr_number" >&2
+        exit 1
+    }
+    [ -n "$head_ref" ] || {
+        printf 'jr: missing head branch metadata for pull request %s\n' "$pr_number" >&2
+        exit 1
+    }
+
+    open_review_window "$pr_number" "$author_login" "$head_ref"
+}
+
 render_pr_summary() {
     gh pr view "$1" \
         --json additions,assignees,author,baseRefName,changedFiles,commits,createdAt,deletions,headRefName,isDraft,labels,latestReviews,mergeStateStatus,mergeable,number,reviewDecision,state,title,updatedAt,url \
@@ -401,6 +431,10 @@ case "${1:-}" in
         mode=show
         shift
         ;;
+    --open)
+        mode=open
+        shift
+        ;;
     --window)
         mode=window
         shift
@@ -419,6 +453,12 @@ case "$mode" in
         }
         ;;
     show)
+        [ "$#" -eq 1 ] || {
+            usage >&2
+            exit 1
+        }
+        ;;
+    open)
         [ "$#" -eq 1 ] || {
             usage >&2
             exit 1
@@ -453,6 +493,9 @@ case "$mode" in
         ;;
     show)
         show_pr "$1"
+        ;;
+    open)
+        open_pr "$1"
         ;;
     window)
         require_command tmux

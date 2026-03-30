@@ -16,6 +16,25 @@ require_command() {
     }
 }
 
+expand_path() {
+    case $1 in
+        "~")
+            printf '%s\n' "$HOME"
+            ;;
+        "~/"*)
+            printf '%s/%s\n' "$HOME" "${1#"~/"}"
+            ;;
+        *)
+            printf '%s\n' "$1"
+            ;;
+    esac
+}
+
+repo_path=$(cat <<'EOF'
+{{ get $github "repoPath" | default "" }}
+EOF
+)
+
 global_pr_filter=$(cat <<'EOF'
 {{ get $github "globalPrFilter" | default "" }}
 EOF
@@ -31,27 +50,70 @@ list_prs() {
 
 format_pr_rows() {
     awk -F '\t' '
-        function repo_from_url(url,   parts) {
-            split(url, parts, "/")
-            if (length(parts) >= 5) {
-                return parts[4] "/" parts[5]
-            }
-            return "unknown/unknown"
-        }
-
         BEGIN {
             printf "url\tpr\t%-8s  %-16s  %-16s  %-18s  %s\n", "state", "author", "updated", "size", "title"
         }
         {
-            title = $5
-            for (i = 6; i <= NF; i++) {
+            title = $6
+            for (i = 7; i <= NF; i++) {
                 title = title "\t" $i
             }
             gsub(/\t/, " ", title)
-            repo = repo_from_url($1)
-            printf "%s\t%s\t%-8s  %-16s  %-16s  %-18s  %s\n", $1, $2, $3, $4, $5, "-", repo ": " title
+            printf "%s\t%s\t%-8s  %-16s  %-16s  %-18s  %s\n", $1, $2, $3, $4, $5, "-", title
         }
     '
+}
+
+parse_repo_from_url() {
+    printf '%s\n' "$1" | awk -F '/' '
+        NF >= 7 && $1 ~ /^https?:$/ && $3 != "" && $4 != "" && $5 != "" && $6 == "pull" {
+            printf "%s\t%s\n", $4, $5
+            exit
+        }
+    '
+}
+
+resolve_local_repo_root() {
+    repo_owner=$1
+    repo_name=$2
+
+    [ -n "$repo_path" ] || {
+        printf '%s\n' 'jrg: github.repoPath is empty' >&2
+        exit 1
+    }
+
+    repo_base=$(expand_path "$repo_path")
+    [ -d "$repo_base" ] || {
+        printf 'jrg: github.repoPath is not a directory: %s\n' "$repo_base" >&2
+        exit 1
+    }
+
+    # Search .git entries one level deeper than the requested repo-root depth.
+    matches=$(fd -HI -t d -t f -d 5 '^\.git$' "$repo_base" 2>/dev/null | while IFS= read -r git_entry; do
+        candidate=$(dirname "$git_entry")
+        if [ "$(basename "$candidate")" = "$repo_name" ]; then
+            printf '%s\n' "$candidate"
+        fi
+    done | awk '!seen[$0]++')
+
+    match_count=$(printf '%s\n' "$matches" | awk 'NF { count++ } END { print count + 0 }')
+
+    case "$match_count" in
+        0)
+            printf 'jrg: unable to find a local checkout for %s/%s under %s (searched up to 4 levels deep)\n' \
+                "$repo_owner" "$repo_name" "$repo_base" >&2
+            exit 1
+            ;;
+        1)
+            printf '%s\n' "$matches"
+            ;;
+        *)
+            printf 'jrg: multiple local checkouts match %s/%s under %s:\n' \
+                "$repo_owner" "$repo_name" "$repo_base" >&2
+            printf '%s\n' "$matches" >&2
+            exit 1
+            ;;
+    esac
 }
 
 pick_pr() {
@@ -63,6 +125,7 @@ pick_pr() {
     list_output=$(list_prs)
 
     if [ -z "$list_output" ]; then
+        printf '%s\n' 'jrg: no pull requests matched github.globalPrFilter'
         exit 0
     fi
 
@@ -73,16 +136,33 @@ pick_pr() {
             --delimiter="$tab" \
             --with-nth=2.. \
             --header-lines=1 \
-            --header='enter: print PR URL' \
+            --header='enter: open review window' \
             --exit-0) || exit 0
 
     [ -n "$selection" ] || exit 0
 
-    IFS="$tab" read -r pr_url _ << EOF
+    IFS="$tab" read -r pr_url pr_number _ << EOF
 $selection
 EOF
     [ -n "$pr_url" ] || exit 1
-    printf '%s\n' "$pr_url"
+    pr_number=${pr_number#\#}
+    [ -n "$pr_number" ] || exit 1
+
+    repo_metadata=$(parse_repo_from_url "$pr_url")
+    [ -n "$repo_metadata" ] || {
+        printf 'jrg: unable to parse GitHub repo from PR URL: %s\n' "$pr_url" >&2
+        exit 1
+    }
+
+    IFS="$tab" read -r repo_owner repo_name << EOF
+$repo_metadata
+EOF
+    [ -n "$repo_owner" ] || exit 1
+    [ -n "$repo_name" ] || exit 1
+
+    repo_root=$(resolve_local_repo_root "$repo_owner" "$repo_name")
+    cd "$repo_root" || exit 1
+    exec "$HOME/.local/bin/jr" --open "$pr_number"
 }
 
 case "${1:-}" in
@@ -99,5 +179,6 @@ esac
 
 require_command gh
 require_command fzf
+require_command fd
 
 pick_pr

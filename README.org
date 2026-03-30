@@ -136,9 +136,11 @@ bash = true
 zsh = false
 #+end_src
 
-=github.globalPrFilter= is intended for global GitHub PR search commands such
-as =jrg=. =github.repoPath= is reserved for future GitHub helpers and is not
-used by =jrg= yet.
+=github.globalPrFilter= is used by =jrg= to build the global PR search.
+=github.repoPath= is used by =jrg= to find the local checkout before handing
+off into the same review flow as =jr=. =jrg= searches under =repoPath= for a
+matching Git repository up to 4 repo-root levels deep and fails with a clear
+error when it finds none or more than one match.
 
 ** Agent skills layout
 Agent skills are stored once in the canonical shared location:
