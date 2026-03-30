@@ -2,7 +2,7 @@ ui:
   hideHeader: true
   hideFooter: true
   showFileTree: true
-  fileTreeWidth: 28
+  fileTreeWidth: 56
   searchTreeWidth: 56
   icons: unicode
   colorFileNames: false

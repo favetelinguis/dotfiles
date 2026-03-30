@@ -58,20 +58,6 @@ define-command -hidden gh-review-refresh-state %{
 
         resolve_review_pr_number() {
             repo_root=$1
-            branch_name=$(git -C "$repo_root" branch --show-current 2>/dev/null || true)
-            case "$branch_name" in
-                review/pr-*)
-                    pr_number=${branch_name#review/pr-}
-                    case "$pr_number" in
-                        ''|*[!0-9]*)
-                            ;;
-                        *)
-                            printf '%s\n' "$pr_number"
-                            return 0
-                            ;;
-                    esac
-                    ;;
-            esac
 
             worktree_name=${repo_root##*/}
             case "$worktree_name" in
@@ -125,10 +111,10 @@ define-command -hidden gh-review-refresh-state %{
         patch_file=$kak_opt_gh_review_patch_file
         [ -n "$patch_file" ] || patch_file=$(mktemp "${TMPDIR:-/tmp}/kak-gh-review.XXXXXX")
 
-        manifest_file=$(mktemp "${TMPDIR:-/tmp}/kak-gh-review-files.XXXXXX.tsv")
+        manifest_file=$(mktemp "${TMPDIR:-/tmp}/kak-gh-review-manifest.XXXXXX")
         picker_root=$(mktemp -d "${TMPDIR:-/tmp}/kak-gh-review-tree.XXXXXX")
         patch_tmp=$(mktemp "${TMPDIR:-/tmp}/kak-gh-review-fetch.XXXXXX")
-        list_tmp=$(mktemp "${TMPDIR:-/tmp}/kak-gh-review-files.XXXXXX.list")
+        list_tmp=$(mktemp "${TMPDIR:-/tmp}/kak-gh-review-filelist.XXXXXX")
         err_tmp=$(mktemp "${TMPDIR:-/tmp}/kak-gh-review-error.XXXXXX")
 
         cleanup() {

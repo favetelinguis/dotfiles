@@ -148,7 +148,7 @@ if [ -z "$review_filter" ]; then
     exec gh dash --config "$base_config"
 fi
 
-temp_config=$(mktemp "${TMPDIR:-/tmp}/gh-dash-review.XXXXXX.yml")
+temp_config=$(mktemp "${TMPDIR:-/tmp}/gh-dash-review-config.XXXXXX")
 trap 'rm -f "$temp_config"' EXIT HUP INT TERM
 
 write_review_config "$base_config" "$review_title" "$review_filter" "$temp_config"

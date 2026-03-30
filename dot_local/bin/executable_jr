@@ -77,10 +77,6 @@ encode_review_component() {
     printf '%s' "$1" | base64 | tr -d '\n=' | tr '/+' '_-'
 }
 
-review_branch_name() {
-    printf 'review/pr-%s\n' "$1"
-}
-
 review_worktree_path() {
     pr_number=$1
     author_login=$2
@@ -102,6 +98,7 @@ legacy_review_worktree_path() {
 
 find_existing_review_worktree() {
     pr_number=$1
+    head_ref=${2:-}
     reviews_root=${JR_REVIEWS_ROOT:-$HOME/.reviews}
 
     for candidate in \
@@ -114,6 +111,17 @@ find_existing_review_worktree() {
             return 0
         fi
     done
+
+    if [ -n "$head_ref" ]; then
+        wt=$(git worktree list --porcelain | awk -v ref="refs/heads/$head_ref" '
+            /^worktree /{wt=substr($0,10)} /^branch /{if($2==ref){print wt;exit)}
+        ')
+         if [ -n "$wt" ]; then
+             printf '%s\n' "$wt"
+             return 0
+         fi
+    fi
+
 
     return 1
 }
@@ -178,11 +186,9 @@ review_session_name() {
 update_review_checkout() {
     pr_number=$1
     worktree_path=$2
-    branch_name=$(review_branch_name "$pr_number")
-
     (
         cd "$worktree_path" || exit 1
-        gh pr checkout "$pr_number" --branch "$branch_name" --force >/dev/null
+        gh pr checkout "$pr_number" --force >/dev/null
     )
 }
 
@@ -194,7 +200,7 @@ ensure_review_worktree() {
 
     mkdir -p "$reviews_root"
 
-    worktree_path=$(find_existing_review_worktree "$pr_number" 2>/dev/null || true)
+    worktree_path=$(find_existing_review_worktree "$pr_number" "$head_ref" 2>/dev/null || true)
     if [ -z "$worktree_path" ]; then
         [ -n "$author_login" ] && [ -n "$head_ref" ] || {
             printf 'jr: missing review metadata for pull request %s\n' "$pr_number" >&2

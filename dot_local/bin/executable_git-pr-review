@@ -51,21 +51,6 @@ resolve_base() {
 }
 
 resolve_review_pr_number() {
-    branch_name=$(git branch --show-current 2>/dev/null || true)
-    case "$branch_name" in
-        review/pr-*)
-            pr_number=${branch_name#review/pr-}
-            case "$pr_number" in
-                ''|*[!0-9]*)
-                    ;;
-                *)
-                    printf '%s\n' "$pr_number"
-                    return 0
-                    ;;
-            esac
-            ;;
-    esac
-
     repo_root=$(git rev-parse --show-toplevel 2>/dev/null || true)
     worktree_name=${repo_root##*/}
     case "$worktree_name" in
