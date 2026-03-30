@@ -1,0 +1,116 @@
+#!/bin/sh
+
+set -eu
+
+root=${KAK_NOTE_ROOT:-"${HOME}/kak_notes"}
+relpath=${KAK_NOTE_HISTORY_RELPATH:-}
+open_helper="${HOME}/.local/bin/kak-note-history-open"
+sep=$(printf '\037')
+
+[ -n "$relpath" ] || {
+    printf '%s\n' "KAK_NOTE_HISTORY_RELPATH is required" >&2
+    exit 1
+}
+[ -x "$open_helper" ] || {
+    printf 'note history helper not found: %s\n' "$open_helper" >&2
+    exit 1
+}
+
+mkdir -p "$root" 2>/dev/null || {
+    printf 'unable to create notes directory %s\n' "$root" >&2
+    exit 1
+}
+
+if [ ! -d "$root/.git" ]; then
+    git -C "$root" init >/dev/null
+fi
+
+build_lineage() {
+    git -C "$root" log --follow --format='__NH__%H' --name-status --find-renames -- "$relpath" |
+        awk -F '\t' -v current_path="$relpath" -v sep="$sep" '
+            function flush_commit() {
+                if (!seen) {
+                    return
+                }
+                printf "%s%s%s\n", commit_full, sep, current_path
+                if (rename_old != "" && rename_new == current_path) {
+                    current_path = rename_old
+                }
+            }
+            /^__NH__/ {
+                flush_commit()
+                commit_full = substr($0, 7)
+                rename_old = ""
+                rename_new = ""
+                seen = 1
+                next
+            }
+            NF == 0 { next }
+            $1 ~ /^R[0-9]*$/ {
+                rename_old = $2
+                rename_new = $3
+                next
+            }
+            END {
+                flush_commit()
+            }
+        '
+}
+
+search_history() {
+    query=${1:-}
+
+    [ -n "$query" ] || exit 0
+
+    case "$query" in
+        *[[:upper:]]*) ignore_case= ;;
+        *) ignore_case='-i' ;;
+    esac
+
+    build_lineage | while IFS="$sep" read -r commit path_at_commit; do
+        [ -n "$commit" ] || continue
+        [ -n "$path_at_commit" ] || continue
+
+        git -C "$root" grep -n --full-name -E $ignore_case -e "$query" "$commit" -- "$path_at_commit" 2>/dev/null |
+            while IFS= read -r match; do
+                commit_out=$(printf '%s' "$match" | cut -d: -f1)
+                path_out=$(printf '%s' "$match" | cut -d: -f2)
+                lineno=$(printf '%s' "$match" | cut -d: -f3)
+                text=$(printf '%s' "$match" | cut -d: -f4-)
+                short_hash=$(printf '%s' "$commit_out" | cut -c1-8)
+
+                printf '%s%s%s%s%s%s%s\n' \
+                    "$path_out:$lineno:$text [$short_hash]" \
+                    "$sep" "$commit_out" \
+                    "$sep" "$path_out" \
+                    "$sep" "$lineno"
+            done
+    done
+}
+
+case "${1:-}" in
+    --query)
+        shift
+        search_history "${1:-}"
+        exit 0
+        ;;
+esac
+
+cd "$root" || exit 1
+
+result=$(
+    fzf --disabled --reverse --delimiter "$sep" --with-nth=1 \
+        --prompt 'note history> ' \
+        --header 'type to search history / enter: open / ctrl-o: split' \
+        --bind "start:reload:$0 --query {q} || true" \
+        --bind "change:reload:$0 --query {q} || true" \
+        --bind "ctrl-o:execute-silent($open_helper split {2} {3} {4})+abort"
+)
+
+[ -n "$result" ] || exit 0
+
+commit=$(printf '%s' "$result" | cut -d "$sep" -f2)
+path_at_commit=$(printf '%s' "$result" | cut -d "$sep" -f3)
+lineno=$(printf '%s' "$result" | cut -d "$sep" -f4)
+
+exec "$open_helper" here "$commit" "$path_at_commit" "$lineno"

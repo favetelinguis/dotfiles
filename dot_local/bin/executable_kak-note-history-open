@@ -1,0 +1,70 @@
+#!/bin/sh
+
+set -eu
+
+send_to_client() {
+    command_name=$1
+    shift
+
+    kak_bin=$(command -v kak 2>/dev/null || true)
+    [ -n "$kak_bin" ] || {
+        printf '%s\n' "kak executable not found in PATH" >&2
+        exit 1
+    }
+    [ -n "${KAK_PICKER_SESSION:-}" ] || {
+        printf '%s\n' "KAK_PICKER_SESSION is required" >&2
+        exit 1
+    }
+    [ -n "${KAK_PICKER_CLIENT:-}" ] || {
+        printf '%s\n' "KAK_PICKER_CLIENT is required" >&2
+        exit 1
+    }
+
+    payload="evaluate-commands -client '$KAK_PICKER_CLIENT' %{ $command_name"
+    for arg in "$@"; do
+        escaped=$(printf '%s' "$arg" | sed "s/'/''/g")
+        payload="$payload '$escaped'"
+    done
+    payload="$payload }"
+
+    printf '%s\n' "$payload" | "$kak_bin" -p "$KAK_PICKER_SESSION"
+}
+
+mode=${1:-}
+commit=${2:-}
+path_at_commit=${3:-}
+lineno=${4:-1}
+
+[ -n "$mode" ] || {
+    printf '%s\n' "usage: kak-note-history-open <here|split> <commit> <path> [line]" >&2
+    exit 1
+}
+[ -n "$commit" ] || {
+    printf '%s\n' "kak-note-history-open requires a commit id" >&2
+    exit 1
+}
+[ -n "$path_at_commit" ] || {
+    printf '%s\n' "kak-note-history-open requires a file path" >&2
+    exit 1
+}
+
+case "$lineno" in
+    ''|*[!0-9]*)
+        lineno=1
+        ;;
+esac
+
+case "$mode" in
+    here)
+        send_to_client note-history-open "$commit" "$path_at_commit" "$lineno"
+        exit 0
+        ;;
+    split)
+        send_to_client "vsplit; note-history-open" "$commit" "$path_at_commit" "$lineno"
+        exit 0
+        ;;
+    *)
+        printf 'unknown kak-note-history-open mode: %s\n' "$mode" >&2
+        exit 1
+        ;;
+esac
