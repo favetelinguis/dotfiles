@@ -1,4 +1,4 @@
-colorscheme zenburn
+colorscheme zenburn-alabaster
 set-option global startup_info_version 99999999
 
 map -docstring "yank the selection into the clipboard" global user y ':clipboard-copy<ret>'
