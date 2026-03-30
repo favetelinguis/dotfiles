@@ -173,6 +173,9 @@ fetch_pr_metadata() {
 review_session_name() {
     worktree_path=$1
     worktree_name=$(basename -- "$worktree_path")
+    sanitize_session_component() {
+        printf '%s' "$1" | tr -c '[:alnum:]_-' '_'
+    }
 
     case "$worktree_name" in
         gh__*__*__PR*__*__*)
@@ -182,12 +185,15 @@ review_session_name() {
             session_repo_name=${session_rest%%__*}
             session_rest=${session_rest#"${session_repo_name}"__}
             session_pr=${session_rest%%__*}
-            printf 'review %s__%s %s\n' "$session_repo_owner" "$session_repo_name" "$session_pr"
+            printf 'review__%s__%s__%s\n' \
+                "$(sanitize_session_component "$session_repo_owner")" \
+                "$(sanitize_session_component "$session_repo_name")" \
+                "$(sanitize_session_component "$session_pr")"
             return 0
             ;;
     esac
 
-    printf 'review %s\n' "$(printf '%s' "$worktree_name" | tr -c '[:alnum:]_-' '_')"
+    printf 'review__%s\n' "$(sanitize_session_component "$worktree_name")"
 }
 
 update_review_checkout() {
@@ -242,22 +248,21 @@ ensure_review_worktree() {
     printf '%s\n' "$worktree_path"
 }
 
-claude_pane_command() {
-    printf '%s\n' "sh -lc 'if command -v claude >/dev/null 2>&1; then claude; else printf \"%s\\n\" \"jr: claude is not installed\"; fi; exec \"\${SHELL:-/bin/sh}\" -i'"
+status_pane_command() {
+    pr_number=$1
+    printf '%s\n' "sh -lc '\"$HOME/.local/bin/jr\" --show $pr_number </dev/null; status=\$?; if [ \"\$status\" -ne 0 ]; then printf \"%s\\n\" \"jr: status pane command exited with status \$status\"; fi; exec \"\${SHELL:-/bin/sh}\" -i'"
 }
 
-diffnav_pane_command() {
-    printf '%s\n' "\"$HOME/.local/bin/git-pr-review\"; status=\$?; if [ \"\$status\" -ne 0 ]; then printf \"%s\\n\" \"jr: git-pr-review exited with status \$status\"; fi; exec \"\${SHELL:-/bin/sh}\" -i"
+kak_picker_pane_command() {
+    printf '%s\n' "exec \"$HOME/.local/bin/kak-tmux-session\" --cmd gh-pr-files"
 }
 
 setup_review_window() {
     pr_number=$1
     current_pane=$(tmux display-message -p '#{pane_id}')
-    status_command=$(printf 'exec "%s" --show %s' "$HOME/.local/bin/jr" "$pr_number")
-    bottom_left_pane=$(tmux split-window -v -p 50 -P -F '#{pane_id}' -c "$PWD" "$status_command")
-    tmux split-window -h -t "$bottom_left_pane" -c "$PWD" "$(claude_pane_command)" >/dev/null
+    tmux split-window -d -h -P -F '#{pane_id}' -t "$current_pane" -c "$PWD" "$(status_pane_command "$pr_number")" >/dev/null
     tmux select-pane -t "$current_pane"
-    exec sh -lc "$(diffnav_pane_command)"
+    exec sh -lc "$(kak_picker_pane_command)"
 }
 
 open_review_window() {
@@ -292,7 +297,13 @@ open_review_window() {
         return 0
     fi
 
-    tmux new-session -d -s "$session_name" -n 1 -c "$worktree_path" "$review_command"
+    new_session_output=''
+    if ! new_session_output=$(tmux new-session -d -s "$session_name" -n 1 -c "$worktree_path" "$review_command" 2>&1); then
+        tmux has-session -t "=$session_name" 2>/dev/null || {
+            [ -n "$new_session_output" ] && printf '%s\n' "$new_session_output" >&2
+            exit 1
+        }
+    fi
     tmux switch-client -t "=$session_name"
 }
 

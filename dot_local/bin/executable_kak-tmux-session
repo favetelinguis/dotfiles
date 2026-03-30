@@ -4,6 +4,7 @@
 set -eu
 
 kak_bin=$(which kak)
+startup_cmd=
 
 sanitize_name() {
     printf '%s' "$1" | tr -c '[:alnum:]_.-' '_'
@@ -12,6 +13,22 @@ sanitize_name() {
 kakquote() {
     printf "'%s'" "$(printf '%s' "$1" | sed "s/'/''/g")"
 }
+
+while [ "$#" -gt 0 ]; do
+    case "$1" in
+        --cmd)
+            [ "$#" -ge 2 ] || {
+                printf '%s\n' 'kak-tmux-session: --cmd requires an argument' >&2
+                exit 1
+            }
+            startup_cmd=$2
+            shift 2
+            ;;
+        *)
+            break
+            ;;
+    esac
+done
 
 passthrough=false
 for arg in "$@"; do
@@ -24,6 +41,10 @@ for arg in "$@"; do
 done
 
 if [ "$passthrough" = true ]; then
+    [ -z "$startup_cmd" ] || {
+        printf '%s\n' 'kak-tmux-session: --cmd cannot be combined with raw Kakoune session flags' >&2
+        exit 1
+    }
     exec "$kak_bin" "$@"
 fi
 
@@ -40,6 +61,10 @@ fi
 if [ -n "${KAK_CLIENT_NAME:-}" ]; then
     client_name=$(sanitize_name "$KAK_CLIENT_NAME")
     set -- -e "rename-client $client_name" "$@"
+fi
+
+if [ -n "$startup_cmd" ]; then
+    set -- "$@" -e "$startup_cmd"
 fi
 
 if [ -n "${TMUX:-}" ] && command -v tmux >/dev/null 2>&1; then
