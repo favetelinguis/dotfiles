@@ -44,7 +44,7 @@ verbs: [
         shortcut: e
         key: ctrl-e
         apply_to: text_file
-        external: "$EDITOR {file:space-separated}"
+        external: "kak +{line}:1 {file}"
         leave_broot: false
     }
 
