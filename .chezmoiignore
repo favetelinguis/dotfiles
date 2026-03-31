@@ -1,6 +1,7 @@
 README.org
 {{- $apps := (get . "apps") | default dict -}}
 {{- $agent := (get . "agent") | default dict -}}
+{{- $git := (get . "git") | default dict -}}
 {{- $shell := (get . "shell") | default dict -}}
 {{- $foot := (get $apps "foot") | default false -}}
 {{- $fuzzel := (get $apps "fuzzel") | default false -}}
@@ -20,11 +21,13 @@ README.org
 {{- $codex := (get $agent "codex") | default false -}}
 {{- $claude := (get $agent "claude") | default false -}}
 {{- $opencode := (get $agent "opencode") | default false -}}
+{{- $gitEnabled := (get $git "enable") | default false -}}
 {{- $bash := (get $shell "bash") | default false -}}
 {{- $zsh := (get $shell "zsh") | default false -}}
 {{- $anyAgent := or $codex $claude $opencode -}}
 {{- $hasShell := or $bash $zsh -}}
-{{- $hasConfig := or $foot $fuzzel $mako $niri $swaylock $ghostty $kak $nvim $ghDash $lf $lazygit $gitui $emacs $anyAgent $hasShell -}}
+{{- $hasGitUi := or $ghDash $gitEnabled -}}
+{{- $hasConfig := or $foot $fuzzel $mako $niri $swaylock $ghostty $kak $nvim $ghDash $lf $lazygit $gitui $emacs $anyAgent $hasShell $gitEnabled -}}
 {{- $hasLocalBin := $kakTaskScripts -}}
 
 {{- if not $hasConfig }}
@@ -68,9 +71,15 @@ README.org
 .config/nvim
 .config/nvim/**
 {{- end }}
-{{- if not $ghDash }}
+{{- if not $hasGitUi }}
 .config/gh-dash
 .config/gh-dash/**
+{{- end }}
+{{- if not $hasGitUi }}
+.config/diffnav
+.config/diffnav/**
+.config/git
+.config/git/**
 {{- end }}
 {{- if not $lf }}
 .config/lf

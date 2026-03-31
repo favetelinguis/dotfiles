@@ -26,11 +26,6 @@ resolve_diffnav_editor() {
 }
 
 resolve_diffnav_command() {
-    if [ -x "$HOME/.local/bin/diffnav-zenburn" ]; then
-        printf '%s\n' "$HOME/.local/bin/diffnav-zenburn"
-        return 0
-    fi
-
     if command -v diffnav >/dev/null 2>&1; then
         command -v diffnav
         return 0

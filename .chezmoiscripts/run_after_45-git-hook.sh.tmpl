@@ -1,0 +1,26 @@
+{{- $git := (get . "git") | default dict -}}
+#!/bin/sh
+
+set -eu
+
+git_enabled={{ if (get $git "enable" | default false) }}true{{ else }}false{{ end }}
+include_path={{ printf "%s/.config/git/config.gitconfig" .chezmoi.homeDir | quote }}
+
+append_include_block() {
+    target=$1
+
+    if [ ! -f "$target" ]; then
+        printf '%s\n' "chezmoi git hook error: git.enable is true but ${target} does not exist" >&2
+        exit 1
+    fi
+
+    if grep -Fqx "	path = $include_path" "$target"; then
+        return 0
+    fi
+
+    printf '\n[include]\n\tpath = %s\n' "$include_path" >>"$target"
+}
+
+if $git_enabled; then
+    append_include_block "$HOME/.gitconfig"
+fi

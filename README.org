@@ -38,6 +38,9 @@ codex = false
 claude = false
 opencode = false
 
+[data.git]
+enable = false
+
 [data.github]
 globalPrFilter = ""
 repoPath = ""
@@ -76,6 +79,9 @@ Agent toggles:
 - =agent.claude=
 - =agent.opencode=
 
+Git toggles:
+- =git.enable=
+
 Shell toggles:
 - =shell.bash=
 - =shell.zsh=
@@ -92,6 +98,13 @@ Enabling =shell.bash= installs =~/.config/shell/local.sh= and appends a
 single guarded source line to =~/.bashrc=. Enabling =shell.zsh= does the same
 for =~/.zshrc=. The source line is appended only if it is missing, and
 =chezmoi apply= fails if the requested rc file does not already exist.
+
+=git.enable= installs the managed =gh-dash=, =diffnav=, and =delta= config
+files and appends a guarded include block to =~/.gitconfig=. The include is
+append-only, and =chezmoi apply= fails if =~/.gitconfig= does not already
+exist.
+=apps.gh_dash= still enables the existing =gh-dash=, =diffnav=, and =delta=
+config files, but it does not add the =~/.gitconfig= include hook.
 By default this repo sets =[diff].exclude = ["scripts"]=, so =chezmoi diff=
 does not show script entries at all. It also does not show the append-only
 change to an unmanaged rc file. Use =chezmoi diff --include scripts= if you
@@ -126,6 +139,9 @@ gitui = true
 codex = true
 claude = true
 opencode = false
+
+[data.git]
+enable = true
 
 [data.github]
 globalPrFilter = "is:open label:my-label"

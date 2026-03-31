@@ -331,9 +331,7 @@ d2() {
         return 1
     fi
 
-    if [ -x "$HOME/.local/bin/diffnav-zenburn" ]; then
-        diffnav_command=$HOME/.local/bin/diffnav-zenburn
-    elif command -v diffnav >/dev/null 2>&1; then
+    if command -v diffnav >/dev/null 2>&1; then
         diffnav_command=$(command -v diffnav)
     else
         printf '%s\n' "d2: diffnav is not installed" >&2

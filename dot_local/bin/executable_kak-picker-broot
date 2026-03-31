@@ -1,0 +1,36 @@
+#!/bin/sh
+
+set -eu
+
+command -v broot >/dev/null 2>&1 || {
+    printf '%s\n' 'kak-picker-broot: broot is not installed' >&2
+    exit 1
+}
+
+command -v kak >/dev/null 2>&1 || {
+    printf '%s\n' 'kak-picker-broot: kak is not installed' >&2
+    exit 1
+}
+
+[ -n "${KAK_PICKER_SESSION:-}" ] || {
+    printf '%s\n' 'kak-picker-broot: KAK_PICKER_SESSION is not set' >&2
+    exit 1
+}
+
+[ -n "${KAK_PICKER_CLIENT:-}" ] || {
+    printf '%s\n' 'kak-picker-broot: KAK_PICKER_CLIENT is not set' >&2
+    exit 1
+}
+
+root=$PWD
+buffer_path=${KAK_PICKER_BUFFERFILE:-}
+
+if [ -n "$buffer_path" ] && [ -e "$buffer_path" ]; then
+    case "$buffer_path" in
+        /*)
+            root=$(dirname "$buffer_path")
+            ;;
+    esac
+fi
+
+broot "$root"
