@@ -34,7 +34,6 @@ map global window s ':vsplit<ret>' -docstring 'split right'
 map global window t ':tabnew<ret>' -docstring 'new tmux window'
 
 map global fzf f ':fzf-files<ret>'       -docstring 'files'
-map global fzf e ':nnn-files<ret>'       -docstring 'nnn explorer'
 map global fzf E ':lf-files<ret>'        -docstring 'lf explorer'
 map global fzf b ':fzf-buffers<ret>'     -docstring 'buffers'
 map global fzf g ':fzf-grep<ret>'        -docstring 'grep'
@@ -66,13 +65,3 @@ map global task x ':task-cancel<ret>'            -docstring 'cancel running task
 map global task f ':task-find<ret>'              -docstring 'find running tasks'
 
 map global utility t ':utility-jwt-decode-cursor<ret>' -docstring 'decode jwt'
-
-hook global BufSetOption filetype=java %{
-    try %{ unmap buffer normal gd }
-    try %{ map buffer goto d ':global-goto-definition<ret>' -docstring 'GNU Global smart goto' }
-    try %{ map buffer goto r ':global-find-references<ret>' -docstring 'GNU Global references' }
-    try %{ map buffer goto s ':global-search-symbol<ret>' -docstring 'GNU Global symbol search' }
-    try %{ map buffer goto b '<c-o>' -docstring 'jump backward in jumplist' }
-    try %{ map buffer goto i ':global-find-callers<ret>' -docstring 'GNU Global callers' }
-    try %{ map buffer goto o ':global-find-callees<ret>' -docstring 'GNU Global callee search status' }
-}

@@ -3,24 +3,6 @@
 # Shared shell customizations sourced from enterprise-managed shell rc files.
 export FZF_CTRL_R_OPTS='--height=40% --reverse'
 
-# Zenburn-ish nnn palette derived from the existing foot/GitUI theme colors.
-export NNN_COLORS='#ae6cdf74af49bcf2'
-export NNN_FCOLORS='97bb746c00af49f2b5b48b5f'
-
-if [ -x "$HOME/.config/nnn/plugins/jr" ]; then
-    case ";${NNN_PLUG:-};" in
-        *";j:"*)
-            ;;
-        *)
-            if [ -n "${NNN_PLUG:-}" ]; then
-                export NNN_PLUG="${NNN_PLUG};j:jr"
-            else
-                export NNN_PLUG='j:jr'
-            fi
-            ;;
-    esac
-fi
-
 if [ -x "$HOME/.local/bin/jr" ]; then
     jr() {
         "$HOME/.local/bin/jr" "$@"
