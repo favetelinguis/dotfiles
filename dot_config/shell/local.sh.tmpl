@@ -16,8 +16,9 @@ if [ -x "$HOME/.local/bin/jrg" ]; then
 fi
 
 if [ -x "$HOME/.local/bin/kak-tmux-session" ]; then
-    export EDITOR="$HOME/.local/bin/kak-tmux-session"
-    export GIT_EDITOR="$HOME/.local/bin/kak-tmux-session"
+    export EDITOR="/usr/bin/kak"
+    export VISUAL="/usr/bin/kak"
+    export GIT_EDITOR="/usr/bin/kak"
     k() {
         "$HOME/.local/bin/kak-tmux-session" "$@"
     }
@@ -91,11 +92,151 @@ wta() {
     cd "$target" || return 1
 }
 
-wtr() {
-    if [ "$#" -gt 1 ]; then
-        printf '%s\n' "wtr: usage: wtr [branch]" >&2
+wtreview() {
+    if [ "$#" -ne 0 ]; then
+        printf '%s\n' "wtreview: usage: wtreview" >&2
         return 1
     fi
+
+    if ! command -v gh >/dev/null 2>&1; then
+        printf '%s\n' "wtreview: gh is not installed" >&2
+        return 1
+    fi
+
+    if ! command -v fzf >/dev/null 2>&1; then
+        printf '%s\n' "wtreview: fzf is not installed" >&2
+        return 1
+    fi
+
+    repo_root=$(git rev-parse --show-toplevel 2>/dev/null) || {
+        printf '%s\n' "wtreview: not inside a git work tree" >&2
+        return 1
+    }
+    cd "$repo_root" || return 1
+
+    repo_name=$(wt_repo_name) || return 1
+    main_root=$(wt_main_root) || return 1
+    tab=$(printf '\t')
+
+    list_output=$(
+        gh pr list \
+            --limit "${JR_LIMIT:-80}" \
+            --state open \
+            --json number,title,author,updatedAt,isDraft,reviewDecision,changedFiles,additions,deletions \
+            --jq '.[] | [
+                ("#" + (.number | tostring)),
+                (if .isDraft then "DRAFT"
+                 elif .reviewDecision == "APPROVED" then "APPROVED"
+                 elif .reviewDecision == "CHANGES_REQUESTED" then "CHANGES"
+                 elif .reviewDecision == "REVIEW_REQUIRED" then "REVIEW"
+                 else "OPEN"
+                 end),
+                .author.login,
+                (.updatedAt[0:16] | gsub("T"; " ")),
+                (.changedFiles | tostring),
+                (.additions | tostring),
+                (.deletions | tostring),
+                .title
+            ] | @tsv'
+    ) || return 1
+
+    if [ -z "$list_output" ]; then
+        printf '%s\n' "wtreview: no open pull requests"
+        return 0
+    fi
+
+    selection=$(
+        printf '%s\n' "$list_output" |
+            awk -F '\t' '
+                BEGIN {
+                    printf "pr\t%-8s  %-16s  %-16s  %-18s  %s\n", "state", "author", "updated", "size", "title"
+                }
+                {
+                    title = $8
+                    for (i = 9; i <= NF; i++) {
+                        title = title "\t" $i
+                    }
+                    gsub(/\t/, " ", title)
+                    size = $5 "f +" $6 "/-" $7
+                    printf "%s\t%-8s  %-16s  %-16s  %-18s  %s\n", $1, $2, $3, $4, size, title
+                }
+            ' |
+            fzf --height=75% \
+                --reverse \
+                --prompt='pr> ' \
+                --delimiter="$tab" \
+                --with-nth=2.. \
+                --header-lines=1 \
+                --header='enter: create or reuse review worktree' \
+                --exit-0
+    )
+    status=$?
+    [ "$status" -eq 0 ] || return 0
+    [ -n "$selection" ] || return 0
+
+    IFS="$tab" read -r pr_number _ << EOF
+$selection
+EOF
+    pr_number=${pr_number#\#}
+    [ -n "$pr_number" ] || {
+        printf '%s\n' "wtreview: unable to determine the selected pull request" >&2
+        return 1
+    }
+
+    target="$(dirname "$main_root")/$repo_name.review-pr-$pr_number"
+
+    if [ -e "$target" ] && ! git -C "$target" rev-parse --show-toplevel >/dev/null 2>&1; then
+        printf 'wtreview: target path exists and is not a git worktree: %s\n' "$target" >&2
+        return 1
+    fi
+
+    if git -C "$target" rev-parse --show-toplevel >/dev/null 2>&1; then
+        if [ -n "$(git -C "$target" status --porcelain 2>/dev/null)" ]; then
+            printf 'wtreview: existing review worktree has local changes: %s\n' "$target" >&2
+            return 1
+        fi
+
+        (
+            cd "$target" || exit 1
+            gh pr checkout "$pr_number" --force >/dev/null
+        ) || return 1
+
+        cd "$target" || return 1
+        return 0
+    fi
+
+    git worktree add --detach "$target" >/dev/null || return 1
+    if ! (
+        cd "$target" || exit 1
+        gh pr checkout "$pr_number" --force >/dev/null
+    ); then
+        git worktree remove --force "$target" >/dev/null 2>&1 || true
+        return 1
+    fi
+
+    cd "$target" || return 1
+}
+
+wtr() {
+    force=false
+    case "${1:-}" in
+        -f|--force)
+            force=true
+            shift
+            ;;
+    esac
+
+    if [ "$#" -gt 1 ]; then
+        printf '%s\n' "wtr: usage: wtr [-f|--force] [branch]" >&2
+        return 1
+    fi
+
+    case "${1:-}" in
+        -*)
+            printf '%s\n' "wtr: usage: wtr [-f|--force] [branch]" >&2
+            return 1
+            ;;
+    esac
 
     r=$(wt_repo_name) || return 1
     main_root=$(wt_main_root) || return 1
@@ -122,12 +263,41 @@ wtr() {
         fi
     fi
 
+    review_worktree=false
+    case "$(basename "$target")" in
+        *.review-pr-*|gh__*__*__PR*__*__*|*.PR*)
+            review_worktree=true
+            ;;
+    esac
+
+    if [ "$review_worktree" != true ] && [ "$force" != true ]; then
+        delete_base=$(git -C "$main_root" for-each-ref --format='%(upstream)' "refs/heads/$branch")
+        [ -n "$delete_base" ] || delete_base=HEAD
+
+        if ! git -C "$main_root" merge-base --is-ancestor "$branch" "$delete_base" >/dev/null 2>&1; then
+            printf "wtr: branch '%s' is not fully merged; refusing to remove the worktree\n" "$branch" >&2
+            if [ "$#" -eq 1 ]; then
+                printf "hint: If you are sure you want to delete it, run 'wtr -f %s'\n" "$branch" >&2
+            else
+                printf "%s\n" "hint: If you are sure you want to delete it, run 'wtr -f'" >&2
+            fi
+            return 1
+        fi
+    fi
+
     if [ -n "$current_root" ] && [ "$current_root" = "$target" ]; then
         cd "$main_root" || return 1
     fi
 
     git worktree remove "$target" || return 1
-    git -C "$main_root" branch -d "$branch"
+
+    [ "$review_worktree" = true ] && return 0
+
+    if [ "$force" = true ]; then
+        git -C "$main_root" branch -D "$branch"
+    else
+        git -C "$main_root" branch -d "$branch"
+    fi
 }
 
 wtj() {
