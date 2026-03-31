@@ -87,7 +87,7 @@ Shell toggles:
 - =shell.zsh=
 
 GitHub machine-local data:
-- =github.globalPrFilter=
+- =github.globalPrFilter=, appended after a built-in =is:open=
 - =github.repoPath=
 
 Enabling any =agent.*= value installs the shared skills in
@@ -144,7 +144,7 @@ opencode = false
 enable = true
 
 [data.github]
-globalPrFilter = "is:open label:my-label"
+globalPrFilter = "label:my-label"
 repoPath = ""
 
 [data.shell]
@@ -152,7 +152,8 @@ bash = true
 zsh = false
 #+end_src
 
-=github.globalPrFilter= is used by =jrg= to build the global PR search.
+=github.globalPrFilter= is appended after a built-in =is:open= filter and is
+used by both =gh-dash= and =jrg=.
 =github.repoPath= is used by =jrg= to find the local checkout before handing
 off into the same review flow as =jr=. =jrg= searches under =repoPath= for a
 matching Git repository up to 4 repo-root levels deep and fails with a clear

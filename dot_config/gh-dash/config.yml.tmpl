@@ -1,6 +1,8 @@
+{{- $github := (get . "github") | default dict -}}
+{{- $globalPrFilterExtra := (get $github "globalPrFilter") | default "" | trim | trimPrefix "is:open" | trim -}}
 prSections:
-    - title: Assigned to Me
-      filters: is:open assignee:@me
+    - title: PRs for review
+      filters: {{ if $globalPrFilterExtra }}{{ printf "is:open %s" $globalPrFilterExtra | quote }}{{ else }}"is:open"{{ end }}
 issuesSections:
     - title: My Issues
       filters: is:open author:@me
