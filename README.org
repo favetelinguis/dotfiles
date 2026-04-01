@@ -23,6 +23,7 @@ mako = false
 niri = false
 swaylock = false
 ghostty = false
+ideavim = false
 kak = false
 nvim = false
 gh_dash = false
@@ -65,6 +66,7 @@ App toggles:
 - =apps.niri=
 - =apps.swaylock=
 - =apps.ghostty=
+- =apps.ideavim=
 - =apps.kak=
 - =apps.nvim=
 - =apps.gh_dash=
@@ -129,6 +131,7 @@ swaylock = true
 exclude = ["scripts"]
 
 [data.apps]
+ideavim = true
 kak = true
 tmux = true
 kak_task_scripts = true

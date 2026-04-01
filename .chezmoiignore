@@ -9,6 +9,7 @@ README.org
 {{- $niri := (get $apps "niri") | default false -}}
 {{- $swaylock := (get $apps "swaylock") | default false -}}
 {{- $ghostty := (get $apps "ghostty") | default false -}}
+{{- $ideavim := (get $apps "ideavim") | default false -}}
 {{- $kak := (get $apps "kak") | default false -}}
 {{- $nvim := (get $apps "nvim") | default false -}}
 {{- $ghDash := (get $apps "gh_dash") | default false -}}
@@ -63,6 +64,9 @@ README.org
 {{- if not $ghostty }}
 .config/ghostty
 .config/ghostty/**
+{{- end }}
+{{- if not $ideavim }}
+.ideavimrc
 {{- end }}
 {{- if not $kak }}
 .config/kak
