@@ -4,7 +4,7 @@
 # yaml-language-server: $schema=https://raw.githubusercontent.com/jesseduffield/lazygit/master/schema/config.json
 
 os:
-  edit: '{{ $home }}/.local/bin/kak-tmux-session "{{ $filename }}"'
-  editAtLine: '{{ $home }}/.local/bin/kak-tmux-session +{{ $line }} "{{ $filename }}"'
-  editAtLineAndWait: '{{ $home }}/.local/bin/kak-tmux-session +{{ $line }} "{{ $filename }}"'
+  edit: 'kak {{ $filename }}'
+  editAtLine: 'kak +{{ $line }} {{ $filename }}'
+  editAtLineAndWait: 'kak +{{ $line }} {{ $filename }}'
   editInTerminal: true

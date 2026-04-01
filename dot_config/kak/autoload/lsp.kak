@@ -10,7 +10,7 @@ hook global BufSetOption filetype=python %{
 }
 
 # Enable LSP only for filetypes with installed servers
-hook global WinSetOption filetype=(javascript|typescript|python|c|cpp|objc) %{
+hook global WinSetOption filetype=(javascript|typescript|python|c|cpp|objc|java) %{
     lsp-enable-window
 }
 

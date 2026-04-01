@@ -170,8 +170,8 @@ wtreview() {
                 --header='enter: create or reuse review worktree' \
                 --exit-0
     )
-    status=$?
-    [ "$status" -eq 0 ] || return 0
+    fzf_status=$?
+    [ "$fzf_status" -eq 0 ] || return 0
     [ -n "$selection" ] || return 0
 
     IFS="$tab" read -r pr_number _ << EOF
@@ -407,9 +407,9 @@ EOF
                 --bind "ctrl-x:execute-silent($helper remove {1} '$current_root' '$main_root')+reload($helper list '$current_root' '$repo_name')" \
                 --exit-0
     )
-    status=$?
+    fzf_status=$?
     rm -f "$helper"
-    [ "$status" -eq 0 ] || return 0
+    [ "$fzf_status" -eq 0 ] || return 0
     [ -n "$choice" ] || return 0
 
     IFS="$tab" read -r target _ << EOF
