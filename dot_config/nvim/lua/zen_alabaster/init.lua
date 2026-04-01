@@ -7,6 +7,7 @@ function M.setup()
   require("zen_alabaster.core.commands")
   require("zen_alabaster.core.keymaps")
   require("zen_alabaster.plugins").setup()
+  require("zen_alabaster.core.which_key").setup()
   require("zen_alabaster.theme").setup()
   require("zen_alabaster.lsp").setup()
 end

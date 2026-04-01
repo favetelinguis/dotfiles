@@ -6,6 +6,7 @@ This Neovim config is built around a local `zen_alabaster` colorscheme:
 - Alabaster-style restrained syntax highlighting
 - definition-first highlighting via Tree-sitter captures and LSP semantic tokens
 - native Neovim 0.12 APIs
+- leader-key discovery with `which-key.nvim`
 - no LSP auto-downloads
 - no parser auto-installs while editing
 
@@ -18,10 +19,15 @@ This Neovim config is built around a local `zen_alabaster` colorscheme:
 
 ## Manual setup
 
-1. Install the managed plugin manually:
+1. Start Neovim so `vim.pack` can add the managed plugins:
 
-   - Start Neovim
-   - Run `:PackSync`
+   - On first launch, confirm the `vim.pack` install prompt if plugins are missing
+   - You can still run `:PackSync` manually to resync the configured plugin set
+
+   After `which-key.nvim` is installed, pressing `<Space>` in normal mode
+   shows the configured leader-key menu, and pressing `g` shows the builtin
+   `g`-prefixed key help.
+   LSP actions are exposed under `<Space>l`.
 
 2. Install the managed Tree-sitter parser set after `nvim-treesitter` is installed:
 
@@ -49,6 +55,7 @@ This Neovim config is built around a local `zen_alabaster` colorscheme:
 ## Verification
 
 - `:checkhealth vim.lsp`
+- `:checkhealth which-key`
 - `:TSInstallInfo`
 - `:Inspect` on a definition and on a call site
 - `:colorscheme zen_alabaster`
