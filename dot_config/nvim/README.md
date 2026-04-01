@@ -7,7 +7,7 @@ This Neovim config is built around a local `zen_alabaster` colorscheme:
 - definition-first highlighting via Tree-sitter captures and LSP semantic tokens
 - native Neovim 0.12 APIs
 - no LSP auto-downloads
-- no parser auto-installs
+- no parser auto-installs while editing
 
 ## Layout
 
@@ -23,9 +23,10 @@ This Neovim config is built around a local `zen_alabaster` colorscheme:
    - Start Neovim
    - Run `:PackSync`
 
-2. Install Tree-sitter parsers manually after `nvim-treesitter` is installed:
+2. Install the managed Tree-sitter parser set after `nvim-treesitter` is installed:
 
-   - `:TSInstall lua vim vimdoc query java javascript typescript tsx python go rust`
+   - Run `:TSInstallManaged`
+   - Update the same parser set later with `:TSUpdateManaged`
 
 3. Install LSP servers manually and place them on `PATH`:
 
@@ -37,9 +38,18 @@ This Neovim config is built around a local `zen_alabaster` colorscheme:
    - `rust-analyzer`
    - `jdtls`
 
+## Tree-sitter management
+
+- Neovim provides the runtime, parser loading, and query lookup.
+- This config provides the managed parser list and local query extensions in `queries/*/highlights.scm`.
+- `nvim-treesitter` provides the parser registry, download URLs, build logic, and `:TSInstall` / `:TSUpdate` commands.
+- External grammar source URLs are not built into Neovim and are not duplicated in this config.
+- This Neovim build does not ship parser binaries on `runtimepath`, so local ftplugins degrade safely until parsers are installed.
+
 ## Verification
 
 - `:checkhealth vim.lsp`
+- `:TSInstallInfo`
 - `:Inspect` on a definition and on a call site
 - `:colorscheme zen_alabaster`
 

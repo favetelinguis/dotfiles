@@ -6,7 +6,7 @@ if vim.uv.fs_stat(undo_dir) == nil then
 end
 
 opt.termguicolors = true
-opt.number = true
+opt.number = false
 opt.relativenumber = false
 opt.signcolumn = "yes"
 opt.cursorline = true

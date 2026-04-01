@@ -2,6 +2,7 @@ local M = {}
 
 function M.setup()
   require("zen_alabaster.core.options")
+  require("zen_alabaster.core.ftplugin").setup()
   require("zen_alabaster.core.autocmds")
   require("zen_alabaster.core.commands")
   require("zen_alabaster.core.keymaps")
