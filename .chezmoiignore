@@ -17,6 +17,7 @@ README.org
 {{- $lf := (get $apps "lf") | default false -}}
 {{- $lazygit := (get $apps "lazygit") | default false -}}
 {{- $gitui := (get $apps "gitui") | default false -}}
+{{- $k9s := (get $apps "k9s") | default false -}}
 {{- $emacs := (get $apps "emacs") | default false -}}
 {{- $codex := (get $agent "codex") | default false -}}
 {{- $claude := (get $agent "claude") | default false -}}
@@ -27,7 +28,7 @@ README.org
 {{- $anyAgent := or $codex $claude $opencode -}}
 {{- $hasShell := or $bash $zsh -}}
 {{- $hasGitUi := or $ghDash $gitEnabled -}}
-{{- $hasConfig := or $foot $fuzzel $mako $niri $swaylock $ghostty $kak $nvim $ghDash $lf $lazygit $gitui $emacs $anyAgent $hasShell $gitEnabled -}}
+{{- $hasConfig := or $foot $fuzzel $mako $niri $swaylock $ghostty $kak $nvim $ghDash $lf $lazygit $gitui $k9s $emacs $anyAgent $hasShell $gitEnabled -}}
 {{- $hasLocalBin := $kakTaskScripts -}}
 
 {{- if not $hasConfig }}
@@ -92,6 +93,10 @@ README.org
 {{- if not $gitui }}
 .config/gitui
 .config/gitui/**
+{{- end }}
+{{- if not $k9s }}
+.config/k9s
+.config/k9s/**
 {{- end }}
 {{- if not $emacs }}
 .emacs.d

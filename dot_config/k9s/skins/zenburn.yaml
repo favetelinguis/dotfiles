@@ -1,0 +1,91 @@
+# Zenburn color scheme for k9s
+# Based on the canonical Zenburn palette by jnurmine
+
+k9s:
+  body:
+    fgColor: '#dcdccc'
+    bgColor: '#3f3f3f'
+    logoColor: '#9ece9e'
+  prompt:
+    fgColor: '#dcdccc'
+    bgColor: '#3f3f3f'
+    suggestColor: '#8cd0d3'
+  info:
+    fgColor: '#dcdccc'
+    sectionColor: '#94bff3'
+  help:
+    fgColor: '#dcdccc'
+    bgColor: '#3f3f3f'
+    keyColor: '#f0dfaf'
+    numKeyColor: '#dfaf8f'
+    sectionColor: '#8cd0d3'
+  dialog:
+    fgColor: '#dcdccc'
+    bgColor: '#2f2f2f'
+    buttonFgColor: '#3f3f3f'
+    buttonBgColor: '#7f9f7f'
+    buttonFocusFgColor: '#3f3f3f'
+    buttonFocusBgColor: '#f0dfaf'
+    labelFgColor: '#dfaf8f'
+    fieldFgColor: '#dcdccc'
+  frame:
+    border:
+      fgColor: '#7f9f7f'
+      focusColor: '#f0dfaf'
+    menu:
+      fgColor: '#dcdccc'
+      keyColor: '#f0dfaf'
+      numKeyColor: '#dfaf8f'
+    crumbs:
+      fgColor: '#3f3f3f'
+      bgColor: '#7f9f7f'
+      activeColor: '#f0dfaf'
+    status:
+      newColor: '#9ece9e'
+      modifyColor: '#94bff3'
+      addColor: '#9ece9e'
+      pendingColor: '#dfaf8f'
+      errorColor: '#cc9393'
+      highlightColor: '#f0dfaf'
+      killColor: '#e37170'
+      completedColor: '#7f9f7f'
+    title:
+      fgColor: '#f0dfaf'
+      bgColor: '#3f3f3f'
+      highlightColor: '#8cd0d3'
+      counterColor: '#94bff3'
+      filterColor: '#dc8cc3'
+  views:
+    charts:
+      bgColor: '#3f3f3f'
+      defaultDialColor: '#7f9f7f'
+      dialTextColor: '#dcdccc'
+      resourceColor: '#94bff3'
+      cpuColor: '#dfaf8f'
+      memColor: '#9ece9e'
+    table:
+      fgColor: '#dcdccc'
+      bgColor: '#3f3f3f'
+      cursorFgColor: '#dcdccc'
+      cursorBgColor: '#434443'
+      markColor: '#dc8cc3'
+      header:
+        fgColor: '#8cd0d3'
+        bgColor: '#3f3f3f'
+        sorterColor: '#f0dfaf'
+    xray:
+      fgColor: '#dcdccc'
+      bgColor: '#3f3f3f'
+      cursorColor: '#434443'
+      graphicColor: '#94bff3'
+      showIcons: false
+    yaml:
+      keyColor: '#dc8cc3'
+      colonColor: '#7f9f7f'
+      valueColor: '#dcdccc'
+    logs:
+      fgColor: '#dcdccc'
+      bgColor: '#2f2f2f'
+      indicator:
+        fgColor: '#dcdccc'
+        bgColor: '#7f9f7f'
