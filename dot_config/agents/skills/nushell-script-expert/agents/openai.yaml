@@ -1,0 +1,4 @@
+interface:
+  display_name: "Nushell Script Expert"
+  short_description: "Write and review Nushell .nu code"
+  default_prompt: "Use $nushell-script-expert to create, debug, or refactor Nushell commands, modules, and .nu scripts idiomatically."
