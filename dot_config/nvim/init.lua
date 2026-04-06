@@ -12,4 +12,6 @@ require("flipb").setup({
 	},
 })
 
+require("broot").setup()
+
 require("config.lazy")

@@ -8,22 +8,6 @@
 ###############################################################
 
 verbs: [
-
-    {
-        name: kak_open_file
-        key: enter
-        apply_to: file
-        external: [
-            "sh"
-            "-eu"
-            "-c"
-            "\"$HOME/.local/bin/kak-broot-open\" \"$1\""
-            "sh"
-            "{file}"
-        ]
-        leave_broot: true
-    }
-
     # You should customize this standard opening of text files.
     # If you edit text files in your terminal (vi, emacs, helix, eg.), then
     #  you'll find it convenient to change the 'key' from 'ctrl-e' to 'enter'.
@@ -42,9 +26,9 @@ verbs: [
     {
         invocation: edit
         shortcut: e
-        key: ctrl-e
+        key: enter 
         apply_to: text_file
-        external: "kak +{line}:1 {file}"
+        external: "nvim +{line} {file:space-separated}"
         leave_broot: false
     }
 

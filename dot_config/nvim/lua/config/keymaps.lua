@@ -50,6 +50,14 @@ vim.keymap.set("n", "<leader>pa", function() -- show file path
 	print("file:", path)
 end, { desc = "Copy full file path" })
 
+vim.keymap.set("n", "<leader>e", function()
+	vim.cmd.BrootCurrentDirectory()
+end, { desc = "Explore current directory" })
+
+vim.keymap.set("n", "<leader>E", function()
+	vim.cmd.BrootWorkingDirectory()
+end, { desc = "Explore working directory" })
+
 vim.keymap.set("n", "<leader>td", function()
 	vim.diagnostic.enable(not vim.diagnostic.is_enabled())
 end, { desc = "Toggle diagnostics" })
