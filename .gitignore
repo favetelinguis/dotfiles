@@ -1,3 +1,4 @@
 /.agent-shell/
 /nvim.log
 /.codex
+/dot_config/nvim/.codex
