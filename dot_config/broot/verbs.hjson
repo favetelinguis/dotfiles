@@ -26,10 +26,26 @@ verbs: [
     {
         invocation: edit
         shortcut: e
-        key: enter 
+        key: ctrl-e
         apply_to: text_file
         external: "nvim +{line} {file:space-separated}"
         leave_broot: false
+    }
+
+    {
+        name: host_open
+        key: enter
+        apply_to: file
+        external: [
+            "sh"
+            "-eu"
+            "-c"
+            "\"$HOME/.local/bin/broot-open\" \"$1\" \"$2\""
+            "sh"
+            "{file}"
+            "{line}"
+        ]
+        leave_broot: true
     }
 
     # Example 1: launching `tail -n` on the selected file (leaving broot)
@@ -40,12 +56,12 @@ verbs: [
     # }
 
     # Example 2: creating a new file without leaving broot
-    # {
-    #     name: touch
-    #     invocation: touch {new_file}
-    #     external: "touch {directory}/{new_file}"
-    #     leave_broot: false
-    # }
+    {
+        name: touch
+        invocation: touch {new_file}
+        external: "touch {directory}/{new_file}"
+        leave_broot: false
+    }
 
     # Zip selected file(s) into a new archive named <name>.zip
     # This can be called on the staging area after having staged several
@@ -66,8 +82,16 @@ verbs: [
     #  the current directory or below
     {
         invocation: create {subpath}
-        execution: "$EDITOR {directory}/{subpath}"
-        leave_broot: false
+        external: [
+            "sh"
+            "-eu"
+            "-c"
+            "\"$HOME/.local/bin/broot-open\" --create \"$1\" \"$2\""
+            "sh"
+            "{directory}/{subpath}"
+            "{line}"
+        ]
+        leave_broot: true
     }
 
     {

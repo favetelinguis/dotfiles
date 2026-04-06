@@ -16,9 +16,9 @@ if [ -x "$HOME/.local/bin/jrg" ]; then
 fi
 
 if [ -x "$HOME/.local/bin/kak-tmux-session" ]; then
-    export EDITOR="/usr/bin/kak"
-    export VISUAL="/usr/bin/kak"
-    export GIT_EDITOR="/usr/bin/kak"
+    export EDITOR="nvim"
+    export VISUAL="nvim"
+    export GIT_EDITOR="nvim"
     k() {
         "$HOME/.local/bin/kak-tmux-session" "$@"
     }

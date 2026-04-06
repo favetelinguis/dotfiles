@@ -1,0 +1,42 @@
+#!/bin/sh
+
+set -eu
+
+create_mode=false
+if [ "${1:-}" = "--create" ]; then
+    create_mode=true
+    shift
+fi
+
+path=${1:-}
+line=${2:-1}
+
+[ -n "$path" ] || exit 0
+
+case "$path" in
+    /*)
+        ;;
+    *)
+        path=$PWD/$path
+        ;;
+esac
+
+if [ "$create_mode" = true ]; then
+    parent_dir=$(dirname "$path")
+    [ -d "$parent_dir" ] || mkdir -p "$parent_dir"
+elif [ ! -e "$path" ]; then
+    exit 0
+fi
+
+case "$line" in
+    ''|*[!0-9]*)
+        line=1
+        ;;
+esac
+
+if [ -n "${NVIM_BROOT_OUTPUT:-}" ]; then
+    printf '%s\t%s\n' "$path" "$line" > "$NVIM_BROOT_OUTPUT"
+    exit 0
+fi
+
+exec "${EDITOR:-nvim}" "+${line}" -- "$path"
