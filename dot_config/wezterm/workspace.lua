@@ -157,7 +157,7 @@ function module.prompt_for_workspace()
 						pane
 					)
 				else
-					create_workspace_with_first_tab(window, pane, line)
+					module.create_workspace_with_first_tab(window, pane, line)
 				end
 			end
 		end),
