@@ -1,3 +1,2 @@
-/.agent-shell/
-/nvim.log
+**/nvim.log
 **/.codex

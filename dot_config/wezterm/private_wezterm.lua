@@ -6,6 +6,48 @@ local wezterm = require("wezterm")
 local act = wezterm.action
 local config = wezterm.config_builder()
 
+local function is_vim(pane)
+	return pane:get_user_vars().IS_NVIM == "true"
+end
+
+local direction_keys = {
+	h = "Left",
+	j = "Down",
+	k = "Up",
+	l = "Right",
+}
+
+local function split_nav(mode, key)
+	local mods = mode == "resize" and "CTRL" or "META"
+
+	return {
+		key = key,
+		mods = mods,
+		action = wezterm.action_callback(function(window, pane)
+			if is_vim(pane) then
+				window:perform_action({
+					SendKey = {
+						key = key,
+						mods = mods,
+					},
+				}, pane)
+				return
+			end
+
+			if mode == "resize" then
+				window:perform_action({
+					AdjustPaneSize = { direction_keys[key], 3 },
+				}, pane)
+				return
+			end
+
+			window:perform_action({
+				ActivatePaneDirection = direction_keys[key],
+			}, pane)
+		end),
+	}
+end
+
 -- Color scheme from colors/Noctalia.toml
 config.color_scheme = "tokyonight_night"
 
@@ -79,6 +121,14 @@ config.mouse_bindings = {
 config.scrollback_lines = 100000
 
 config.keys = {
+	split_nav("move", "h"),
+	split_nav("move", "j"),
+	split_nav("move", "k"),
+	split_nav("move", "l"),
+	split_nav("resize", "h"),
+	split_nav("resize", "j"),
+	split_nav("resize", "k"),
+	split_nav("resize", "l"),
 	{
 		key = "e",
 		mods = "LEADER",
@@ -125,46 +175,6 @@ config.keys = {
 		action = act.SplitHorizontal({
 			domain = "CurrentPaneDomain",
 		}),
-	},
-	{
-		key = "h",
-		mods = "LEADER",
-		action = act.ActivatePaneDirection("Left"),
-	},
-	{
-		key = "j",
-		mods = "LEADER",
-		action = act.ActivatePaneDirection("Down"),
-	},
-	{
-		key = "k",
-		mods = "LEADER",
-		action = act.ActivatePaneDirection("Up"),
-	},
-	{
-		key = "l",
-		mods = "LEADER",
-		action = act.ActivatePaneDirection("Right"),
-	},
-	{
-		key = "H",
-		mods = "LEADER",
-		action = act.AdjustPaneSize({ "Left", 5 }),
-	},
-	{
-		key = "J",
-		mods = "LEADER",
-		action = act.AdjustPaneSize({ "Down", 5 }),
-	},
-	{
-		key = "K",
-		mods = "LEADER",
-		action = act.AdjustPaneSize({ "Up", 5 }),
-	},
-	{
-		key = "L",
-		mods = "LEADER",
-		action = act.AdjustPaneSize({ "Right", 5 }),
 	},
 	{
 		key = "q",
