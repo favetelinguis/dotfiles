@@ -57,6 +57,7 @@ return {
 			function()
 				require("fzf-lua").live_grep({
 					cwd = project_root(),
+					path_shorten = 1,
 					multiline = true,
 				})
 			end,
@@ -67,6 +68,7 @@ return {
 			function()
 				require("fzf-lua").git_status({
 					cwd = project_root(),
+					path_shorten = 1,
 				})
 			end,
 			desc = "Git Status",
@@ -83,6 +85,7 @@ return {
 			function()
 				require("fzf-lua").grep_cword({
 					cwd = project_root(),
+					path_shorten = 1,
 					multiline = true,
 				})
 			end,
@@ -93,6 +96,7 @@ return {
 			function()
 				require("fzf-lua").grep_cWORD({
 					cwd = project_root(),
+					path_shorten = 1,
 					multiline = true,
 				})
 			end,
@@ -103,6 +107,7 @@ return {
 			function()
 				require("fzf-lua").grep_visual({
 					cwd = project_root(),
+					path_shorten = 1,
 					multiline = true,
 				})
 			end,
