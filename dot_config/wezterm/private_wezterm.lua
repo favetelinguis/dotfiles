@@ -46,7 +46,7 @@ config.window_close_confirmation = "NeverPrompt"
 config.native_macos_fullscreen_mode = true
 config.pane_focus_follows_mouse = true
 
-config.default_prog = { "/usr/bin/nu", "-l" }
+-- config.default_prog = { "/usr/bin/nu", "-l" }
 config.leader = {
 	key = "Space",
 	mods = "ALT",
@@ -186,62 +186,62 @@ config.keys = {
 		mods = "SUPER",
 		action = projects.choose_project(),
 	},
-		{
-			key = "1",
-			mods = "SUPER",
-			action = act.ActivateTab(0),
-		},
-		{
-			key = "2",
-			mods = "SUPER",
-			action = act.ActivateTab(1),
-		},
-		{
-			key = "3",
-			mods = "SUPER",
-			action = act.ActivateTab(2),
-		},
-		{
-			key = "4",
-			mods = "SUPER",
-			action = act.ActivateTab(3),
-		},
-		{
-			key = "5",
-			mods = "SUPER",
-			action = act.ActivateTab(4),
-		},
-		{
-			key = "6",
-			mods = "SUPER",
-			action = act.ActivateTab(5),
-		},
-		{
-			key = "7",
-			mods = "SUPER",
-			action = act.ActivateTab(6),
-		},
-			{
-				key = "8",
-				mods = "SUPER",
-				action = wezterm.action_callback(function(window, pane)
-					ws.activate_or_open_named_tab(window, pane, "K9s", { "k9s" })
-				end),
-			},
-			{
-				key = "9",
-				mods = "SUPER",
-				action = wezterm.action_callback(function(window, pane)
-					ws.activate_or_open_named_tab(window, pane, "Git", { "lazygit" })
-				end),
-			},
-			{
-				key = "0",
-				mods = "SUPER",
-				action = wezterm.action_callback(function(window, pane)
-					ws.activate_or_open_named_tab(window, pane, "Dash", { "gh", "dash" })
-				end),
-			},
-	}
+	{
+		key = "1",
+		mods = "SUPER",
+		action = act.ActivateTab(0),
+	},
+	{
+		key = "2",
+		mods = "SUPER",
+		action = act.ActivateTab(1),
+	},
+	{
+		key = "3",
+		mods = "SUPER",
+		action = act.ActivateTab(2),
+	},
+	{
+		key = "4",
+		mods = "SUPER",
+		action = act.ActivateTab(3),
+	},
+	{
+		key = "5",
+		mods = "SUPER",
+		action = act.ActivateTab(4),
+	},
+	{
+		key = "6",
+		mods = "SUPER",
+		action = act.ActivateTab(5),
+	},
+	{
+		key = "7",
+		mods = "SUPER",
+		action = act.ActivateTab(6),
+	},
+	{
+		key = "8",
+		mods = "SUPER",
+		action = wezterm.action_callback(function(window, pane)
+			ws.activate_or_open_named_tab(window, pane, "K9s", { "k9s" })
+		end),
+	},
+	{
+		key = "9",
+		mods = "SUPER",
+		action = wezterm.action_callback(function(window, pane)
+			ws.activate_or_open_named_tab(window, pane, "Git", { "lazygit" })
+		end),
+	},
+	{
+		key = "0",
+		mods = "SUPER",
+		action = wezterm.action_callback(function(window, pane)
+			ws.activate_or_open_named_tab(window, pane, "Dash", { "gh", "dash" })
+		end),
+	},
+}
 
 return config

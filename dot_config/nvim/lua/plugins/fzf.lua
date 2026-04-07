@@ -27,28 +27,47 @@ return {
 		{
 			"<leader>ff",
 			function()
-				require("fzf-lua").files({ cwd = project_root() })
+				require("fzf-lua").files({ cwd = project_root(), path_shorten = 1 })
 			end,
 			desc = "Find Files in root",
 		},
 		{
+			"<leader>fd",
+			function()
+				require("fzf-lua").diagnostics_workspace()
+			end,
+			desc = "Diagnostics workspace",
+		},
+		{
+			"<leader>fD",
+			function()
+				require("fzf-lua").diagnostics_document()
+			end,
+			desc = "Diagnostics document",
+		},
+		{
 			"<leader>fF",
 			function()
-				require("fzf-lua").files()
+				require("fzf-lua").files({ path_shorten = 1 })
 			end,
 			desc = "Find Files in CWD",
 		},
 		{
 			"<leader>fg",
 			function()
-				require("fzf-lua").live_grep()
+				require("fzf-lua").live_grep({
+					cwd = project_root(),
+					multiline = true,
+				})
 			end,
 			desc = "Project root with -- *.json glob support",
 		},
 		{
 			"<leader>fs",
 			function()
-				require("fzf-lua").git_status()
+				require("fzf-lua").git_status({
+					cwd = project_root(),
+				})
 			end,
 			desc = "Git Status",
 		},
@@ -62,21 +81,30 @@ return {
 		{
 			"<leader>fw",
 			function()
-				require("fzf-lua").grep_cword()
+				require("fzf-lua").grep_cword({
+					cwd = project_root(),
+					multiline = true,
+				})
 			end,
 			desc = "Grep word",
 		},
 		{
 			"<leader>fW",
 			function()
-				require("fzf-lua").grep_cWORD()
+				require("fzf-lua").grep_cWORD({
+					cwd = project_root(),
+					multiline = true,
+				})
 			end,
 			desc = "Grep WORD",
 		},
 		{
 			"<leader>fv",
 			function()
-				require("fzf-lua").grep_visual()
+				require("fzf-lua").grep_visual({
+					cwd = project_root(),
+					multiline = true,
+				})
 			end,
 			mode = "x",
 			desc = "Grep visual",
@@ -105,10 +133,9 @@ return {
 		{
 			"<leader>fo",
 			function()
-				require("fzf-lua").oldfiles()
+				require("fzf-lua").oldfiles({ path_shorten = 1 })
 			end,
 			desc = "Find old file",
 		},
 	},
-	---@diagnostic enable: missing-fields
 }

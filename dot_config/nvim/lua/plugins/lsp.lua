@@ -39,21 +39,23 @@ return {
 
 				-- Rename the variable under your cursor.
 				--  Most Language Servers support renaming across files, etc.
-				map("<leader>cr", vim.lsp.buf.rename, "[R]e[n]ame")
+				map("grn", vim.lsp.buf.rename, "[R]e[n]ame")
 
 				-- Execute a code action, usually your cursor needs to be on top of an error
 				-- or a suggestion from your LSP for this to activate.
-				map("<leader>ca", vim.lsp.buf.code_action, "[G]oto Code [A]ction", { "n", "x" })
+				map("gra", vim.lsp.buf.code_action, "[G]oto Code [A]ction", { "n", "x" })
 
 				-- WARN: This is not Goto Definition, this is Goto Declaration.
 				--  For example, in C this would take you to the header.
 				map("grD", vim.lsp.buf.declaration, "[G]oto [D]eclaration")
 
-				map("<leader>D", require("fzf-lua").lsp_typedefs, "Type [Definition")
-				map("<leader>ds", require("fzf-lua").lsp_document_symbols, "[D]ocument [S]ymbols")
-				map("<leader>ws", require("fzf-lua").lsp_live_workspace_symbols, "[W]orkspace [S]ymbols")
-				map("<leader>li", require("fzf-lua").lsp_incoming_calls, "Incomin Calls")
-				map("<leader>lu", require("fzf-lua").lsp_outgoing_calls, "Outoing Calls")
+				map("grr", require("fzf-lua").lsp_references, "References")
+				map("gri", require("fzf-lua").lsp_implementations, "Implementations")
+				map("gd", require("fzf-lua").lsp_definitions, "Definitions")
+				map("grf", require("fzf-lua").lsp_incoming_calls, "Incoming Calls")
+				map("grt", require("fzf-lua").lsp_typedefs, "Typedefs")
+				map("gO", require("fzf-lua").lsp_document_symbols, "Document Symbols")
+				map("gW", require("fzf-lua").lsp_live_workspace_symbols, "Workspace Symbols")
 
 				-- The following two autocommands are used to highlight references of the
 				-- word under your cursor when your cursor rests there for a little while.
