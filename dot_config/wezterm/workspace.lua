@@ -11,6 +11,28 @@ local workspace_state = {
 	previous = nil,
 }
 
+local function wrap_args_with_cwd(cwd, args)
+	if not cwd or cwd == "" or not args or #args == 0 then
+		return args, nil
+	end
+
+	local wrapped = {
+		"/bin/zsh",
+		"-il",
+		"-c",
+		'cd "$WEZTERM_TAB_CWD" || exit 1; exec "$@"',
+		"spawn",
+	}
+
+	for _, arg in ipairs(args) do
+		table.insert(wrapped, arg)
+	end
+
+	return wrapped, {
+		WEZTERM_TAB_CWD = cwd,
+	}
+end
+
 function module.activate_or_open_named_tab(window, pane, name, args)
 	local mux_window = window:mux_window()
 	if not mux_window then
@@ -26,9 +48,11 @@ function module.activate_or_open_named_tab(window, pane, name, args)
 
 	local cwd_url = pane:get_current_working_dir()
 	local cwd = cwd_url and cwd_url.file_path or nil
+	local spawn_args, spawn_env = wrap_args_with_cwd(cwd, args)
 	local tab, _, _ = mux_window:spawn_tab({
 		cwd = cwd,
-		args = args,
+		args = spawn_args,
+		set_environment_variables = spawn_env,
 	})
 	tab:set_title(name)
 	tab:activate()

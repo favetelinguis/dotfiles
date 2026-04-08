@@ -129,7 +129,16 @@ function module.open_or_activate_notes_tab(window, _pane)
 
 	local ok, tab = pcall(mux_window.spawn_tab, mux_window, {
 		cwd = repo,
-		args = { "nvim", todo_path },
+		set_environment_variables = {
+			WEZNOTES_DIR = repo,
+			WEZNOTES_FILE = todo_path,
+		},
+		args = {
+			"/bin/zsh",
+			"-il",
+			"-c",
+			'cd "$WEZNOTES_DIR" || exit 1; exec nvim "$WEZNOTES_FILE"',
+		},
 	})
 
 	if not ok then
