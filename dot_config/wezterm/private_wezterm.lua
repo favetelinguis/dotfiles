@@ -53,7 +53,7 @@ config.color_scheme = "tokyonight_night"
 
 -- Font configuration
 config.font = wezterm.font("JetBrains Mono")
-config.font_size = 11.0
+config.font_size = 12.0
 config.line_height = 1.2
 
 -- Window configuration
@@ -74,7 +74,8 @@ config.tab_max_width = 32
 config.status_update_interval = 1000
 config.colors = {
 	tab_bar = {
-		active_tab = { fg_color = "#6c7086", bg_color = "#74c7ec" },
+		inactive_tab = { fg_color = "#c8d3f5", bg_color = "#292e42" },
+		active_tab = { fg_color = "#15161e", bg_color = "#7aa2f7" },
 	},
 }
 
