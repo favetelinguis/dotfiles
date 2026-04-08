@@ -2,7 +2,7 @@ local wezterm = require("wezterm")
 local act = wezterm.action
 local M = {}
 
-local fd = "/usr/bin/fd"
+local fd = "fd"
 local project_folder = "repos"
 
 local function display_path(path)

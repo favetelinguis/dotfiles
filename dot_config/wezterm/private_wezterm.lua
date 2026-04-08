@@ -1,6 +1,7 @@
 require("scrollback")
 local ws = require("workspace")
 local projects = require("projects")
+local weznotes = require("weznotes")
 
 local wezterm = require("wezterm")
 local act = wezterm.action
@@ -230,14 +231,14 @@ config.keys = {
 	{
 		key = "7",
 		mods = "SUPER",
-		action = act.ActivateTab(6),
+		action = wezterm.action_callback(function(window, pane)
+			ws.activate_or_open_named_tab(window, pane, "K9s", { "k9s" })
+		end),
 	},
 	{
 		key = "8",
 		mods = "SUPER",
-		action = wezterm.action_callback(function(window, pane)
-			ws.activate_or_open_named_tab(window, pane, "K9s", { "k9s" })
-		end),
+		action = wezterm.action_callback(weznotes.open_or_activate_notes_tab),
 	},
 	{
 		key = "9",
