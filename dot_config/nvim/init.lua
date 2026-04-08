@@ -1,5 +1,6 @@
 require("config.options")
 require("config.keymaps")
+require("java")
 
 require("flipb").setup({
 	mappings = {
