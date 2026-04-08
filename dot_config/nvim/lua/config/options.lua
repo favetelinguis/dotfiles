@@ -1,5 +1,5 @@
 vim.opt.termguicolors = true
-vim.opt.number = true -- line number
+vim.opt.number = false -- line number
 vim.opt.relativenumber = false -- relative line numbers
 vim.opt.cursorline = true -- highlight current line
 vim.opt.wrap = false -- do not wrap lines by default
