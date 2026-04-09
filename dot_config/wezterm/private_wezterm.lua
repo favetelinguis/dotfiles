@@ -98,16 +98,16 @@ config.leader = {
 }
 config.launch_menu = {
 	{
-		label = "Nu shell",
-		args = { "/usr/bin/nu", "-l" },
-	},
-	{
-		label = "Lazygit",
-		args = { "lazygit" },
-	},
-	{
-		label = "btop",
+		label = "Btop",
 		args = { "btop" },
+	},
+	{
+		label = "K9s",
+		args = { "k9s" },
+	},
+	{
+		label = "GH Dash",
+		args = { "gh", "dash" },
 	},
 }
 
@@ -231,14 +231,12 @@ config.keys = {
 	{
 		key = "7",
 		mods = "SUPER",
-		action = wezterm.action_callback(function(window, pane)
-			ws.activate_or_open_named_tab(window, pane, "K9s", { "k9s" })
-		end),
+		action = act.ActivateTab(7),
 	},
 	{
 		key = "8",
 		mods = "SUPER",
-		action = wezterm.action_callback(weznotes.open_or_activate_notes_tab),
+		action = act.ActivateTab(8),
 	},
 	{
 		key = "9",
@@ -250,9 +248,7 @@ config.keys = {
 	{
 		key = "0",
 		mods = "SUPER",
-		action = wezterm.action_callback(function(window, pane)
-			ws.activate_or_open_named_tab(window, pane, "Dash", { "gh", "dash" })
-		end),
+		action = wezterm.action_callback(weznotes.open_or_activate_notes_tab),
 	},
 }
 
