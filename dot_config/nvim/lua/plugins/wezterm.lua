@@ -17,14 +17,6 @@ return {
 			multiplexer_integration = "wezterm",
 		},
 		init = function()
-			pcall(vim.keymap.del, "n", "<C-h>")
-			pcall(vim.keymap.del, "n", "<C-j>")
-			pcall(vim.keymap.del, "n", "<C-k>")
-			pcall(vim.keymap.del, "n", "<C-l>")
-			pcall(vim.keymap.del, "n", "<C-Up>")
-			pcall(vim.keymap.del, "n", "<C-Down>")
-			pcall(vim.keymap.del, "n", "<C-Left>")
-			pcall(vim.keymap.del, "n", "<C-Right>")
 			pcall(vim.keymap.del, "n", "<A-j>")
 			pcall(vim.keymap.del, "n", "<A-k>")
 			pcall(vim.keymap.del, "v", "<A-j>")
@@ -58,34 +50,6 @@ return {
 					require("smart-splits").move_cursor_right()
 				end,
 				desc = "Move to right split or pane",
-			},
-			{
-				"<C-h>",
-				function()
-					require("smart-splits").resize_left()
-				end,
-				desc = "Resize split left",
-			},
-			{
-				"<C-j>",
-				function()
-					require("smart-splits").resize_down()
-				end,
-				desc = "Resize split down",
-			},
-			{
-				"<C-k>",
-				function()
-					require("smart-splits").resize_up()
-				end,
-				desc = "Resize split up",
-			},
-			{
-				"<C-l>",
-				function()
-					require("smart-splits").resize_right()
-				end,
-				desc = "Resize split right",
 			},
 		},
 	},

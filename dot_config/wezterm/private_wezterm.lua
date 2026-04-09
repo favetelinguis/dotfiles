@@ -127,10 +127,6 @@ config.keys = {
 	split_nav("move", "j"),
 	split_nav("move", "k"),
 	split_nav("move", "l"),
-	split_nav("resize", "h"),
-	split_nav("resize", "j"),
-	split_nav("resize", "k"),
-	split_nav("resize", "l"),
 	{
 		key = "e",
 		mods = "LEADER",
