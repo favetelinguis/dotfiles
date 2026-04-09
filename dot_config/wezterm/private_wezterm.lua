@@ -161,14 +161,14 @@ config.keys = {
 		}),
 	},
 	{
-		key = "d",
+		key = "s",
 		mods = "LEADER",
 		action = act.SplitVertical({
 			domain = "CurrentPaneDomain",
 		}),
 	},
 	{
-		key = "s",
+		key = "v",
 		mods = "LEADER",
 		action = act.SplitHorizontal({
 			domain = "CurrentPaneDomain",
