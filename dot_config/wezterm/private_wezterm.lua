@@ -109,6 +109,14 @@ config.launch_menu = {
 		label = "GH Dash",
 		args = { "gh", "dash" },
 	},
+	{
+		label = "WiFi",
+		args = { "netpala" },
+	},
+	{
+		label = "Bluetooth",
+		args = { "bluetui" },
+	},
 }
 
 config.mouse_bindings = {
