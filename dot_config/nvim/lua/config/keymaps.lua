@@ -19,6 +19,9 @@ vim.keymap.set("n", "<C-u>", "<C-u>zz", { desc = "Half page up (centered)" })
 vim.keymap.set("x", "<leader>p", '"_dP', { desc = "Paste without yanking" })
 vim.keymap.set({ "n", "v" }, "<leader>x", '"_d', { desc = "Delete without yanking" })
 
+-- Some emacs love
+vim.keymap.set("i", "<C-f>", "<Right>", { desc = "Forward char" })
+vim.keymap.set("i", "<C-e>", "<End>", { desc = "End of line" })
 -- vim.keymap.set("n", "<leader>bn", ":bnext<CR>", { desc = "Next buffer" })
 -- vim.keymap.set("n", "<leader>bp", ":bprevious<CR>", { desc = "Previous buffer" })
 
