@@ -4,8 +4,8 @@ local M = {}
 
 local defaults = {
 	keys = {
-		next = "j",
-		prev = "k",
+		next = "n",
+		prev = "p",
 		delete = "d",
 	},
 	mappings = {
@@ -36,6 +36,8 @@ local state = {
 	focus = nil,
 	win = nil,
 	buf = nil,
+	source_win = nil,
+	prev_lazyredraw = nil,
 	ns = api.nvim_create_namespace("flipb"),
 }
 
@@ -43,6 +45,7 @@ M.opts = vim.deepcopy(defaults)
 
 local mru_counter = 0
 local mru_order = {} -- bufnr -> sequence number (higher = more recently used)
+local window_views = {} -- winid -> bufnr -> winsaveview()
 
 local function mru_touch(bufnr)
 	mru_counter = mru_counter + 1
@@ -155,9 +158,14 @@ local function close_window()
 	if state.win and api.nvim_win_is_valid(state.win) then
 		pcall(api.nvim_win_close, state.win, true)
 	end
+	if state.prev_lazyredraw ~= nil then
+		vim.o.lazyredraw = state.prev_lazyredraw
+	end
 	state.active = false
 	state.win = nil
 	state.focus = nil
+	state.source_win = nil
+	state.prev_lazyredraw = nil
 end
 
 local function ensure_float_buf()
@@ -263,14 +271,98 @@ local function render()
 	)
 end
 
+local function refresh_ui()
+	if state.source_win and api.nvim_win_is_valid(state.source_win) then
+		pcall(api.nvim__redraw, {
+			win = state.source_win,
+			valid = false,
+			cursor = true,
+		})
+	end
+	if state.win and api.nvim_win_is_valid(state.win) then
+		pcall(api.nvim__redraw, {
+			win = state.win,
+			valid = false,
+		})
+	end
+	pcall(api.nvim__redraw, { flush = true })
+	pcall(vim.cmd, "redraw!")
+end
+
+local function source_win_call(fn)
+	if not state.source_win or not api.nvim_win_is_valid(state.source_win) then
+		return nil
+	end
+	return api.nvim_win_call(state.source_win, fn)
+end
+
+local function views_for_win(winid)
+	if not window_views[winid] then
+		window_views[winid] = {}
+	end
+	return window_views[winid]
+end
+
+local function save_view_for_win(winid, bufnr)
+	if not winid or not api.nvim_win_is_valid(winid) or not bufnr or not api.nvim_buf_is_valid(bufnr) then
+		return
+	end
+
+	local ok, view = pcall(api.nvim_win_call, winid, function()
+		return vim.fn.winsaveview()
+	end)
+	if ok and view then
+		views_for_win(winid)[bufnr] = view
+	end
+end
+
+local function save_current_view()
+	local bufnr = state.source_win
+		and api.nvim_win_is_valid(state.source_win)
+		and api.nvim_win_get_buf(state.source_win)
+	save_view_for_win(state.source_win, bufnr)
+end
+
+local function restore_view(bufnr)
+	local cached = views_for_win(state.source_win)[bufnr]
+
+	local ok = pcall(source_win_call, function()
+		if cached then
+			vim.fn.winrestview(cached)
+			return
+		end
+
+		local view = vim.fn.winsaveview()
+		local mark = api.nvim_buf_get_mark(bufnr, '"')
+		local line_count = api.nvim_buf_line_count(bufnr)
+		local row = math.min(math.max(mark[1], 1), math.max(line_count, 1))
+		local col = math.max(mark[2], 0)
+
+		if mark[1] > 0 and view.lnum ~= row then
+			pcall(api.nvim_win_set_cursor, state.source_win, { row, col })
+			view = vim.fn.winsaveview()
+		end
+
+		views_for_win(state.source_win)[bufnr] = view
+		vim.fn.winrestview(view)
+	end)
+
+	return ok
+end
+
 local function load_focus()
+	if not state.source_win or not api.nvim_win_is_valid(state.source_win) then
+		return false
+	end
+
 	local target = state.buffers[state.focus]
 	if not target or not api.nvim_buf_is_valid(target.bufnr) then
 		return false
 	end
 
-	api.nvim_win_set_buf(0, target.bufnr)
-	return true
+	save_current_view()
+	api.nvim_win_set_buf(state.source_win, target.bufnr)
+	return restore_view(target.bufnr)
 end
 
 local function start_selector(direction)
@@ -279,6 +371,9 @@ local function start_selector(direction)
 		vim.notify("flipb: No switchable buffers", vim.log.levels.INFO)
 		return false
 	end
+
+	state.source_win = api.nvim_get_current_win()
+	save_current_view()
 
 	local current_index = current_buf_index(state.buffers)
 	if not current_index then
@@ -344,14 +439,16 @@ function M.select(direction)
 		error("flipb.select(direction): direction must be 'next' or 'prev'")
 	end
 
+	state.prev_lazyredraw = vim.o.lazyredraw
+	vim.o.lazyredraw = false
 	state.active = true
 	if not start_selector(direction) then
-		state.active = false
+		close_window()
 		return
 	end
 
 	render()
-	pcall(vim.cmd, "redraw")
+	refresh_ui()
 
 	while state.active do
 		local ok, key = pcall(M.get_input)
@@ -364,7 +461,7 @@ function M.select(direction)
 		if selector_key_matches(key, M.opts.keys.next) then
 			if move_focus("next") then
 				render()
-				pcall(vim.cmd, "redraw")
+				refresh_ui()
 			else
 				close_window()
 				return
@@ -372,7 +469,7 @@ function M.select(direction)
 		elseif selector_key_matches(key, M.opts.keys.prev) then
 			if move_focus("prev") then
 				render()
-				pcall(vim.cmd, "redraw")
+				refresh_ui()
 			else
 				close_window()
 				return
@@ -385,7 +482,7 @@ function M.select(direction)
 				if not refresh_after_delete() then
 					return
 				end
-				pcall(vim.cmd, "redraw")
+				refresh_ui()
 			else
 				vim.notify("flipb: Failed to delete buffer", vim.log.levels.WARN)
 			end
@@ -421,10 +518,27 @@ function M.setup(opts)
 			end
 		end,
 	})
+	api.nvim_create_autocmd("BufLeave", {
+		group = group,
+		callback = function(ev)
+			if is_switchable(ev.buf) then
+				save_view_for_win(api.nvim_get_current_win(), ev.buf)
+			end
+		end,
+	})
 	api.nvim_create_autocmd("BufWipeout", {
 		group = group,
 		callback = function(ev)
 			mru_order[ev.buf] = nil
+			for _, views in pairs(window_views) do
+				views[ev.buf] = nil
+			end
+		end,
+	})
+	api.nvim_create_autocmd("WinClosed", {
+		group = group,
+		callback = function(ev)
+			window_views[tonumber(ev.match)] = nil
 		end,
 	})
 

@@ -8,8 +8,8 @@ require("flipb").setup({
 		prev = nil,
 	},
 	keys = {
-		next = "j",
-		prev = "k",
+		next = "n",
+		prev = "p",
 	},
 })
 
