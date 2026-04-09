@@ -21,6 +21,7 @@ vim.keymap.set({ "n", "v" }, "<leader>x", '"_d', { desc = "Delete without yankin
 
 -- Some emacs love
 vim.keymap.set("i", "<C-f>", "<Right>", { desc = "Forward char" })
+vim.keymap.set("i", "<C-b>", "<Left>", { desc = "Backward char" })
 vim.keymap.set("i", "<C-e>", "<End>", { desc = "End of line" })
 -- vim.keymap.set("n", "<leader>bn", ":bnext<CR>", { desc = "Next buffer" })
 -- vim.keymap.set("n", "<leader>bp", ":bprevious<CR>", { desc = "Previous buffer" })
