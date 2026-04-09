@@ -11,6 +11,18 @@ local workspace_state = {
 	previous = nil,
 }
 
+local function format_status_timestamp()
+	local month = tonumber(wezterm.strftime("%m"))
+	local week = tonumber(wezterm.strftime("%V"))
+	local day = tonumber(wezterm.strftime("%d"))
+
+	if not month or not week or not day then
+		return wezterm.strftime("%H:%M")
+	end
+
+	return string.format("M%d W%d D%d %s", month, week, day, wezterm.strftime("%H:%M"))
+end
+
 local function wrap_args_with_cwd(cwd, args)
 	if not cwd or cwd == "" or not args or #args == 0 then
 		return args, nil
@@ -56,14 +68,6 @@ function module.activate_or_open_named_tab(window, pane, name, args)
 	})
 	tab:set_title(name)
 	tab:activate()
-end
-
-local function basename(path)
-	if not path or path == "" then
-		return nil
-	end
-
-	return path:match("([^/]+)/*$")
 end
 
 local function workspace_exists(name)
@@ -140,7 +144,7 @@ end
 wezterm.on("update-status", function(window, pane)
 	local current = window:active_workspace()
 	if workspace_state.current ~= current then
-		if workspace_state.current and workspace_state.current ~= "" and workspace_state.current ~= current then
+		if workspace_state.current and workspace_state.current ~= "" then
 			workspace_state.previous = workspace_state.current
 		end
 		workspace_state.current = current
@@ -155,16 +159,10 @@ wezterm.on("update-status", function(window, pane)
 	local cells = {}
 	local workspace = current
 	if workspace and workspace ~= "" then
-		table.insert(cells, "ws:" .. workspace)
+		table.insert(cells, workspace)
 	end
 
-	local cwd_uri = pane:get_current_working_dir()
-	local cwd_name = cwd_uri and basename(cwd_uri.file_path) or nil
-	if cwd_name and cwd_name ~= "" then
-		table.insert(cells, cwd_name)
-	end
-
-	table.insert(cells, wezterm.strftime("%Y-%m-%d %H:%M"))
+	table.insert(cells, format_status_timestamp())
 	window:set_right_status(table.concat(cells, " | "))
 end)
 
