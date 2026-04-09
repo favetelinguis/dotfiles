@@ -14,6 +14,7 @@ require("flipb").setup({
 })
 
 require("broot").setup()
+require("other").setup()
 require("weznotes").setup()
 
 require("config.lazy")
