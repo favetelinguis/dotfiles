@@ -193,7 +193,7 @@ config.keys = {
 		action = act.CloseCurrentTab({ confirm = true }),
 	},
 	{
-		key = "m",
+		key = "o",
 		mods = "SUPER",
 		action = act.TogglePaneZoomState,
 	},
