@@ -113,7 +113,7 @@ local function commit_note(rel_note)
 			error(diff_stderr ~= "" and diff_stderr or "unable to inspect staged notes changes")
 		end
 
-		run_git({ "commit", "-m", commit_message(rel_note), "--", rel_note })
+		run_git({ "commit", "--no-verify", "-m", commit_message(rel_note), "--", rel_note })
 		state.pending[rel_note] = nil
 	end)
 
