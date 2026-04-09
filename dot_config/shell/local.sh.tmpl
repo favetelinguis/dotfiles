@@ -84,11 +84,53 @@ wt_main_root() {
     fi
 }
 
+wt_default_base_ref() {
+    if git show-ref --verify --quiet refs/remotes/origin/main; then
+        printf '%s\n' "origin/main"
+        return 0
+    fi
+
+    if git show-ref --verify --quiet refs/remotes/origin/master; then
+        printf '%s\n' "origin/master"
+        return 0
+    fi
+
+    printf '%s\n' "wta: unable to resolve a default base branch; expected origin/main or origin/master" >&2
+    return 1
+}
+
 wta() {
+    use_current=false
+    case "${1:-}" in
+        --current)
+            use_current=true
+            shift
+            ;;
+    esac
+
+    if [ "$#" -ne 1 ]; then
+        printf '%s\n' "wta: usage: wta [--current] <branch>" >&2
+        return 1
+    fi
+
+    case "${1:-}" in
+        -*)
+            printf '%s\n' "wta: usage: wta [--current] <branch>" >&2
+            return 1
+            ;;
+    esac
+
+    branch=$1
     r=$(wt_repo_name) || return 1
     main_root=$(wt_main_root) || return 1
-    target="$(dirname "$main_root")/$r.$1"
-    git worktree add -b "$1" "$target" || return 1
+    target="$(dirname "$main_root")/$r.$branch"
+    if [ "$use_current" = true ]; then
+        base_ref=HEAD
+    else
+        base_ref=$(wt_default_base_ref) || return 1
+    fi
+
+    git worktree add -b "$branch" "$target" "$base_ref" || return 1
     cd "$target" || return 1
 }
 
