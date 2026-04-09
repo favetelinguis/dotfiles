@@ -41,6 +41,14 @@ local state = {
 
 M.opts = vim.deepcopy(defaults)
 
+local mru_counter = 0
+local mru_order = {} -- bufnr -> sequence number (higher = more recently used)
+
+local function mru_touch(bufnr)
+	mru_counter = mru_counter + 1
+	mru_order[bufnr] = mru_counter
+end
+
 local function option_width(value, total)
 	if type(value) == "number" and value > 0 and value < 1 then
 		return math.max(1, math.floor(total * value))
@@ -121,10 +129,13 @@ local function collect_buffers()
 
 	for _, bufnr in ipairs(api.nvim_list_bufs()) do
 		if is_switchable(bufnr) then
-			local info = vim.fn.getbufinfo(bufnr)[1] or {}
+			if not mru_order[bufnr] then
+				local info = vim.fn.getbufinfo(bufnr)[1] or {}
+				mru_order[bufnr] = info.lastused or 0
+			end
 			table.insert(buffers, {
 				bufnr = bufnr,
-				lastused = info.lastused or 0,
+				lastused = mru_order[bufnr],
 				path = path_style(M.opts.path_style, api.nvim_buf_get_name(bufnr)),
 			})
 		end
@@ -333,17 +344,19 @@ function M.select(direction)
 		error("flipb.select(direction): direction must be 'next' or 'prev'")
 	end
 
+	state.active = true
 	if not start_selector(direction) then
+		state.active = false
 		return
 	end
 
-	state.active = true
 	render()
 	pcall(vim.cmd, "redraw")
 
 	while state.active do
 		local ok, key = pcall(M.get_input)
 		if not ok then
+			mru_touch(api.nvim_get_current_buf())
 			close_window()
 			return
 		end
@@ -368,6 +381,7 @@ function M.select(direction)
 			local target = api.nvim_get_current_buf()
 			local deleted = pcall(api.nvim_buf_delete, target, {})
 			if deleted then
+				mru_order[target] = nil
 				if not refresh_after_delete() then
 					return
 				end
@@ -376,6 +390,7 @@ function M.select(direction)
 				vim.notify("flipb: Failed to delete buffer", vim.log.levels.WARN)
 			end
 		else
+			mru_touch(api.nvim_get_current_buf())
 			close_window()
 			pcall(M.forward_input, key)
 			return
@@ -385,6 +400,33 @@ end
 
 function M.setup(opts)
 	M.opts = vim.tbl_deep_extend("force", vim.deepcopy(defaults), opts or {})
+
+	for _, bufnr in ipairs(api.nvim_list_bufs()) do
+		if is_switchable(bufnr) then
+			local info = vim.fn.getbufinfo(bufnr)[1] or {}
+			local ts = info.lastused or 0
+			mru_order[bufnr] = ts
+			if ts > mru_counter then
+				mru_counter = ts
+			end
+		end
+	end
+
+	local group = api.nvim_create_augroup("flipb_mru", { clear = true })
+	api.nvim_create_autocmd("BufEnter", {
+		group = group,
+		callback = function(ev)
+			if not state.active and is_switchable(ev.buf) then
+				mru_touch(ev.buf)
+			end
+		end,
+	})
+	api.nvim_create_autocmd("BufWipeout", {
+		group = group,
+		callback = function(ev)
+			mru_order[ev.buf] = nil
+		end,
+	})
 
 	api.nvim_create_user_command("FlipbNext", function()
 		require("flipb").select("next")
