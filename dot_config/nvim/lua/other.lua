@@ -4,6 +4,8 @@ local state = {
 	is_setup = false,
 }
 
+local user_var_name = "other"
+
 local function notify(message, level)
 	vim.notify(message, level or vim.log.levels.INFO, { title = "other" })
 end
@@ -46,6 +48,14 @@ local function send_user_var(name, value)
 	return true
 end
 
+function M.send_request(request)
+	local payload = vim.tbl_extend("keep", request or {}, {
+		cwd = vim.fn.getcwd(),
+	})
+
+	return send_user_var(user_var_name, vim.json.encode(payload))
+end
+
 function M.send_visual_selection()
 	local text = get_visual_text()
 	if not text or text == "" then
@@ -53,11 +63,10 @@ function M.send_visual_selection()
 		return
 	end
 
-	local payload = vim.json.encode({
-		hello = text,
+	M.send_request({
+		mode = "selector",
+		cmd = text,
 	})
-
-	send_user_var("my_action", payload)
 end
 
 function M.setup()

@@ -1,27 +1,22 @@
-local function notify(message, level)
-	vim.notify(message, level or vim.log.levels.INFO, { title = "weztest" })
-end
-
-local function send_user_var(name, value)
-	if not vim.api.nvim_ui_send then
-		notify("nvim_ui_send() is unavailable in this Neovim build", vim.log.levels.ERROR)
-		return false
+local function shorten_command(cmd)
+	local normalized = (cmd or ""):gsub("%s+", " "):gsub("^%s+", ""):gsub("%s+$", "")
+	if normalized == "" then
+		return "test"
+	end
+	if #normalized > 48 then
+		return normalized:sub(1, 45) .. "..."
 	end
 
-	local encoded = vim.base64.encode(value)
-	local osc = string.format("\027]1337;SetUserVar=%s=%s\007", name, encoded)
-
-	vim.api.nvim_ui_send(osc)
-	return true
+	return normalized
 end
 
 local function dispatch_test_command(cmd)
-	local payload = vim.json.encode({
+	require("other").send_request({
+		mode = "tab",
 		cmd = cmd,
 		cwd = vim.fn.getcwd(),
+		title = shorten_command(cmd),
 	})
-
-	send_user_var("weztest", payload)
 end
 
 local function register_strategy()
