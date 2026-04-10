@@ -91,6 +91,8 @@ local function task_script(name, command)
 	local running_title = make_state_title("running")
 	local success_title = make_state_title("success")
 	local failure_title = make_state_title("failure")
+	local success_message = string.format("\nTask succeeded: %s\n", name)
+	local failure_format = string.format("\nTask failed (%s), exit %%s\n", name)
 
 	return table.concat({
 		"printf " .. shell_quote(title_escape(running_title)),
@@ -99,10 +101,10 @@ local function task_script(name, command)
 		"task_status=$?",
 		"if [ \"$task_status\" -eq 0 ]; then",
 		"  printf " .. shell_quote(title_escape(success_title)),
-		"  printf '\\nTask succeeded: " .. name .. "\\n'",
+		"  printf " .. shell_quote(success_message),
 		"else",
 		"  printf " .. shell_quote(title_escape(failure_title)),
-		"  printf '\\nTask failed (" .. name .. "), exit %s\\n' \"$task_status\"",
+		"  printf " .. shell_quote(failure_format) .. " \"$task_status\"",
 		"fi",
 		"printf 'This task tab will stay open until you close it manually.\\n'",
 		"exec tail -f /dev/null",
@@ -151,30 +153,51 @@ local function is_missing_justfile_error(message)
 	return type(message) == "string" and message:find("No justfile found", 1, true) ~= nil
 end
 
-local function spawn_recipe_tab(window, pane, recipe)
-	local cwd = current_cwd(pane)
-	if not cwd or cwd == "" then
-		notify(window, "unable to determine current pane directory")
-		return
+function module.spawn_task_tab(window, pane, opts)
+	local name = trim(opts.name)
+	local command = trim(opts.command)
+	local cwd = trim(opts.cwd)
+
+	if name == "" then
+		return nil, "task name is required"
+	end
+	if command == "" then
+		return nil, "task command is required"
+	end
+	if cwd == "" then
+		cwd = current_cwd(pane) or ""
+	end
+	if cwd == "" then
+		return nil, "unable to determine current pane directory"
 	end
 
 	local mux_window = window:mux_window()
 	if not mux_window then
-		notify(window, "unable to access mux window for recipe task")
-		return
+		return nil, "unable to access mux window for task"
 	end
 
-	local command = "cd -- " .. shell_quote(cwd) .. " || exit 1\njust " .. shell_quote(recipe)
+	local script = "cd -- " .. shell_quote(cwd) .. " || exit 1\n" .. command
 	local tab, _, _ = mux_window:spawn_tab({
 		cwd = cwd,
 		args = {
 			shell,
 			"-ilc",
-			task_script(recipe, command),
+			task_script(name, script),
 		},
 	})
-	tab:set_title(recipe)
+	tab:set_title(name)
 	tab:activate()
+	return tab
+end
+
+local function spawn_recipe_tab(window, pane, recipe)
+	local _, err = module.spawn_task_tab(window, pane, {
+		name = recipe,
+		command = "just " .. shell_quote(recipe),
+	})
+	if err then
+		notify(window, err)
+	end
 end
 
 function module.make_title(state, name)

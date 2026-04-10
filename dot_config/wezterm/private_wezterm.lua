@@ -4,6 +4,7 @@ local ws = require("workspace")
 local projects = require("projects")
 local weznotes = require("weznotes")
 local weztask = require("weztask")
+local weztest = require("weztest")
 
 local wezterm = require("wezterm")
 local act = wezterm.action
@@ -83,6 +84,7 @@ config.colors = {
 }
 
 weztask.setup()
+weztest.setup()
 
 -- Cursor
 config.default_cursor_style = "BlinkingBlock"
