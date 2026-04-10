@@ -3,6 +3,7 @@ require("scrollback")
 local ws = require("workspace")
 local projects = require("projects")
 local weznotes = require("weznotes")
+local weztask = require("weztask")
 
 local wezterm = require("wezterm")
 local act = wezterm.action
@@ -50,14 +51,6 @@ local function split_nav(mode, key)
 	}
 end
 
-local function tab_title(tab)
-	if tab.tab_title and #tab.tab_title > 0 then
-		return tab.tab_title
-	end
-
-	return tab.active_pane.title
-end
-
 -- Color scheme from colors/Noctalia.toml
 config.color_scheme = "tokyonight_night"
 
@@ -89,10 +82,7 @@ config.colors = {
 	},
 }
 
-wezterm.on("format-tab-title", function(tab)
-	local zoom = tab.active_pane.is_zoomed and "[Z] " or ""
-	return string.format(" %d: %s%s ", tab.tab_index + 1, zoom, tab_title(tab))
-end)
+weztask.setup()
 
 -- Cursor
 config.default_cursor_style = "BlinkingBlock"
@@ -218,6 +208,16 @@ config.keys = {
 		key = "p",
 		mods = "SUPER",
 		action = projects.choose_project(),
+	},
+	{
+		key = "r",
+		mods = "SUPER",
+		action = weztask.choose_recipe(),
+	},
+	{
+		key = "j",
+		mods = "LEADER",
+		action = wezterm.action.ActivateLastTab,
 	},
 	{
 		key = "1",
