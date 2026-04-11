@@ -158,28 +158,13 @@ wtreview() {
 
     repo_name=$(wt_repo_name) || return 1
     main_root=$(wt_main_root) || return 1
-    tab=$(printf '\t')
 
     list_output=$(
         gh pr list \
             --limit "${JR_LIMIT:-80}" \
             --state open \
-            --json number,title,author,updatedAt,isDraft,reviewDecision,changedFiles,additions,deletions \
-            --jq '.[] | [
-                ("#" + (.number | tostring)),
-                (if .isDraft then "DRAFT"
-                 elif .reviewDecision == "APPROVED" then "APPROVED"
-                 elif .reviewDecision == "CHANGES_REQUESTED" then "CHANGES"
-                 elif .reviewDecision == "REVIEW_REQUIRED" then "REVIEW"
-                 else "OPEN"
-                 end),
-                .author.login,
-                (.updatedAt[0:16] | gsub("T"; " ")),
-                (.changedFiles | tostring),
-                (.additions | tostring),
-                (.deletions | tostring),
-                .title
-            ] | @tsv'
+            --json number,title \
+            --jq '.[] | "#" + (.number | tostring) + " " + .title'
     ) || return 1
 
     if [ -z "$list_output" ]; then
@@ -189,36 +174,16 @@ wtreview() {
 
     selection=$(
         printf '%s\n' "$list_output" |
-            awk -F '\t' '
-                BEGIN {
-                    printf "pr\t%-8s  %-16s  %-16s  %-18s  %s\n", "state", "author", "updated", "size", "title"
-                }
-                {
-                    title = $8
-                    for (i = 9; i <= NF; i++) {
-                        title = title "\t" $i
-                    }
-                    gsub(/\t/, " ", title)
-                    size = $5 "f +" $6 "/-" $7
-                    printf "%s\t%-8s  %-16s  %-16s  %-18s  %s\n", $1, $2, $3, $4, size, title
-                }
-            ' |
             fzf --height=75% \
                 --reverse \
                 --prompt='pr> ' \
-                --delimiter="$tab" \
-                --with-nth=2.. \
-                --header-lines=1 \
-                --header='enter: create or reuse review worktree' \
                 --exit-0
     )
     fzf_status=$?
     [ "$fzf_status" -eq 0 ] || return 0
     [ -n "$selection" ] || return 0
 
-    IFS="$tab" read -r pr_number _ << EOF
-$selection
-EOF
+    pr_number=${selection%% *}
     pr_number=${pr_number#\#}
     [ -n "$pr_number" ] || {
         printf '%s\n' "wtreview: unable to determine the selected pull request" >&2
@@ -227,24 +192,9 @@ EOF
 
     target="$(dirname "$main_root")/$repo_name.review-pr-$pr_number"
 
-    if [ -e "$target" ] && ! git -C "$target" rev-parse --show-toplevel >/dev/null 2>&1; then
-        printf 'wtreview: target path exists and is not a git worktree: %s\n' "$target" >&2
+    if [ -e "$target" ]; then
+        printf 'wtreview: target path already exists: %s\n' "$target" >&2
         return 1
-    fi
-
-    if git -C "$target" rev-parse --show-toplevel >/dev/null 2>&1; then
-        if [ -n "$(git -C "$target" status --porcelain 2>/dev/null)" ]; then
-            printf 'wtreview: existing review worktree has local changes: %s\n' "$target" >&2
-            return 1
-        fi
-
-        (
-            cd "$target" || exit 1
-            gh pr checkout "$pr_number" --force >/dev/null
-        ) || return 1
-
-        cd "$target" || return 1
-        return 0
     fi
 
     git worktree add --detach "$target" >/dev/null || return 1
