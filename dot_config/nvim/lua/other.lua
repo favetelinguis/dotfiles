@@ -48,8 +48,33 @@ local function send_user_var(name, value)
 	return true
 end
 
+local function normalize_request(request)
+	local payload = vim.deepcopy(request or {})
+	payload.mode = vim.trim(payload.mode or "")
+	payload.kind = vim.trim(payload.kind or "")
+
+	if payload.mode == "selector" then
+		payload.mode = "select"
+		if payload.kind == "" then
+			payload.kind = "selection"
+		end
+	end
+
+	if payload.mode == "select" and payload.kind == "" then
+		notify("select requests require a kind", vim.log.levels.ERROR)
+		return nil
+	end
+
+	return payload
+end
+
 function M.send_request(request)
-	local payload = vim.tbl_extend("keep", request or {}, {
+	local normalized = normalize_request(request)
+	if not normalized then
+		return false
+	end
+
+	local payload = vim.tbl_extend("keep", normalized, {
 		cwd = vim.fn.getcwd(),
 	})
 
@@ -64,7 +89,8 @@ function M.send_visual_selection()
 	end
 
 	M.send_request({
-		mode = "selector",
+		mode = "select",
+		kind = "selection",
 		cmd = text,
 	})
 end

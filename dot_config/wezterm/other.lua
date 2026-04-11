@@ -1,4 +1,5 @@
 local wezterm = require("wezterm")
+local mux = wezterm.mux
 local act = wezterm.action
 
 local module = {}
@@ -11,6 +12,8 @@ local user_var_name = "other"
 local task_title_prefix = "weztask:"
 local task_banner = "WezTask"
 local shell = "/bin/zsh"
+local data_dir = (os.getenv("XDG_DATA_HOME") or (wezterm.home_dir .. "/.local/share")) .. "/wezterm"
+local route_store_path = data_dir .. "/other-routes.json"
 local task_colors = {
 	running = "#e0af68",
 	failure = "#f7768e",
@@ -19,6 +22,7 @@ local task_colors = {
 }
 local valid_modes = {
 	tab = true,
+	select = true,
 	selector = true,
 }
 
@@ -129,11 +133,132 @@ local function parse_request(value)
 	return request
 end
 
+local function route_key(sender_pane_id, kind)
+	return string.format("%d:%s", sender_pane_id, kind)
+end
+
+local function read_route_store()
+	local file = io.open(route_store_path, "r")
+	if not file then
+		return {}
+	end
+
+	local ok, contents = pcall(function()
+		return file:read("*a")
+	end)
+	file:close()
+	if not ok or not contents or trim(contents) == "" then
+		return {}
+	end
+
+	local parsed_ok, routes = pcall(wezterm.json_parse, contents)
+	if not parsed_ok or type(routes) ~= "table" then
+		wezterm.log_warn("failed to parse route store at " .. route_store_path)
+		return {}
+	end
+
+	return routes
+end
+
+local function ensure_route_store_dir()
+	local ok = wezterm.run_child_process({ "mkdir", "-p", data_dir })
+	return ok
+end
+
+local function write_route_store(routes)
+	local encoded_ok, encoded = pcall(wezterm.json_encode, routes)
+	if not encoded_ok then
+		wezterm.log_warn("failed to encode route store")
+		return false
+	end
+
+	if not ensure_route_store_dir() then
+		wezterm.log_warn("failed to create route store directory: " .. data_dir)
+		return false
+	end
+
+	local file, err = io.open(route_store_path, "w")
+	if not file then
+		wezterm.log_warn("failed to open route store: " .. tostring(err))
+		return false
+	end
+
+	local write_ok, write_err = pcall(function()
+		file:write(encoded)
+	end)
+	file:close()
+	if not write_ok then
+		wezterm.log_warn("failed to write route store: " .. tostring(write_err))
+		return false
+	end
+
+	return true
+end
+
+local function route_identifier(sender_pane_id, kind, target_pane_id)
+	return string.format("sender:%d|kind:%s|target:%d", sender_pane_id, kind, target_pane_id)
+end
+
+local function read_route(sender_pane_id, kind)
+	local route = read_route_store()[route_key(sender_pane_id, kind)]
+	if type(route) ~= "table" then
+		return nil
+	end
+
+	return route
+end
+
+local function write_route(sender_pane_id, kind, target_pane_id)
+	local routes = read_route_store()
+	local route = {
+		identifier = route_identifier(sender_pane_id, kind, target_pane_id),
+		kind = kind,
+		sender_pane_id = sender_pane_id,
+		target_pane_id = target_pane_id,
+	}
+	routes[route_key(sender_pane_id, kind)] = route
+	write_route_store(routes)
+	return route
+end
+
+local function clear_route(sender_pane_id, kind)
+	local routes = read_route_store()
+	routes[route_key(sender_pane_id, kind)] = nil
+	write_route_store(routes)
+end
+
+local function find_pane_by_id(target_pane_id)
+	if type(target_pane_id) ~= "number" then
+		return nil
+	end
+
+	for _, mux_window in ipairs(mux.all_windows()) do
+		for _, tab_info in ipairs(mux_window:tabs_with_info()) do
+			for _, pane_info in ipairs(tab_info.tab:panes_with_info()) do
+				local target_pane = pane_info.pane
+				if target_pane:pane_id() == target_pane_id then
+					return target_pane
+				end
+			end
+		end
+	end
+
+	return nil
+end
+
 local function normalize_request(pane, request)
 	local mode = trim(request.mode)
 	local cmd = trim(request.cmd)
 	local cwd = trim(request.cwd)
 	local title = trim(request.title)
+	local kind = trim(request.kind)
+
+	if mode == "selector" then
+		mode = "select"
+		if kind == "" then
+			kind = "selection"
+		end
+	end
 
 	if not valid_modes[mode] then
 		return nil, "other payload is missing a valid mode"
@@ -155,10 +280,15 @@ local function normalize_request(pane, request)
 		end
 	end
 
+	if mode == "select" and kind == "" then
+		return nil, "other payload is missing kind"
+	end
+
 	return {
 		mode = mode,
 		cmd = cmd,
 		cwd = cwd,
+		kind = kind,
 		title = title,
 	}
 end
@@ -176,34 +306,51 @@ local function notify(window, message)
 	wezterm.log_error(text)
 end
 
-local function select_target_pane(window, pane, request)
-	local tab = pane and pane:tab() or nil
-	if not tab then
-		return nil, "unable to access current tab"
+local function collect_other_panes(tab, sender_pane_id)
+	local panes = {}
+	for _, item in ipairs(tab:panes_with_info()) do
+		local target_pane = item.pane
+		if target_pane:pane_id() ~= sender_pane_id then
+			table.insert(panes, target_pane)
+		end
 	end
 
+	return panes
+end
+
+local function choice_for_pane(target_pane)
+	local pane_id = target_pane:pane_id()
+	local process_name = basename(target_pane:get_foreground_process_name())
+	local title = target_pane:get_title() or ""
+
+	return {
+		id = tostring(pane_id),
+		label = string.format(
+			"Pane %d | %s | %s",
+			pane_id,
+			process_name ~= "" and process_name or "unknown process",
+			title ~= "" and title or "no_title"
+		),
+	}
+end
+
+local function send_to_pane(target_pane, cmd)
+	target_pane:send_text(cmd)
+	if not cmd:match("[\r\n]$") then
+		target_pane:send_text("\n")
+	end
+end
+
+local function dispatch_to_target(sender_pane_id, request, target_pane)
+	write_route(sender_pane_id, request.kind, target_pane:pane_id())
+	send_to_pane(target_pane, request.cmd)
+	return target_pane
+end
+
+local function prompt_for_target_pane(window, pane, request, sender_pane_id, target_panes)
 	local choices = {}
-	for _, item in ipairs(tab:panes_with_info()) do
-		if item.is_active then
-			goto continue
-		end
-
-		local target_pane = item.pane
-		local pane_id = target_pane:pane_id()
-		local process_name = basename(target_pane:get_foreground_process_name())
-		local title = target_pane:get_title() or ""
-
-		table.insert(choices, {
-			id = tostring(pane_id),
-			label = string.format(
-				"Pane %d | %s | %s",
-				pane_id,
-				process_name ~= "" and process_name or "unknown process",
-				title ~= "" and title or "no_title"
-			),
-		})
-
-		::continue::
+	for _, target_pane in ipairs(target_panes) do
+		table.insert(choices, choice_for_pane(target_pane))
 	end
 
 	if #choices == 0 then
@@ -212,12 +359,12 @@ local function select_target_pane(window, pane, request)
 
 	window:perform_action(
 		act.InputSelector({
-			title = "Select pane",
+			title = string.format("Select %s pane", request.kind),
 			description = "Choose the pane that should receive text",
 			choices = choices,
 			fuzzy = true,
 			fuzzy_description = "Search by pane id, process, or title: ",
-			action = wezterm.action_callback(function(inner_window, inner_pane, id, _label)
+			action = wezterm.action_callback(function(inner_window, _inner_pane, id, _label)
 				if not id then
 					return
 				end
@@ -228,20 +375,82 @@ local function select_target_pane(window, pane, request)
 					return
 				end
 
-				for _, info in ipairs(inner_pane:tab():panes_with_info()) do
-					if info.pane:pane_id() == target_id then
-						info.pane:paste(request.cmd)
-						return
-					end
+				local target_pane = find_pane_by_id(target_id)
+				if not target_pane then
+					clear_route(sender_pane_id, request.kind)
+					notify(inner_window, "selected pane no longer exists")
+					return
 				end
 
-				notify(inner_window, "selected pane no longer exists")
+				local _, err = dispatch_to_target(sender_pane_id, request, target_pane)
+				if err then
+					notify(inner_window, err)
+				end
 			end),
 		}),
 		pane
 	)
 
 	return true
+end
+
+local function create_right_split(pane)
+	local split_args = {
+		direction = "Right",
+		domain = "CurrentPaneDomain",
+	}
+	local cwd = trim(current_cwd(pane) or "")
+	if cwd ~= "" then
+		split_args.cwd = cwd
+	end
+
+	local ok, target_pane = pcall(function()
+		return pane:split(split_args)
+	end)
+	if not ok or not target_pane then
+		return nil, "failed to create a split to the right"
+	end
+
+	-- Give the spawned program a moment to attach before sending input.
+	wezterm.sleep_ms(50)
+	return target_pane
+end
+
+local function select_target_pane(window, pane, request)
+	local sender_pane_id = pane and pane:pane_id() or nil
+	if not sender_pane_id then
+		return nil, "unable to identify the sending pane"
+	end
+
+	local existing_route = read_route(sender_pane_id, request.kind)
+	if existing_route then
+		local target_pane = find_pane_by_id(existing_route.target_pane_id)
+		if target_pane then
+			return dispatch_to_target(sender_pane_id, request, target_pane)
+		end
+
+		clear_route(sender_pane_id, request.kind)
+	end
+
+	local tab = pane and pane:tab() or nil
+	if not tab then
+		return nil, "unable to access current tab"
+	end
+
+	local target_panes = collect_other_panes(tab, sender_pane_id)
+	if #target_panes == 0 then
+		local target_pane, err = create_right_split(pane)
+		if not target_pane then
+			return nil, err
+		end
+		return dispatch_to_target(sender_pane_id, request, target_pane)
+	end
+
+	if #target_panes == 1 then
+		return dispatch_to_target(sender_pane_id, request, target_panes[1])
+	end
+
+	return prompt_for_target_pane(window, pane, request, sender_pane_id, target_panes)
 end
 
 local function spawn_task_tab(window, pane, request)
@@ -292,7 +501,7 @@ function module.dispatch(window, pane, request)
 		return nil, err
 	end
 
-	if normalized.mode == "selector" then
+	if normalized.mode == "select" then
 		return select_target_pane(window, pane, normalized)
 	end
 

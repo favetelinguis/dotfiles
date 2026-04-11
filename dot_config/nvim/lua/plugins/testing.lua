@@ -12,8 +12,9 @@ end
 
 local function dispatch_test_command(cmd)
 	require("other").send_request({
-		mode = "tab",
-		cmd = cmd,
+		mode = "select",
+		kind = "test",
+		cmd = "clear\n" .. cmd,
 		cwd = vim.fn.getcwd(),
 		title = shorten_command(cmd),
 	})
