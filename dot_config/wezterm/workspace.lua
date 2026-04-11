@@ -6,10 +6,24 @@ local mux = wezterm.mux
 
 local module = {}
 
-local workspace_state = {
-	current = nil,
-	previous = nil,
-}
+-- Avoid nested tables in wezterm.GLOBAL.
+-- GLOBAL values are special proxy objects across reloads, so flat primitive keys
+-- are more reliable than reading/modifying nested table state.
+local workspace_current_key = "workspace.current"
+local workspace_previous_key = "workspace.previous"
+
+local function workspace_current()
+	return wezterm.GLOBAL[workspace_current_key]
+end
+
+local function workspace_previous()
+	return wezterm.GLOBAL[workspace_previous_key]
+end
+
+local function set_workspace_history(current, previous)
+	wezterm.GLOBAL[workspace_current_key] = current
+	wezterm.GLOBAL[workspace_previous_key] = previous
+end
 
 local function format_status_timestamp()
 	local month = tonumber(wezterm.strftime("%m"))
@@ -117,9 +131,10 @@ end)
 function module.toggle_workspace(window, pane)
 	local current = window:active_workspace()
 	local target = nil
+	local previous = workspace_previous()
 
-	if workspace_exists(workspace_state.previous) and workspace_state.previous ~= current then
-		target = workspace_state.previous
+	if workspace_exists(previous) and previous ~= current then
+		target = previous
 	else
 		local workspaces = mux.get_workspace_names()
 		table.sort(workspaces)
@@ -143,11 +158,13 @@ end
 
 wezterm.on("update-status", function(window, pane)
 	local current = window:active_workspace()
-	if workspace_state.current ~= current then
-		if workspace_state.current and workspace_state.current ~= "" then
-			workspace_state.previous = workspace_state.current
+	local saved_current = workspace_current()
+	local saved_previous = workspace_previous()
+	if saved_current ~= current then
+		if saved_current and saved_current ~= "" then
+			saved_previous = saved_current
 		end
-		workspace_state.current = current
+		set_workspace_history(current, saved_previous)
 	end
 
 	if window:leader_is_active() then

@@ -3,17 +3,13 @@ local mux = wezterm.mux
 local act = wezterm.action
 
 local module = {}
-
-local state = {
-	is_setup = false,
-}
+local is_setup = false
 
 local user_var_name = "other"
 local task_title_prefix = "weztask:"
 local task_banner = "WezTask"
 local shell = "/bin/zsh"
-local data_dir = (os.getenv("XDG_DATA_HOME") or (wezterm.home_dir .. "/.local/share")) .. "/wezterm"
-local route_store_path = data_dir .. "/other-routes.json"
+local route_key_prefix = "other.route:"
 local task_colors = {
 	running = "#e0af68",
 	failure = "#f7768e",
@@ -134,97 +130,28 @@ local function parse_request(value)
 end
 
 local function route_key(sender_pane_id, kind)
-	return string.format("%d:%s", sender_pane_id, kind)
-end
-
-local function read_route_store()
-	local file = io.open(route_store_path, "r")
-	if not file then
-		return {}
-	end
-
-	local ok, contents = pcall(function()
-		return file:read("*a")
-	end)
-	file:close()
-	if not ok or not contents or trim(contents) == "" then
-		return {}
-	end
-
-	local parsed_ok, routes = pcall(wezterm.json_parse, contents)
-	if not parsed_ok or type(routes) ~= "table" then
-		wezterm.log_warn("failed to parse route store at " .. route_store_path)
-		return {}
-	end
-
-	return routes
-end
-
-local function ensure_route_store_dir()
-	local ok = wezterm.run_child_process({ "mkdir", "-p", data_dir })
-	return ok
-end
-
-local function write_route_store(routes)
-	local encoded_ok, encoded = pcall(wezterm.json_encode, routes)
-	if not encoded_ok then
-		wezterm.log_warn("failed to encode route store")
-		return false
-	end
-
-	if not ensure_route_store_dir() then
-		wezterm.log_warn("failed to create route store directory: " .. data_dir)
-		return false
-	end
-
-	local file, err = io.open(route_store_path, "w")
-	if not file then
-		wezterm.log_warn("failed to open route store: " .. tostring(err))
-		return false
-	end
-
-	local write_ok, write_err = pcall(function()
-		file:write(encoded)
-	end)
-	file:close()
-	if not write_ok then
-		wezterm.log_warn("failed to write route store: " .. tostring(write_err))
-		return false
-	end
-
-	return true
-end
-
-local function route_identifier(sender_pane_id, kind, target_pane_id)
-	return string.format("sender:%d|kind:%s|target:%d", sender_pane_id, kind, target_pane_id)
+	return string.format("%s%d:%s", route_key_prefix, sender_pane_id, kind)
 end
 
 local function read_route(sender_pane_id, kind)
-	local route = read_route_store()[route_key(sender_pane_id, kind)]
-	if type(route) ~= "table" then
+	local target_pane_id = wezterm.GLOBAL[route_key(sender_pane_id, kind)]
+	if type(target_pane_id) ~= "number" then
 		return nil
 	end
 
-	return route
+	return target_pane_id
 end
 
 local function write_route(sender_pane_id, kind, target_pane_id)
-	local routes = read_route_store()
-	local route = {
-		identifier = route_identifier(sender_pane_id, kind, target_pane_id),
-		kind = kind,
-		sender_pane_id = sender_pane_id,
-		target_pane_id = target_pane_id,
-	}
-	routes[route_key(sender_pane_id, kind)] = route
-	write_route_store(routes)
-	return route
+	-- Avoid nested tables in wezterm.GLOBAL.
+	-- GLOBAL values are special proxy objects across reloads, so a flat numeric
+	-- pane id per route key is more reliable than table-shaped route state.
+	wezterm.GLOBAL[route_key(sender_pane_id, kind)] = target_pane_id
+	return target_pane_id
 end
 
 local function clear_route(sender_pane_id, kind)
-	local routes = read_route_store()
-	routes[route_key(sender_pane_id, kind)] = nil
-	write_route_store(routes)
+	wezterm.GLOBAL[route_key(sender_pane_id, kind)] = nil
 end
 
 local function find_pane_by_id(target_pane_id)
@@ -430,7 +357,7 @@ local function select_target_pane(window, pane, request)
 
 	local existing_route = read_route(sender_pane_id, request.kind)
 	if existing_route then
-		local target_pane = find_pane_by_id(existing_route.target_pane_id)
+		local target_pane = find_pane_by_id(existing_route)
 		if target_pane then
 			return dispatch_to_target(sender_pane_id, request, target_pane)
 		end
@@ -515,11 +442,11 @@ function module.dispatch(window, pane, request)
 end
 
 function module.setup()
-	if state.is_setup then
+	if is_setup then
 		return
 	end
 
-	state.is_setup = true
+	is_setup = true
 
 	wezterm.on("format-tab-title", function(tab)
 		return module.format_tab_title(tab)
