@@ -209,6 +209,8 @@ wtreview() {
     cd "$target" || return 1
 }
 
+alias prdiff='gh pr review | diffnav'
+
 wtr() {
     force=false
     case "${1:-}" in
