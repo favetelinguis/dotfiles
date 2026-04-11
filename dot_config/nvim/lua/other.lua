@@ -10,6 +10,18 @@ local function notify(message, level)
 	vim.notify(message, level or vim.log.levels.INFO, { title = "other" })
 end
 
+local function current_file_path()
+	local path = vim.fn.expand("%:.")
+	if path == "" then
+		path = vim.api.nvim_buf_get_name(0)
+	end
+	if path == "" then
+		return nil
+	end
+
+	return path
+end
+
 local function get_visual_text()
 	local mode = vim.fn.mode()
 	if not mode:match("[vV\22]") then
@@ -17,11 +29,12 @@ local function get_visual_text()
 	end
 
 	if not mode:match("[vV\22]") then
-		return nil
+		return nil, nil
 	end
 
 	local start_pos = vim.fn.getpos("v")
 	local end_pos = vim.fn.getcurpos()
+	local start_line = math.min(start_pos[2], end_pos[2])
 	local lines = vim.fn.getregion(start_pos, end_pos, {
 		type = mode,
 		exclusive = vim.o.selection == "exclusive",
@@ -32,7 +45,16 @@ local function get_visual_text()
 		text = text .. "\n"
 	end
 
-	return text
+	return text, start_line
+end
+
+local function with_file_location(text, start_line)
+	local path = current_file_path()
+	if not path then
+		return text
+	end
+
+	return string.format("%s:%d\n%s", path, start_line, text)
 end
 
 local function send_user_var(name, value)
@@ -52,6 +74,7 @@ local function normalize_request(request)
 	local payload = vim.deepcopy(request or {})
 	payload.mode = vim.trim(payload.mode or "")
 	payload.kind = vim.trim(payload.kind or "")
+	payload.paste = payload.paste == true
 
 	if payload.mode == "selector" then
 		payload.mode = "select"
@@ -93,6 +116,23 @@ function M.send_visual_selection()
 		kind = "selection",
 		cmd = text,
 	})
+end
+
+function M.visual_selection()
+	local text, start_line = get_visual_text()
+	if not text or text == "" then
+		notify("visual selection required", vim.log.levels.ERROR)
+		return nil
+	end
+
+	return {
+		text = text,
+		start_line = start_line,
+	}
+end
+
+function M.file_location_text(text, start_line)
+	return with_file_location(text, start_line)
 end
 
 function M.setup()

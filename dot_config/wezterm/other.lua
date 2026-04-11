@@ -252,6 +252,7 @@ local function normalize_request(pane, request)
 	local cwd = trim(request.cwd)
 	local title = trim(request.title)
 	local kind = trim(request.kind)
+	local paste = request.paste == true
 
 	if mode == "selector" then
 		mode = "select"
@@ -289,6 +290,7 @@ local function normalize_request(pane, request)
 		cmd = cmd,
 		cwd = cwd,
 		kind = kind,
+		paste = paste,
 		title = title,
 	}
 end
@@ -334,16 +336,20 @@ local function choice_for_pane(target_pane)
 	}
 end
 
-local function send_to_pane(target_pane, cmd)
-	target_pane:send_text(cmd)
-	if not cmd:match("[\r\n]$") then
-		target_pane:send_text("\n")
+local function send_to_pane(target_pane, request)
+	if request.paste then
+		target_pane:send_paste(request.cmd)
+		wezterm.sleep_ms(100)
+	else
+		target_pane:send_text(request.cmd)
 	end
+
+	target_pane:send_text("\r")
 end
 
 local function dispatch_to_target(sender_pane_id, request, target_pane)
 	write_route(sender_pane_id, request.kind, target_pane:pane_id())
-	send_to_pane(target_pane, request.cmd)
+	send_to_pane(target_pane, request)
 	return target_pane
 end
 
