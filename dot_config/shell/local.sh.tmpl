@@ -292,9 +292,9 @@ wtr() {
     fi
 }
 
-wtj() {
+wtl() {
     if ! command -v fzf >/dev/null 2>&1; then
-        printf '%s\n' "wtj: fzf is not installed" >&2
+        printf '%s\n' "wtl: fzf is not installed" >&2
         return 1
     fi
 
@@ -302,7 +302,7 @@ wtj() {
     main_root=$(wt_main_root) || return 1
     repo_name=$(wt_repo_name) || return 1
     tab=$(printf '\t')
-    helper=$(mktemp "${TMPDIR:-/tmp}/wtj.XXXXXX") || return 1
+    helper=$(mktemp "${TMPDIR:-/tmp}/wtl.XXXXXX") || return 1
     cat >"$helper" <<'EOF'
 #!/bin/sh
 
@@ -356,12 +356,12 @@ remove_worktree() {
     [ -n "$target" ] || exit 1
 
     if [ "$target" = "$main_root" ]; then
-        printf '%s\n' "wtj: refusing to remove the main worktree" >&2
+        printf '%s\n' "wtl: refusing to remove the main worktree" >&2
         exit 1
     fi
 
     if [ "$target" = "$current_root" ]; then
-        printf '%s\n' "wtj: refusing to remove the current worktree from the picker" >&2
+        printf '%s\n' "wtl: refusing to remove the current worktree from the picker" >&2
         exit 1
     fi
 
@@ -383,7 +383,7 @@ case "${1:-}" in
         remove_worktree "$@"
         ;;
     *)
-        printf '%s\n' "wtj helper: expected list|remove" >&2
+        printf '%s\n' "wtl helper: expected list|remove" >&2
         exit 1
         ;;
 esac
@@ -409,10 +409,6 @@ $choice
 EOF
     [ -n "$target" ] || return 0
     cd "$target" || return 1
-}
-
-wtl() {
-    wtj "$@"
 }
 
 js_pick_path() {
