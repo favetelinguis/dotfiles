@@ -17,10 +17,12 @@ local task_colors = {
 	text = "#15161e",
 }
 local valid_modes = {
+	remove = true,
 	tab = true,
 	select = true,
 	selector = true,
 }
+local inform
 
 local function trim(text)
 	return (text or ""):gsub("^%s+", ""):gsub("%s+$", "")
@@ -191,11 +193,12 @@ local function normalize_request(pane, request)
 	if not valid_modes[mode] then
 		return nil, "other payload is missing a valid mode"
 	end
-	if cmd == "" then
-		return nil, "other payload is missing cmd"
-	end
 
 	if mode == "tab" then
+		if cmd == "" then
+			return nil, "other payload is missing cmd"
+		end
+
 		if cwd == "" then
 			cwd = trim(current_cwd(pane) or "")
 		end
@@ -208,7 +211,16 @@ local function normalize_request(pane, request)
 		end
 	end
 
-	if mode == "select" and kind == "" then
+	if mode == "select" then
+		if cmd == "" then
+			return nil, "other payload is missing cmd"
+		end
+		if kind == "" then
+			return nil, "other payload is missing kind"
+		end
+	end
+
+	if mode == "remove" and kind == "" then
 		return nil, "other payload is missing kind"
 	end
 
@@ -222,6 +234,24 @@ local function normalize_request(pane, request)
 	}
 end
 
+local function remove_route_for_pane(window, pane, kind)
+	local sender_pane_id = pane and pane:pane_id() or nil
+	if not sender_pane_id then
+		return nil, "unable to identify the sending pane"
+	end
+
+	local existing_route = read_route(sender_pane_id, kind)
+	clear_route(sender_pane_id, kind)
+
+	if existing_route then
+		inform(window, string.format("Cleared %s pane association", kind))
+	else
+		inform(window, string.format("No %s pane association for current pane", kind))
+	end
+
+	return true
+end
+
 local function notify(window, message)
 	local text = trim(message)
 	if text == "" then
@@ -233,6 +263,19 @@ local function notify(window, message)
 	end
 
 	wezterm.log_error(text)
+end
+
+inform = function(window, message)
+	local text = trim(message)
+	if text == "" then
+		return
+	end
+
+	if window and window.toast_notification then
+		window:toast_notification(task_banner, text, nil, 2000)
+	end
+
+	wezterm.log_info(text)
 end
 
 local function collect_other_panes(tab, sender_pane_id)
@@ -434,12 +477,18 @@ function module.dispatch(window, pane, request)
 		return nil, err
 	end
 
+	if normalized.mode == "remove" then
+		return remove_route_for_pane(window, pane, normalized.kind)
+	end
+
 	if normalized.mode == "select" then
 		return select_target_pane(window, pane, normalized)
 	end
 
 	return spawn_task_tab(window, pane, normalized)
 end
+
+module.remove_route_for_pane = remove_route_for_pane
 
 function module.setup()
 	if is_setup then

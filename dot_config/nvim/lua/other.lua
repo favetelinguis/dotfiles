@@ -88,6 +88,11 @@ local function normalize_request(request)
 		return nil
 	end
 
+	if payload.mode == "remove" and payload.kind == "" then
+		notify("remove requests require a kind", vim.log.levels.ERROR)
+		return nil
+	end
+
 	return payload
 end
 
@@ -135,6 +140,19 @@ function M.file_location_text(text, start_line)
 	return with_file_location(text, start_line)
 end
 
+function M.remove(kind)
+	local normalized_kind = vim.trim(kind or "")
+	if normalized_kind == "" then
+		notify("remove requires a kind", vim.log.levels.ERROR)
+		return false
+	end
+
+	return M.send_request({
+		mode = "remove",
+		kind = normalized_kind,
+	})
+end
+
 function M.setup()
 	if state.is_setup then
 		return
@@ -145,6 +163,18 @@ function M.setup()
 	vim.keymap.set("x", "<leader>z", function()
 		M.send_visual_selection()
 	end, { desc = "Send selection to WezTerm" })
+
+	vim.keymap.set("n", "<leader>rA", function()
+		M.remove("ai")
+	end, { desc = "Clear AI pane association" })
+
+	vim.keymap.set("n", "<leader>rR", function()
+		M.remove("repl")
+	end, { desc = "Clear REPL pane association" })
+
+	vim.keymap.set("n", "<leader>rT", function()
+		M.remove("test")
+	end, { desc = "Clear test pane association" })
 end
 
 return M
