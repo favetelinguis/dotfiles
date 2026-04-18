@@ -8,7 +8,7 @@ local weztask = require("weztask")
 local wezterm = require("wezterm")
 local act = wezterm.action
 local config = wezterm.config_builder()
-
+config.enable_kitty_keyboard = true
 local function is_vim(pane)
 	return pane:get_user_vars().IS_NVIM == "true"
 end
