@@ -44,6 +44,10 @@ return {
 
 		lint.linters_by_ft = {
 			rust = { "clippy" },
+			javascript = { "eslint_d" },
+			javascriptreact = { "eslint_d" },
+			typescript = { "eslint_d" },
+			typescriptreact = { "eslint_d" },
 			-- markdown = { "markdownlint" }, -- Make sure to install `markdownlint` via mason / npm
 		}
 

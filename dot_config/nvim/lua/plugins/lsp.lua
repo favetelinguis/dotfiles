@@ -128,7 +128,34 @@ return {
 			--    https://github.com/pmizio/typescript-tools.nvim
 			--
 			-- But for many setups, the LSP (`ts_ls`) will work just fine
-			-- ts_ls = {},
+			ts_ls = {
+				settings = {
+					typescript = {
+						inlayHints = {
+							includeInlayParameterNameHints = "all",
+							includeInlayParameterNameHintsWhenArgumentMatchesName = false,
+							includeInlayFunctionParameterTypeHints = true,
+							includeInlayVariableTypeHints = true,
+							includeInlayVariableTypeHintsWhenTypeMatchesName = false,
+							includeInlayPropertyDeclarationTypeHints = true,
+							includeInlayFunctionLikeReturnTypeHints = true,
+							includeInlayEnumMemberValueHints = true,
+						},
+					},
+					javascript = {
+						inlayHints = {
+							includeInlayParameterNameHints = "all",
+							includeInlayParameterNameHintsWhenArgumentMatchesName = false,
+							includeInlayFunctionParameterTypeHints = true,
+							includeInlayVariableTypeHints = true,
+							includeInlayVariableTypeHintsWhenTypeMatchesName = false,
+							includeInlayPropertyDeclarationTypeHints = true,
+							includeInlayFunctionLikeReturnTypeHints = true,
+							includeInlayEnumMemberValueHints = true,
+						},
+					},
+				},
+			},
 
 			-- Special Lua Config, as recommended by neovim help docs
 			lua_ls = {
@@ -179,6 +206,7 @@ return {
 			-- You can add other tools here that you want Mason to install
 			"stylua", -- foramtter for lua
 			"prettierd", -- deamon fast version
+			"eslint_d",
 		})
 
 		require("mason-tool-installer").setup({ ensure_installed = ensure_installed })
