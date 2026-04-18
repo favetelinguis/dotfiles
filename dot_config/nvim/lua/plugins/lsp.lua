@@ -108,7 +108,21 @@ return {
 			-- clangd = {},
 			-- gopls = {},
 			-- pyright = {},
-			-- rust_analyzer = {},
+			rust_analyzer = {
+				settings = {
+					["rust-analyzer"] = {
+						cargo = {
+							allFeatures = true,
+						},
+						check = {
+							command = "check",
+						},
+						procMacro = {
+							enable = true,
+						},
+					},
+				},
+			},
 			--
 			-- Some languages (like typescript) have entire language plugins that can be useful:
 			--    https://github.com/pmizio/typescript-tools.nvim
@@ -158,7 +172,9 @@ return {
 		--    :Mason
 		--
 		-- You can press `g?` for help in this menu.
-		local ensure_installed = vim.tbl_keys(servers or {})
+		local ensure_installed = vim.tbl_filter(function(name)
+			return name ~= "rust_analyzer"
+		end, vim.tbl_keys(servers or {}))
 		vim.list_extend(ensure_installed, {
 			-- You can add other tools here that you want Mason to install
 			"stylua", -- foramtter for lua
