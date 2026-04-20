@@ -1,4 +1,0 @@
-{{- $agent := (get . "agent") | default dict -}}
-{{- if (get $agent "codex" | default false) -}}
-{{ .chezmoi.homeDir }}/.config/agents/skills/chezmoi-dotfile-expert
-{{- end -}}

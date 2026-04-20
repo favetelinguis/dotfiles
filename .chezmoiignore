@@ -1,6 +1,5 @@
 README.org
 {{- $apps := (get . "apps") | default dict -}}
-{{- $agent := (get . "agent") | default dict -}}
 {{- $git := (get . "git") | default dict -}}
 {{- $shell := (get . "shell") | default dict -}}
 {{- $foot := (get $apps "foot") | default false -}}
@@ -20,16 +19,12 @@ README.org
 {{- $gitui := (get $apps "gitui") | default false -}}
 {{- $k9s := (get $apps "k9s") | default false -}}
 {{- $emacs := (get $apps "emacs") | default false -}}
-{{- $codex := (get $agent "codex") | default false -}}
-{{- $claude := (get $agent "claude") | default false -}}
-{{- $opencode := (get $agent "opencode") | default false -}}
 {{- $gitEnabled := (get $git "enable") | default false -}}
 {{- $bash := (get $shell "bash") | default false -}}
 {{- $zsh := (get $shell "zsh") | default false -}}
-{{- $anyAgent := or $codex $claude $opencode -}}
 {{- $hasShell := or $bash $zsh -}}
 {{- $hasGitUi := or $ghDash $gitEnabled -}}
-{{- $hasConfig := or $foot $fuzzel $mako $niri $swaylock $ghostty $kak $nvim $ghDash $lf $lazygit $gitui $k9s $emacs $anyAgent $hasShell $gitEnabled -}}
+{{- $hasConfig := or $foot $fuzzel $mako $niri $swaylock $ghostty $kak $nvim $ghDash $lf $lazygit $gitui $k9s $emacs $hasShell $gitEnabled -}}
 {{- $hasLocalBin := $kakTaskScripts -}}
 
 {{- if not $hasConfig }}
@@ -113,20 +108,4 @@ README.org
 .local/bin/kak-task-list
 .local/bin/kak-task-run
 .local/bin/kak-tmux-session
-{{- end }}
-{{- if not $anyAgent }}
-.config/agents
-.config/agents/**
-{{- end }}
-{{- if not $codex }}
-.codex
-.codex/**
-{{- end }}
-{{- if not $claude }}
-.claude
-.claude/**
-{{- end }}
-{{- if not $opencode }}
-.config/opencode
-.config/opencode/**
 {{- end }}

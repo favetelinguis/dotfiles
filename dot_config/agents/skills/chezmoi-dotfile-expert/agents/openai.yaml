@@ -1,4 +1,0 @@
-interface:
-  display_name: "chezmoi Dotfile Expert"
-  short_description: "Manage source-state dotfiles with chezmoi"
-  default_prompt: "Use $chezmoi-dotfile-expert to inspect, edit, and sync my chezmoi-managed dotfiles from source state rather than editing live files."

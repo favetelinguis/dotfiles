@@ -1,4 +1,0 @@
-interface:
-  display_name: "Kak Task Expert"
-  short_description: "Create Kak task scripts and wiring"
-  default_prompt: "Use $kak-task-expert to create or update Kak task scripts that match my ~/.local/bin and task.kak workflow."

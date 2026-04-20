@@ -1,4 +1,0 @@
-interface:
-  display_name: "WezTerm Config Expert"
-  short_description: "Edit WezTerm Lua config and modules"
-  default_prompt: "Use $wezterm-config-expert to edit my WezTerm Lua configuration, including wezterm.lua, helper modules, and WezTerm-specific callbacks or workspace logic."

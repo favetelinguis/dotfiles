@@ -1,4 +1,0 @@
-interface:
-  display_name: "Neovim 0.12 Expert"
-  short_description: "Write Neovim Lua with 0.12-native APIs"
-  default_prompt: "Use $neovim-012-config-expert to edit Neovim Lua or my Neovim config with a Neovim 0.12-native approach, and pair it with $chezmoi-dotfile-expert for ~/.config/nvim changes."

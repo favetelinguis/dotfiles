@@ -1,6 +1,5 @@
 {{- $data := (get . "data") | default dict -}}
 {{- $apps := (get $data "apps") | default dict -}}
-{{- $agent := (get $data "agent") | default dict -}}
 {{- $git := (get $data "git") | default dict -}}
 {{- $github := (get $data "github") | default dict -}}
 {{- $shell := (get $data "shell") | default dict -}}
@@ -30,11 +29,6 @@ lazygit = {{ get $apps "lazygit" | default false }}
 gitui = {{ get $apps "gitui" | default false }}
 k9s = {{ get $apps "k9s" | default false }}
 emacs = {{ get $apps "emacs" | default false }}
-
-[data.agent]
-codex = {{ get $agent "codex" | default false }}
-claude = {{ get $agent "claude" | default false }}
-opencode = {{ get $agent "opencode" | default false }}
 
 [data.git]
 enable = {{ get $git "enable" | default false }}

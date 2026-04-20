@@ -1,4 +1,0 @@
-interface:
-  display_name: "Kak Script Expert"
-  short_description: "Write Kakoune scripts in established style"
-  default_prompt: "Use $kakoune-script-expert to write or review Kakoune script that matches my existing autoload patterns."

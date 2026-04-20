@@ -1,4 +1,0 @@
-{{- $agent := (get . "agent") | default dict -}}
-{{- if (get $agent "claude" | default false) -}}
-{{ .chezmoi.homeDir }}/.config/agents/skills/nushell-script-expert
-{{- end -}}

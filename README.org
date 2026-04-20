@@ -35,11 +35,6 @@ gitui = false
 k9s = false
 emacs = false
 
-[data.agent]
-codex = false
-claude = false
-opencode = false
-
 [data.git]
 enable = false
 
@@ -78,11 +73,6 @@ App toggles:
 - =apps.k9s=
 - =apps.emacs=
 
-Agent toggles:
-- =agent.codex=
-- =agent.claude=
-- =agent.opencode=
-
 Git toggles:
 - =git.enable=
 
@@ -93,10 +83,6 @@ Shell toggles:
 GitHub machine-local data:
 - =github.globalPrFilter=, appended after a built-in =is:open=
 - =github.repoPath=
-
-Enabling any =agent.*= value installs the shared skills in
-=~/.config/agents/skills=. Enabling a specific =agent.*= value also installs
-that agent's compatibility symlinks.
 
 Enabling =shell.bash= installs =~/.config/shell/local.sh= and appends a
 single guarded source line to =~/.bashrc=. Enabling =shell.zsh= does the same
@@ -141,11 +127,6 @@ lazygit = true
 gitui = true
 k9s = true
 
-[data.agent]
-codex = true
-claude = true
-opencode = false
-
 [data.git]
 enable = true
 
@@ -164,18 +145,6 @@ used by both =gh-dash= and =jrg=.
 off into the same review flow as =jr=. =jrg= searches under =repoPath= for a
 matching Git repository up to 4 repo-root levels deep and fails with a clear
 error when it finds none or more than one match.
-
-** Agent skills layout
-Agent skills are stored once in the canonical shared location:
-=~/.config/agents/skills=.
-
-Compatibility paths are managed by chezmoi with per-skill symlinks:
-- =~/.claude/skills/<skill-name>=
-- =~/.codex/skills/<skill-name>=
-- =~/.config/opencode/skills/<skill-name>=
-
-Shared skills are installed when any =agent.*= value is true. Compatibility
-symlinks are installed only for the matching =agent.*= value.
 
 ** Useful commands
 - =chezmoi cat-config=
