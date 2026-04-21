@@ -91,7 +91,6 @@ function M.choose_project()
 				set_environment_variables = {
 					WEZTERM_PROJECT_ROOT = id,
 				},
-				args = { "/bin/zsh", "-il", "-c", "cd $WEZTERM_PROJECT_ROOT; br" },
 			})
 			tab:set_title(tab_name)
 			tab:activate()
