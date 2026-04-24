@@ -101,12 +101,34 @@ return {
 		-- Enable the following language servers
 		--  Feel free to add/remove any LSPs that you want here. They will automatically be installed.
 		--  See `:help lsp-config` for information about keys and how to configure
+		local capabilities = require("blink.cmp").get_lsp_capabilities()
+
 		---@type table<string, vim.lsp.Config>
 		local servers = {
 			jdtls = {},
 			marksman = {},
 			-- clangd = {},
-			-- gopls = {},
+			gopls = {
+				settings = {
+					gopls = {
+						gofumpt = true,
+						staticcheck = true,
+						analyses = {
+							shadow = true,
+							unusedparams = true,
+						},
+						hints = {
+							assignVariableTypes = true,
+							compositeLiteralFields = true,
+							compositeLiteralTypes = true,
+							constantValues = true,
+							functionTypeParameters = true,
+							parameterNames = true,
+							rangeVariableTypes = true,
+						},
+					},
+				},
+			},
 			-- pyright = {},
 			rust_analyzer = {
 				settings = {
@@ -207,11 +229,15 @@ return {
 			"stylua", -- foramtter for lua
 			"prettierd", -- deamon fast version
 			"eslint_d",
+			"goimports",
+			"gofumpt",
+			"golangci-lint",
 		})
 
 		require("mason-tool-installer").setup({ ensure_installed = ensure_installed })
 
 		for name, server in pairs(servers) do
+			server.capabilities = vim.tbl_deep_extend("force", {}, capabilities, server.capabilities or {})
 			vim.lsp.config(name, server)
 			vim.lsp.enable(name)
 		end

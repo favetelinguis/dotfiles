@@ -12,9 +12,9 @@
         })
 
         local parsers = {
-          "lua", "java", "json", "yaml", "markdown", "typescript", "helm", "python", "rust", "go", 
-          "toml", "javascript", "html", "tsx", "jsx", "xml", "bash", "zsh", "nu", "query", "vim",
-          "vimdoc", "markdown_inline", "luadoc"
+          "lua", "java", "json", "yaml", "markdown", "typescript", "helm", "python", "rust", "go",
+          "gomod", "gowork", "gosum", "toml", "javascript", "html", "tsx", "jsx", "xml", "bash", "zsh",
+          "nu", "query", "vim", "vimdoc", "markdown_inline", "luadoc"
         }
 
         ts.install(parsers)

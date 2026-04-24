@@ -19,6 +19,12 @@ return {
 					return
 				end
 
+				if filetype == "go" then
+					local root = vim.fs.root(vim.api.nvim_buf_get_name(bufnr), { "go.work", "go.mod", ".git" })
+					lint.try_lint("golangcilint", { cwd = root or vim.fn.getcwd() })
+					return
+				end
+
 				lint.try_lint()
 			end,
 			desc = "[C]ode [C]heck",
@@ -33,9 +39,18 @@ return {
 			return root or vim.fs.root(vim.api.nvim_buf_get_name(bufnr), { "Cargo.toml", "rust-project.json", ".git" })
 		end
 
+		local function go_lint_cwd(bufnr)
+			return vim.fs.root(vim.api.nvim_buf_get_name(bufnr), { "go.work", "go.mod", ".git" })
+		end
+
 		local function lint_buffer(bufnr, names)
 			if vim.bo[bufnr].filetype == "rust" then
 				lint.try_lint(names or "clippy", { cwd = rust_lint_cwd(bufnr) or vim.fn.getcwd() })
+				return
+			end
+
+			if vim.bo[bufnr].filetype == "go" then
+				lint.try_lint(names or "golangcilint", { cwd = go_lint_cwd(bufnr) or vim.fn.getcwd() })
 				return
 			end
 
@@ -44,6 +59,7 @@ return {
 
 		lint.linters_by_ft = {
 			rust = { "clippy" },
+			go = { "golangcilint" },
 			javascript = { "eslint_d" },
 			javascriptreact = { "eslint_d" },
 			typescript = { "eslint_d" },
@@ -89,7 +105,7 @@ return {
 		vim.api.nvim_create_autocmd({ "BufEnter", "BufWritePost", "InsertLeave" }, {
 			group = lint_augroup,
 			callback = function()
-				if vim.bo.filetype == "rust" then
+				if vim.bo.filetype == "rust" or vim.bo.filetype == "go" then
 					return
 				end
 
@@ -98,6 +114,16 @@ return {
 				-- describe the hovered symbol using Markdown.
 				if vim.bo.modifiable then
 					lint_buffer(vim.api.nvim_get_current_buf())
+				end
+			end,
+		})
+
+		vim.api.nvim_create_autocmd("BufWritePost", {
+			group = lint_augroup,
+			pattern = "*.go",
+			callback = function(args)
+				if vim.bo[args.buf].modifiable then
+					lint_buffer(args.buf, "golangcilint")
 				end
 			end,
 		})

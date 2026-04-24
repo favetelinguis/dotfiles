@@ -1,5 +1,5 @@
 local function project_root()
-	return vim.fs.root(0, { ".git", "package.json", "pyproject.toml", "Cargo.toml" }) or vim.uv.cwd()
+	return vim.fs.root(0, { ".git", "go.work", "go.mod", "package.json", "pyproject.toml", "Cargo.toml" }) or vim.uv.cwd()
 end
 
 return {
